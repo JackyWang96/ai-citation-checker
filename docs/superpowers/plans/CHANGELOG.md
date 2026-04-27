@@ -2,6 +2,20 @@
 
 Changes are recorded by date (AEST).
 
+## 2026-04-28
+
+**Frontend redesign — match high-fidelity design handoff**
+
+- CSS design tokens: oklch palette, Plus Jakarta Sans + JetBrains Mono fonts
+- Upload page: frosted-glass navbar, hero section (Chinese copy), drag-and-drop zone with dragging state, feature pills
+- New Loading page: spinner, 5-step animated checklist, progress bar; real upload runs in parallel with animation
+- Report page: top bar with donut score gauge, pass/warning/error counts, DOI tip banner; split-panel layout
+- Cross-highlighting: clicking citation span scrolls to issue card and vice versa; hover highlights propagate both ways
+- AnnotatedText: annotated essay body + structured References section (border-left styled blocks)
+- Citation: coloured underline, hover/active bg, tooltip shows first issue reason
+- New components: IssueCard, StatusBadge, CategoryTag
+- IssuePanel: filter tabs (全部/错误/警告/通过) with counts, issue cards, expiry timer + copy-share-link footer
+
 ## 2026-04-27
 
 **AI Citation Checker — full MVP implementation**
