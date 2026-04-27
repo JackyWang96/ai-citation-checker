@@ -15,8 +15,12 @@ async def check_essay(file: UploadFile = File(...)):
     if not file.filename or not file.filename.endswith(".docx"):
         raise HTTPException(status_code=400, detail="Only .docx files are supported")
 
+    MAX_BYTES = 10 * 1024 * 1024
+    # Check Content-Length before buffering to avoid reading huge uploads into memory.
+    if file.size is not None and file.size > MAX_BYTES:
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
     data = await file.read()
-    if len(data) > 10 * 1024 * 1024:
+    if len(data) > MAX_BYTES:
         raise HTTPException(status_code=400, detail="File too large (max 10MB)")
 
     try:

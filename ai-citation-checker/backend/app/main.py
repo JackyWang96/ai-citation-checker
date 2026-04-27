@@ -26,7 +26,7 @@ def _make_app() -> FastAPI:
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "https://your-app.vercel.app"],
+        allow_origins=[cfg.ALLOWED_ORIGIN],
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
