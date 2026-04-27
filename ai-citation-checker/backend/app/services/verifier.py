@@ -1,0 +1,186 @@
+from __future__ import annotations
+import json
+import re
+import uuid
+import asyncio
+from dataclasses import dataclass, field
+from typing import Optional
+import httpx
+from rapidfuzz import fuzz
+from app.services.citation_extractor import ReferenceEntry
+from app.storage.db import get_cached_reference, save_verified_reference
+from app.config import CROSSREF_MAILTO
+
+CROSSREF_BASE = "https://api.crossref.org/works"
+OPENALEX_BASE = "https://api.openalex.org/works"
+SCORE_EXACT = 100
+SCORE_FUZZY_MIN = 85
+
+
+@dataclass
+class VerifyResult:
+    found: bool
+    exact_match: bool = False
+    ambiguous: bool = False
+    other_titles: list[str] = field(default_factory=list)
+    canonical: Optional[dict] = None
+    source: Optional[str] = None
+    verified_reference_id: Optional[str] = None
+
+
+async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
+    # 1. Cache lookup
+    cached = await get_cached_reference(
+        db_path, entry.doi, entry.title_normalized,
+        entry.first_author_normalized, entry.year,
+    )
+    if cached:
+        return VerifyResult(
+            found=True, exact_match=True,
+            canonical=json.loads(cached["canonical_json"]),
+            source=cached["source"],
+            verified_reference_id=cached["id"],
+        )
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        # 2. Crossref search
+        result = await _search_crossref(client, entry, db_path)
+        if result:
+            return result
+        # 3. OpenAlex fallback
+        result = await _search_openalex(client, entry, db_path)
+        if result:
+            return result
+
+    return VerifyResult(found=False)
+
+
+async def _search_crossref(client: httpx.AsyncClient, entry: ReferenceEntry,
+                            db_path: str) -> Optional[VerifyResult]:
+    query = f"{entry.title_normalized} {entry.first_author_normalized} {entry.year}"
+    try:
+        resp = await client.get(CROSSREF_BASE, params={
+            "query.bibliographic": query,
+            "rows": 5,
+            "mailto": CROSSREF_MAILTO,
+        })
+        resp.raise_for_status()
+        items = resp.json().get("message", {}).get("items", [])
+    except Exception:
+        return None
+
+    return await _score_candidates(items, entry, db_path, source="crossref")
+
+
+async def _search_openalex(client: httpx.AsyncClient, entry: ReferenceEntry,
+                            db_path: str) -> Optional[VerifyResult]:
+    query = f"{entry.title_normalized} {entry.first_author_normalized}"
+    try:
+        resp = await client.get(OPENALEX_BASE, params={"search": query, "per-page": 5})
+        resp.raise_for_status()
+        raw_items = resp.json().get("results", [])
+    except Exception:
+        return None
+
+    # Normalise OpenAlex shape to match Crossref shape
+    items = []
+    for w in raw_items:
+        title = w.get("title") or ""
+        authors = [
+            {"family": a.get("author", {}).get("display_name", "").split()[-1], "given": ""}
+            for a in w.get("authorships", [])
+        ]
+        year = w.get("publication_year") or 0
+        doi = (w.get("doi") or "").replace("https://doi.org/", "")
+        items.append({
+            "title": [title],
+            "author": authors,
+            "published": {"date-parts": [[year]]},
+            "container-title": [w.get("host_venue", {}).get("display_name", "")],
+            "DOI": doi,
+            "score": 0,
+        })
+    return await _score_candidates(items, entry, db_path, source="openalex")
+
+
+async def _score_candidates(items: list[dict], entry: ReferenceEntry,
+                             db_path: str, source: str) -> Optional[VerifyResult]:
+    if not items:
+        return None
+
+    scored = []
+    for item in items:
+        cand_title = (item.get("title") or [""])[0]
+        cand_authors = item.get("author") or []
+        cand_year = ((item.get("published") or {}).get("date-parts") or [[0]])[0][0]
+        cand_first_author = (cand_authors[0].get("family") or "") if cand_authors else ""
+
+        title_score = fuzz.token_set_ratio(
+            entry.title_normalized,
+            _norm(cand_title),
+        )
+        author_match = _norm(cand_first_author) == entry.first_author_normalized
+        year_match = abs(cand_year - entry.year) <= 1
+
+        scored.append((title_score, author_match, year_match, item, cand_title))
+
+    # Filter candidates where author+year match (no title threshold for ambiguity detection)
+    author_year_matching = [
+        (score, item, cand_title)
+        for score, author_ok, year_ok, item, cand_title in scored
+        if author_ok and year_ok
+    ]
+
+    # Filter to high-confidence matches for the primary result
+    matching = [
+        (score, item, cand_title)
+        for score, item, cand_title in author_year_matching
+        if score >= SCORE_FUZZY_MIN
+    ]
+
+    if not matching:
+        return None
+
+    # Check ambiguity: multiple candidates with same author+year
+    ambiguous = len(author_year_matching) > 1
+    other_titles = [t for _, _, t in author_year_matching[1:]]
+
+    best_score, best_item, _ = matching[0]
+    exact = best_score == SCORE_EXACT
+
+    ref_id: Optional[str] = None
+    if exact:
+        ref_id = str(uuid.uuid4())
+        doi = best_item.get("DOI") or None
+        await save_verified_reference(
+            db_path, ref_id, doi,
+            entry.title_normalized, entry.first_author_normalized, entry.year,
+            json.dumps(best_item), source,
+        )
+
+    return VerifyResult(
+        found=True,
+        exact_match=exact,
+        ambiguous=ambiguous,
+        other_titles=other_titles,
+        canonical=best_item,
+        source=source,
+        verified_reference_id=ref_id,
+    )
+
+
+async def verify_all(entries: list[ReferenceEntry], db_path: str,
+                     concurrency: int = 10) -> list[VerifyResult]:
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _one(entry: ReferenceEntry) -> VerifyResult:
+        async with sem:
+            return await verify_reference(entry, db_path)
+
+    return await asyncio.gather(*[_one(e) for e in entries])
+
+
+def _norm(text: str) -> str:
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    return re.sub(r'\s+', ' ', text).strip()
