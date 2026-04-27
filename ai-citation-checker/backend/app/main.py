@@ -13,30 +13,7 @@ from app.routes.report import router as report_router
 limiter = Limiter(key_func=get_remote_address, default_limits=["10/minute"])
 
 
-async def create_app() -> FastAPI:
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        await init_db(cfg.DB_PATH)
-        scheduler = start_cleanup_scheduler()
-        yield
-        scheduler.shutdown()
-
-    application = FastAPI(lifespan=lifespan)
-    application.state.limiter = limiter
-    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=["http://localhost:5173", "https://your-app.vercel.app"],
-        allow_methods=["GET", "POST"],
-        allow_headers=["*"],
-    )
-    application.include_router(upload_router)
-    application.include_router(report_router)
-    return application
-
-
-def _build_app() -> FastAPI:
-    """Synchronous factory for module-level import (uvicorn)."""
+def _make_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI):
         await init_db(cfg.DB_PATH)
@@ -58,5 +35,10 @@ def _build_app() -> FastAPI:
     return application
 
 
+async def create_app() -> FastAPI:
+    """Async factory used in tests."""
+    return _make_app()
+
+
 # Module-level app for uvicorn
-app = _build_app()
+app = _make_app()
