@@ -90,11 +90,9 @@ def _extract_first_author(text: str) -> str:
 
 def _extract_title(text: str) -> str:
     m = re.search(r'\(\d{4}[a-z]?\)\.\s+(.+?)[\.\!\?]', text)
-    if m:
-        return m.group(1).strip()
-    return text
+    return m.group(1).strip() if m else ""
 
 
 def _extract_doi(text: str) -> str | None:
     m = re.search(r'https?://doi\.org/\S+', text)
-    return m.group(0).rstrip('.,') if m else None
+    return m.group(0).rstrip('.,;') if m else None
