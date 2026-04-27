@@ -41,7 +41,7 @@ async def save_report(db_path: str, report_id: str, report_json: str, filename: 
     expires = now + timedelta(hours=24)
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
-            "INSERT INTO reports VALUES (?,?,?,?,?)",
+            "INSERT INTO reports (id, report_json, filename, created_at, expires_at) VALUES (?,?,?,?,?)",
             (report_id, report_json, filename, now.isoformat(), expires.isoformat()),
         )
         await db.commit()
@@ -85,6 +85,8 @@ async def save_verified_reference(db_path: str, ref_id: str, doi: str | None,
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """INSERT OR IGNORE INTO verified_references
+               (id, doi, title_normalized, first_author_normalized, year,
+                canonical_json, source, cached_at)
                VALUES (?,?,?,?,?,?,?,?)""",
             (ref_id, doi, title_norm, author_norm, year, canonical_json, source, now),
         )

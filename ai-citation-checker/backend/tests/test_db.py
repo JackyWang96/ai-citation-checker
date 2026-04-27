@@ -1,5 +1,8 @@
 import pytest
-from app.storage.db import init_db, save_report, get_report
+from app.storage.db import (
+    init_db, save_report, get_report,
+    get_cached_reference, save_verified_reference,
+)
 
 @pytest.mark.asyncio
 async def test_save_and_get_report(tmp_path):
@@ -32,3 +35,41 @@ async def test_expired_report_returns_none(tmp_path):
         await db.commit()
     row = await get_report(db_path, "old-id")
     assert row is None
+
+
+@pytest.mark.asyncio
+async def test_save_and_get_verified_reference_by_doi(tmp_path):
+    db_path = str(tmp_path / "test.db")
+    await init_db(db_path)
+    await save_verified_reference(
+        db_path, "ref-1", "10.1000/xyz", "ai in education", "smith", 2020,
+        '{"title": "AI in Education"}', "crossref",
+    )
+    row = await get_cached_reference(db_path, "10.1000/xyz", "", "", 0)
+    assert row is not None
+    assert row["doi"] == "10.1000/xyz"
+    assert row["year"] == 2020
+
+
+@pytest.mark.asyncio
+async def test_get_cached_reference_fallback_no_doi(tmp_path):
+    db_path = str(tmp_path / "test.db")
+    await init_db(db_path)
+    await save_verified_reference(
+        db_path, "ref-2", None, "learning with machines", "jones", 2019,
+        '{"title": "Learning with Machines"}', "openalex",
+    )
+    row = await get_cached_reference(db_path, None, "learning with machines", "jones", 2019)
+    assert row is not None
+    assert row["first_author_normalized"] == "jones"
+
+
+@pytest.mark.asyncio
+async def test_save_verified_reference_idempotent(tmp_path):
+    db_path = str(tmp_path / "test.db")
+    await init_db(db_path)
+    kwargs = ("ref-3", "10.1000/dup", "title", "author", 2021, '{}', "crossref")
+    await save_verified_reference(db_path, *kwargs)
+    await save_verified_reference(db_path, *kwargs)  # should not raise
+    row = await get_cached_reference(db_path, "10.1000/dup", "", "", 0)
+    assert row is not None
