@@ -13,3 +13,8 @@ frontend/dist/
 # Env
 .env
 .env.local
+
+# Build artifacts
+backend/.pytest_cache/
+backend/.ruff_cache/
+*.egg-info/
