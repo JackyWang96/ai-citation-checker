@@ -37,7 +37,7 @@ def parse_docx(data: bytes) -> ParsedDocument:
         for para in paragraphs[ref_start + 1:]:
             if not para.text.strip():
                 continue
-            runs = [(r.text, bool(r.italic)) for r in para.runs if r.text]
+            runs = [(r.text, r.italic is True) for r in para.runs if r.text]
             fmt = para.paragraph_format
             hanging = (
                 fmt.first_line_indent is not None and fmt.first_line_indent < 0
@@ -58,8 +58,6 @@ def parse_docx(data: bytes) -> ParsedDocument:
 
 def _find_references_heading(paragraphs) -> int | None:
     for i, para in enumerate(paragraphs):
-        if para.style.name.startswith("Heading") and para.text.strip().lower() in REFERENCE_HEADINGS:
-            return i
         if para.text.strip().lower() in REFERENCE_HEADINGS:
             return i
     return None
