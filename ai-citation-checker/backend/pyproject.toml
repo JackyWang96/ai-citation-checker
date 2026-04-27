@@ -16,6 +16,7 @@ dependencies = [
     "apscheduler==3.10.4",
     "slowapi==0.1.9",
     "pydantic==2.8.2",
+    "python-multipart==0.0.9",
 ]
 
 [project.optional-dependencies]
