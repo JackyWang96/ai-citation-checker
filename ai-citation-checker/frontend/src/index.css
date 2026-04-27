@@ -1,3 +1,55 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg: oklch(97% 0.006 250);
+  --surface: #ffffff;
+  --border: oklch(88% 0.008 250);
+  --text: oklch(18% 0.012 250);
+  --text-2: oklch(45% 0.01 250);
+  --text-3: oklch(62% 0.008 250);
+  --accent: oklch(52% 0.16 240);
+  --accent-bg: oklch(95% 0.04 240);
+  --green: oklch(50% 0.14 145);
+  --green-bg: oklch(95% 0.04 145);
+  --green-border: oklch(85% 0.08 145);
+  --amber: oklch(62% 0.16 75);
+  --amber-bg: oklch(96% 0.05 75);
+  --amber-border: oklch(84% 0.1 75);
+  --red: oklch(50% 0.18 20);
+  --red-bg: oklch(96% 0.05 20);
+  --red-border: oklch(84% 0.1 20);
+  --font: 'Plus Jakarta Sans', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

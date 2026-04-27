@@ -1,77 +1,181 @@
+import IssueCard from './IssueCard'
+
 interface Issue {
+  type?: string
+  severity: string
+  category: string
   reason: string
   detail?: string
   field?: string
   expected?: string
   actual?: string
-  category: string
-  severity: string
   rule_id?: string
 }
 
 interface CitationData {
   id: string
-  kind: string
+  kind: 'intext' | 'reference'
   raw_text: string
   status: 'pass' | 'warning' | 'error'
   issues: Issue[]
 }
 
+interface Summary {
+  total: number
+  pass: number
+  warning: number
+  error: number
+}
+
+type FilterStatus = 'all' | 'pass' | 'warning' | 'error'
+
 interface Props {
   citations: CitationData[]
-  activeCitationId: string | null
-  onIssueClick: (id: string) => void
+  summary: Summary
+  activeCitId: string | null
+  hoveredCitId: string | null
+  filterStatus: FilterStatus
+  expiresAt: string
+  onCitClick: (id: string) => void
+  onCitHover: (id: string | null) => void
+  onFilterChange: (status: FilterStatus) => void
+  issueRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>
 }
 
-const SEVERITY_ICON: Record<string, string> = {
-  error: '🔴',
-  warning: '🟡',
-  pass: '🟢',
+function formatExpiry(expiresAt: string): string {
+  const ms = new Date(expiresAt).getTime() - Date.now()
+  if (ms <= 0) return '已过期'
+  const h = Math.floor(ms / 3600000)
+  const m = Math.floor((ms % 3600000) / 60000)
+  return `${h}h ${m}m 后过期`
 }
 
-export default function IssuePanel({ citations, activeCitationId, onIssueClick }: Props) {
-  const withIssues = citations.filter(c => c.status !== 'pass')
+export default function IssuePanel({
+  citations,
+  summary,
+  activeCitId,
+  hoveredCitId,
+  filterStatus,
+  expiresAt,
+  onCitClick,
+  onCitHover,
+  onFilterChange,
+  issueRefs,
+}: Props) {
+  const filtered =
+    filterStatus === 'all' ? citations : citations.filter((c) => c.status === filterStatus)
 
-  if (withIssues.length === 0) {
-    return (
-      <div className="p-6 text-center text-gray-400 text-sm">
-        🎉 No issues found!
-      </div>
-    )
-  }
+  const tabs: { key: FilterStatus; label: string; count: number }[] = [
+    { key: 'all',     label: '全部',   count: summary.total   },
+    { key: 'error',   label: '错误',   count: summary.error   },
+    { key: 'warning', label: '警告',   count: summary.warning },
+    { key: 'pass',    label: '通过',   count: summary.pass    },
+  ]
 
   return (
-    <div className="divide-y divide-gray-100">
-      {withIssues.map(c => (
-        <div
-          key={c.id}
-          className={`p-4 cursor-pointer hover:bg-gray-50 transition
-            ${activeCitationId === c.id ? 'bg-blue-50' : ''}
-          `}
-          onClick={() => onIssueClick(c.id)}
-        >
-          <div className="flex items-start gap-2">
-            <span>{SEVERITY_ICON[c.status]}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-mono text-gray-500 truncate">{c.raw_text}</p>
-              {c.issues.map((issue, i) => (
-                <div key={i} className="mt-1">
-                  <p className="text-sm text-gray-800">{issue.reason}</p>
-                  {issue.expected && (
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Expected: <span className="text-green-700">{issue.expected}</span>
-                      {issue.actual && <> · Got: <span className="text-red-600">{issue.actual}</span></>}
-                    </p>
-                  )}
-                  {issue.detail && (
-                    <p className="text-xs text-gray-400 mt-0.5">{issue.detail}</p>
-                  )}
-                </div>
-              ))}
-            </div>
+    <div
+      style={{
+        width: 380,
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--bg)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Filter tabs */}
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--surface)',
+          display: 'flex',
+          gap: 6,
+          flexShrink: 0,
+        }}
+      >
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => onFilterChange(t.key)}
+            style={{
+              padding: '4px 10px',
+              borderRadius: 99,
+              fontSize: 12,
+              fontWeight: 600,
+              background: filterStatus === t.key ? 'var(--accent)' : 'transparent',
+              color: filterStatus === t.key ? 'white' : 'var(--text-3)',
+              transition: 'all 0.15s',
+            }}
+          >
+            {t.label}({t.count})
+          </button>
+        ))}
+      </div>
+
+      {/* Issue list */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: 12,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}
+      >
+        {filtered.length === 0 ? (
+          <div
+            style={{
+              padding: '40px 16px',
+              textAlign: 'center',
+              fontSize: 13,
+              color: 'var(--text-3)',
+            }}
+          >
+            🎉 没有问题！
           </div>
-        </div>
-      ))}
+        ) : (
+          filtered.map((cit) => (
+            <div
+              key={cit.id}
+              ref={(el) => {
+                issueRefs.current[cit.id] = el
+              }}
+            >
+              <IssueCard
+                cit={cit}
+                isActive={activeCitId === cit.id}
+                isHovered={hoveredCitId === cit.id}
+                onClick={() => onCitClick(cit.id)}
+                onHover={onCitHover}
+              />
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          padding: '10px 16px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--surface)',
+          fontSize: 11,
+          color: 'var(--text-3)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+        }}
+      >
+        <span>{formatExpiry(expiresAt)}</span>
+        <button
+          style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}
+          onClick={() => navigator.clipboard.writeText(window.location.href)}
+        >
+          复制分享链接
+        </button>
+      </div>
     </div>
   )
 }

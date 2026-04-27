@@ -16,34 +16,66 @@ interface Props {
   status: 'pass' | 'warning' | 'error'
   text: string
   issues: Issue[]
+  isActive: boolean
+  isHovered: boolean
   onClick: (id: string) => void
-  highlighted: boolean
+  onHover: (id: string | null) => void
 }
 
-const COLOR: Record<string, string> = {
-  pass: 'bg-green-100 text-green-800',
-  warning: 'bg-yellow-100 text-yellow-800',
-  error: 'bg-red-100 text-red-800',
+const COLOR_MAP = {
+  pass:    { border: 'var(--green)', bg: 'var(--green-bg)' },
+  warning: { border: 'var(--amber)', bg: 'var(--amber-bg)' },
+  error:   { border: 'var(--red)',   bg: 'var(--red-bg)'   },
 }
 
-export default function Citation({ id, status, text, issues, onClick, highlighted }: Props) {
+export default function Citation({ id, status, text, issues, isActive, isHovered, onClick, onHover }: Props) {
   const [showTip, setShowTip] = useState(false)
+  const c = COLOR_MAP[status]
+  const highlighted = isActive || isHovered
   const first = issues[0]
 
   return (
-    <span
-      id={id}
-      className={`relative cursor-pointer px-0.5 rounded transition
-        ${COLOR[status]}
-        ${highlighted ? 'ring-2 ring-blue-500' : ''}
-      `}
-      onClick={() => onClick(id)}
-      onMouseEnter={() => setShowTip(true)}
-      onMouseLeave={() => setShowTip(false)}
-    >
-      {text}
+    <span style={{ position: 'relative', display: 'inline' }}>
+      <span
+        id={id}
+        data-cit-id={id}
+        onClick={() => onClick(id)}
+        onMouseEnter={() => { setShowTip(true); onHover(id) }}
+        onMouseLeave={() => { setShowTip(false); onHover(null) }}
+        style={{
+          background: highlighted ? c.bg : 'transparent',
+          borderBottom: `2px solid ${c.border}`,
+          borderRadius: highlighted ? 3 : 0,
+          padding: highlighted ? '1px 3px' : '0 1px',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          outline: isActive ? `2px solid ${c.border}` : 'none',
+          outlineOffset: 1,
+          fontWeight: isActive ? 600 : 'inherit',
+        }}
+      >
+        {text}
+      </span>
       {showTip && first && (
-        <span className="absolute bottom-full left-0 mb-1 z-10 w-64 bg-gray-800 text-white text-xs rounded p-2 shadow-lg">
+        <span
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 6px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: status === 'error' ? 'var(--red)' : 'var(--text)',
+            color: 'white',
+            padding: '6px 10px',
+            borderRadius: 6,
+            fontSize: 12,
+            whiteSpace: 'normal',
+            maxWidth: 260,
+            lineHeight: 1.4,
+            pointerEvents: 'none',
+            zIndex: 100,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          }}
+        >
           {first.reason}
         </span>
       )}
