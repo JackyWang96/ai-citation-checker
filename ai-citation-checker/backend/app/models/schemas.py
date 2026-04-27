@@ -34,4 +34,4 @@ class Report(BaseModel):
     expires_at: datetime
     full_text: str
     citations: list[Citation]
-    summary: dict
+    summary: dict[str, int]
