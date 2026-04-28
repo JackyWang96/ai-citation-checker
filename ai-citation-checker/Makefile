@@ -22,6 +22,10 @@ backend:
 frontend:
 	cd frontend && npm run dev
 
+# Check if backend is running
+check:
+	@curl -sf http://localhost:8000/healthz && echo " ✓ Backend is running" || echo "✗ Backend is NOT running (run: make backend)"
+
 # Install all dependencies
 install:
 	cd backend && pip install -e .
