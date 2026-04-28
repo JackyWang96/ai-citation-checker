@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 import Citation from './Citation'
 
 interface Issue {
@@ -31,21 +32,18 @@ interface Props {
 }
 
 const BORDER_COLOR: Record<string, string> = {
-  pass:    'var(--green-border)',
-  warning: 'var(--amber-border)',
-  error:   'var(--red-border)',
+  pass: 'var(--green-border)', warning: 'var(--amber-border)', error: 'var(--red-border)',
 }
 const BG_COLOR: Record<string, string> = {
-  pass:    'var(--green-bg)',
-  warning: 'var(--amber-bg)',
-  error:   'var(--red-bg)',
+  pass: 'var(--green-bg)', warning: 'var(--amber-bg)', error: 'var(--red-bg)',
 }
 
 export default function AnnotatedText({ fullText, citations, activeCitId, hoveredCitId, onCitClick, onCitHover }: Props) {
+  const { t } = useT()
+
   const refCitations = citations.filter((c) => c.kind === 'reference')
   const intextCitations = citations.filter((c) => c.kind === 'intext')
 
-  // Body text ends at the start of the first reference entry (or end of text if no references)
   const firstRefChar =
     refCitations.length > 0
       ? Math.min(...refCitations.map((c) => c.char_start))
@@ -53,7 +51,6 @@ export default function AnnotatedText({ fullText, citations, activeCitId, hovere
 
   const bodyText = fullText.slice(0, firstRefChar).trimEnd()
 
-  // Build annotated body text segments
   const sortedIntext = [...intextCitations].sort((a, b) => a.char_start - b.char_start)
   const segments: React.ReactNode[] = []
   let cursor = 0
@@ -61,8 +58,7 @@ export default function AnnotatedText({ fullText, citations, activeCitId, hovere
   for (const c of sortedIntext) {
     if (c.char_start >= firstRefChar) break
     if (c.char_start > cursor) {
-      const slice = bodyText.slice(cursor, c.char_start)
-      segments.push(<TextBlock key={`txt-${cursor}`} text={slice} />)
+      segments.push(<TextBlock key={`txt-${cursor}`} text={bodyText.slice(cursor, c.char_start)} />)
     }
     segments.push(
       <Citation
@@ -86,22 +82,12 @@ export default function AnnotatedText({ fullText, citations, activeCitId, hovere
 
   return (
     <div style={{ padding: '40px 48px', maxWidth: 760, lineHeight: 1.85, fontSize: 15, color: 'var(--text)' }}>
-      {/* Section heading */}
-      <h2 style={sectionHeadingStyle}>Essay Text</h2>
-
-      {/* Annotated body text */}
+      <h2 style={headingStyle}>{t.essayHeading}</h2>
       <div style={{ textAlign: 'justify' }}>{segments}</div>
 
-      {/* References section */}
       {refCitations.length > 0 && (
-        <div
-          style={{
-            marginTop: 48,
-            paddingTop: 32,
-            borderTop: '1px solid var(--border)',
-          }}
-        >
-          <h2 style={sectionHeadingStyle}>References</h2>
+        <div style={{ marginTop: 48, paddingTop: 32, borderTop: '1px solid var(--border)' }}>
+          <h2 style={headingStyle}>{t.referencesHeading}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {refCitations.map((cit) => {
               const isActive = activeCitId === cit.id
@@ -137,7 +123,6 @@ export default function AnnotatedText({ fullText, citations, activeCitId, hovere
   )
 }
 
-// Render plain text preserving newlines as paragraph breaks
 function TextBlock({ text }: { text: string }) {
   const lines = text.split('\n')
   return (
@@ -145,23 +130,14 @@ function TextBlock({ text }: { text: string }) {
       {lines.map((line, i) => (
         <span key={i}>
           {line}
-          {i < lines.length - 1 && (
-            <>
-              <br />
-              {line.trim() === '' && <br />}
-            </>
-          )}
+          {i < lines.length - 1 && <>{'\n'}{line.trim() === '' && <br />}</>}
         </span>
       ))}
     </>
   )
 }
 
-const sectionHeadingStyle: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: 'var(--text-3)',
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  marginBottom: 24,
+const headingStyle: React.CSSProperties = {
+  fontSize: 13, fontWeight: 600, color: 'var(--text-3)',
+  letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 24,
 }

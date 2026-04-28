@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useT } from '../i18n'
 
 export function LogoIcon({ size = 24 }: { size?: number }) {
   return (
@@ -12,7 +13,32 @@ export function LogoIcon({ size = 24 }: { size?: number }) {
   )
 }
 
+export function LangToggle() {
+  const { lang, toggle } = useT()
+  return (
+    <button
+      onClick={toggle}
+      style={{
+        marginLeft: 'auto',
+        padding: '4px 12px',
+        borderRadius: 99,
+        fontSize: 12,
+        fontWeight: 600,
+        border: '1px solid var(--border)',
+        color: 'var(--text-2)',
+        background: 'transparent',
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+        fontFamily: 'var(--font)',
+      }}
+    >
+      {lang === 'zh' ? 'EN' : '中文'}
+    </button>
+  )
+}
+
 export default function Upload() {
+  const { t } = useT()
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -21,13 +47,13 @@ export default function Upload() {
   const handleFile = useCallback(
     (file: File) => {
       if (!file.name.match(/\.(docx|pdf)$/i)) {
-        setError('仅支持 .docx 和 .pdf 文件')
+        setError(t.invalidFile)
         return
       }
       setError('')
       navigate('/loading', { state: { file } })
     },
-    [navigate],
+    [navigate, t.invalidFile],
   )
 
   const onDrop = useCallback(
@@ -44,6 +70,8 @@ export default function Upload() {
     const file = e.target.files?.[0]
     if (file) handleFile(file)
   }
+
+  const pillIcons = ['🔴', '🟡', '🟡', '🟢']
 
   return (
     <div
@@ -76,7 +104,7 @@ export default function Upload() {
         }}
       >
         <LogoIcon />
-        <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.01em' }}>引文检查器</span>
+        <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.01em' }}>{t.appName}</span>
         <span
           style={{
             fontSize: 11,
@@ -89,6 +117,7 @@ export default function Upload() {
         >
           APA 7th
         </span>
+        <LangToggle />
       </nav>
 
       {/* Hero */}
@@ -103,7 +132,7 @@ export default function Upload() {
             marginBottom: 16,
           }}
         >
-          AI 驱动 · APA 第七版
+          {t.eyebrow}
         </div>
         <h1
           style={{
@@ -115,11 +144,9 @@ export default function Upload() {
             color: 'var(--text)',
           }}
         >
-          提交前，验证每一条引用。
+          {t.h1}
         </h1>
-        <p style={{ color: 'var(--text-2)', fontSize: 16, lineHeight: 1.7 }}>
-          上传您的论文，在约 5 秒内收到彩色标注的引用核查报告——检测虚假引用、元数据错误和 APA 格式违规。
-        </p>
+        <p style={{ color: 'var(--text-2)', fontSize: 16, lineHeight: 1.7 }}>{t.body}</p>
       </div>
 
       {/* Drop zone */}
@@ -154,51 +181,36 @@ export default function Upload() {
             style={{ opacity: dragging ? 1 : 0.6, margin: '0 auto', display: 'block' }}
           >
             <rect
-              x="8"
-              y="6"
-              width="32"
-              height="36"
-              rx="4"
+              x="8" y="6" width="32" height="36" rx="4"
               fill={dragging ? 'var(--accent-bg)' : 'var(--bg)'}
-              stroke="var(--border)"
-              strokeWidth="2"
+              stroke="var(--border)" strokeWidth="2"
             />
             <path d="M28 6v8h8" stroke="var(--border)" strokeWidth="2" strokeLinejoin="round" />
             <path
               d="M16 26l8-8 8 8M24 18v14"
-              stroke="var(--accent)"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
             />
           </svg>
         </div>
         <p style={{ fontWeight: 600, fontSize: 16, marginBottom: 6 }}>
-          {dragging ? '将文件拖放至此' : '拖拽上传论文'}
+          {dragging ? t.dropActive : t.dropLabel}
         </p>
         <p style={{ color: 'var(--text-3)', fontSize: 13 }}>
-          或{' '}
-          <span style={{ color: 'var(--accent)', fontWeight: 600 }}>点击选择文件</span>
-          {' '}— .docx 或 .pdf 文件
+          {t.dropHint === 'click to browse' ? (
+            <>or <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{t.dropHint}</span> — {t.dropAccept}</>
+          ) : (
+            <>或 <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{t.dropHint}</span> — {t.dropAccept}</>
+          )}
         </p>
       </div>
 
-      {error && (
-        <p style={{ marginTop: 12, fontSize: 13, color: 'var(--red)' }}>{error}</p>
-      )}
+      {error && <p style={{ marginTop: 12, fontSize: 13, color: 'var(--red)' }}>{error}</p>}
 
       {/* Feature pills */}
-      <div
-        style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}
-      >
-        {[
-          { icon: '🔴', label: '虚假引用检测' },
-          { icon: '🟡', label: '元数据不一致' },
-          { icon: '🟡', label: 'APA 格式违规' },
-          { icon: '🟢', label: '引用验证通过' },
-        ].map((f) => (
+      <div style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {t.pills.map((label, i) => (
           <div
-            key={f.label}
+            key={label}
             style={{
               padding: '6px 14px',
               background: 'var(--surface)',
@@ -208,14 +220,12 @@ export default function Upload() {
               color: 'var(--text-2)',
             }}
           >
-            {f.icon} {f.label}
+            {pillIcons[i]} {label}
           </div>
         ))}
       </div>
 
-      <p style={{ marginTop: 24, fontSize: 12, color: 'var(--text-3)' }}>
-        无需登录 · 报告在 24 小时后自动删除 · 文件不会被存储
-      </p>
+      <p style={{ marginTop: 24, fontSize: 12, color: 'var(--text-3)' }}>{t.privacy}</p>
     </div>
   )
 }
