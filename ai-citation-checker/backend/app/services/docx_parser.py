@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from docx import Document
 
 REFERENCE_HEADINGS = {"references", "bibliography", "works cited", "reference list"}
+STOP_HEADINGS = {"appendix", "appendices", "notes", "endnotes", "author note", "author notes"}
 
 
 @dataclass
@@ -35,8 +36,11 @@ def parse_docx(data: bytes) -> ParsedDocument:
     ref_paras: list[ReferenceParagraph] = []
     if ref_start is not None:
         for para in paragraphs[ref_start + 1:]:
-            if not para.text.strip():
+            txt = para.text.strip()
+            if not txt:
                 continue
+            if txt.lower() in STOP_HEADINGS or txt.lower().startswith("appendix"):
+                break
             runs = [(r.text, r.italic is True) for r in para.runs if r.text]
             fmt = para.paragraph_format
             hanging = (

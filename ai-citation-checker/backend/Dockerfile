@@ -5,5 +5,4 @@ RUN pip install -e .
 COPY app/ app/
 RUN mkdir -p /data
 EXPOSE 8000
-VOLUME /data
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

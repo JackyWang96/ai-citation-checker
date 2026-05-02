@@ -1,4 +1,4 @@
-.PHONY: dev backend frontend install
+.PHONY: dev backend frontend install build serve
 
 DATA_DIR := $(HOME)/.citation-checker
 DB_PATH  := $(DATA_DIR)/reports.db
@@ -25,6 +25,17 @@ frontend:
 # Check if backend is running
 check:
 	@curl -sf http://localhost:8000/healthz && echo " ✓ Backend is running" || echo "✗ Backend is NOT running (run: make backend)"
+
+# Build frontend for production
+build:
+	cd frontend && npm run build
+
+# Serve production build (frontend + backend on one port)
+serve:
+	@mkdir -p $(DATA_DIR)
+	@echo "App → http://localhost:8000"
+	@echo ""
+	DB_PATH=$(DB_PATH) uvicorn app.main:app --port 8000 --app-dir backend
 
 # Install all dependencies
 install:

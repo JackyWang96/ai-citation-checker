@@ -11,7 +11,10 @@ _INTEXT_RE = re.compile(
 )
 
 _YEAR_RE = re.compile(r'\((\d{4}[a-z]?)\)')
-_AUTHOR_RE = re.compile(r'^([A-Z][a-zA-Z\-]+),')
+_AUTHOR_RE = re.compile(
+    r'^((?:[A-ZÀ-ɏ][\wÀ-ɏ\-]*\s+)*[A-ZÀ-ɏ][\wÀ-ɏ\-]+\.?)'
+    r'(?:,\s+[A-Z]|\.?\s+\()'
+)
 
 
 @dataclass

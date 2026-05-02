@@ -87,7 +87,7 @@ async def _search_openalex(client: httpx.AsyncClient, entry: ReferenceEntry,
     for w in raw_items:
         title = w.get("title") or ""
         authors = [
-            {"family": a.get("author", {}).get("display_name", "").split()[-1], "given": ""}
+            {"family": (parts := a.get("author", {}).get("display_name", "").split()) and parts[-1] or "", "given": ""}
             for a in w.get("authorships", [])
         ]
         year = w.get("publication_year") or 0

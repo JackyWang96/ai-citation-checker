@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
+const BASE = import.meta.env.VITE_API_BASE ?? ''
 
 export async function uploadEssay(file: File): Promise<{ report_id: string; url: string }> {
   const form = new FormData()
