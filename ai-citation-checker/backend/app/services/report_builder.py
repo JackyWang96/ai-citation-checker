@@ -33,9 +33,11 @@ def build_report(
         issues: list[CitationIssue] = []
 
         if not vr.found:
+            detail = vr.not_found_reason or "no match in Crossref or OpenAlex"
             issues.append(CitationIssue(
                 type="not_found", severity="red", category="content",
-                reason="Reference not found: no match in Crossref or OpenAlex",
+                reason="Reference not found",
+                detail=detail,
             ))
         else:
             # Field-level comparison
@@ -111,8 +113,9 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
     issues = []
     c = vr.canonical
 
-    # Author
+    # Author — normalize Unicode hyphens (U+2010 etc.) to ASCII before comparing
     cand_author = ((c.get("author") or [{}])[0].get("family") or "").lower()
+    cand_author = cand_author.replace("‐", "-").replace("‑", "-")
     if cand_author and cand_author != entry.first_author_normalized:
         issues.append(CitationIssue(
             type="field_mismatch", severity="yellow", category="content",
@@ -122,9 +125,11 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
             actual=entry.first_author_normalized.title(),
         ))
 
-    # Year
-    cand_year = ((c.get("published") or {}).get("date-parts") or [[0]])[0][0]
-    if cand_year and cand_year != entry.year:
+    # Year — prefer print publication year over online-first date
+    print_parts = (c.get("published-print") or {}).get("date-parts") or []
+    online_parts = (c.get("published") or {}).get("date-parts") or []
+    cand_year = (print_parts[0][0] if print_parts else None) or (online_parts[0][0] if online_parts else 0)
+    if cand_year and abs(cand_year - entry.year) > 1:
         issues.append(CitationIssue(
             type="field_mismatch", severity="yellow", category="content",
             field="year", reason="Year mismatch",

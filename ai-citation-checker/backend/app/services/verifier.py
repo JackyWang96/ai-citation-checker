@@ -26,6 +26,7 @@ class VerifyResult:
     canonical: Optional[dict] = None
     source: Optional[str] = None
     verified_reference_id: Optional[str] = None
+    not_found_reason: Optional[str] = None
 
 
 async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
@@ -42,21 +43,59 @@ async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
             verified_reference_id=cached["id"],
         )
 
+    reasons: list[str] = []
     async with httpx.AsyncClient(timeout=10.0) as client:
-        # 2. Crossref search
-        result = await _search_crossref(client, entry, db_path)
+        # 2. Direct DOI lookup (most reliable — skip fuzzy matching entirely)
+        if entry.doi:
+            result, reason = await _lookup_by_doi(client, entry, db_path)
+            if result:
+                return result
+            reasons.append(f"DOI lookup: {reason}")
+        # 3. Crossref text search
+        result, reason = await _search_crossref(client, entry, db_path)
         if result:
             return result
-        # 3. OpenAlex fallback
-        result = await _search_openalex(client, entry, db_path)
+        reasons.append(f"Crossref: {reason}")
+        # 4. OpenAlex fallback
+        result, reason = await _search_openalex(client, entry, db_path)
         if result:
             return result
+        reasons.append(f"OpenAlex: {reason}")
 
-    return VerifyResult(found=False)
+    return VerifyResult(found=False, not_found_reason=" · ".join(reasons))
+
+
+async def _lookup_by_doi(client: httpx.AsyncClient, entry: ReferenceEntry,
+                         db_path: str) -> tuple[Optional[VerifyResult], str]:
+    try:
+        resp = await client.get(f"{CROSSREF_BASE}/{entry.doi}")
+        resp.raise_for_status()
+        item = resp.json().get("message", {})
+    except httpx.TimeoutException:
+        return None, "timeout"
+    except httpx.HTTPStatusError as e:
+        return None, f"HTTP {e.response.status_code}"
+    except Exception as e:
+        return None, str(e)
+
+    if not item:
+        return None, "empty response"
+
+    ref_id = str(uuid.uuid4())
+    await save_verified_reference(
+        db_path, ref_id, entry.doi,
+        entry.title_normalized, entry.first_author_normalized, entry.year,
+        json.dumps(item), "crossref",
+    )
+    return VerifyResult(
+        found=True, exact_match=True,
+        canonical=item, source="crossref",
+        verified_reference_id=ref_id,
+    ), ""
 
 
 async def _search_crossref(client: httpx.AsyncClient, entry: ReferenceEntry,
-                            db_path: str) -> Optional[VerifyResult]:
+                            db_path: str) -> tuple[Optional[VerifyResult], str]:
     query = f"{entry.title_normalized} {entry.first_author_normalized} {entry.year}"
     try:
         resp = await client.get(CROSSREF_BASE, params={
@@ -66,23 +105,39 @@ async def _search_crossref(client: httpx.AsyncClient, entry: ReferenceEntry,
         })
         resp.raise_for_status()
         items = resp.json().get("message", {}).get("items", [])
-    except Exception:
-        return None
+    except httpx.TimeoutException:
+        return None, "timeout"
+    except httpx.HTTPStatusError as e:
+        return None, f"HTTP {e.response.status_code}"
+    except Exception as e:
+        return None, str(e)
 
-    return await _score_candidates(items, entry, db_path, source="crossref")
+    if not items:
+        return None, "no results"
+
+    result = await _score_candidates(items, entry, db_path, source="crossref")
+    if result:
+        return result, ""
+    return None, "score too low or author/year mismatch"
 
 
 async def _search_openalex(client: httpx.AsyncClient, entry: ReferenceEntry,
-                            db_path: str) -> Optional[VerifyResult]:
+                            db_path: str) -> tuple[Optional[VerifyResult], str]:
     query = f"{entry.title_normalized} {entry.first_author_normalized}"
     try:
         resp = await client.get(OPENALEX_BASE, params={"search": query, "per-page": 5})
         resp.raise_for_status()
         raw_items = resp.json().get("results", [])
-    except Exception:
-        return None
+    except httpx.TimeoutException:
+        return None, "timeout"
+    except httpx.HTTPStatusError as e:
+        return None, f"HTTP {e.response.status_code}"
+    except Exception as e:
+        return None, str(e)
 
-    # Normalise OpenAlex shape to match Crossref shape
+    if not raw_items:
+        return None, "no results"
+
     items = []
     for w in raw_items:
         title = w.get("title") or ""
@@ -100,7 +155,11 @@ async def _search_openalex(client: httpx.AsyncClient, entry: ReferenceEntry,
             "DOI": doi,
             "score": 0,
         })
-    return await _score_candidates(items, entry, db_path, source="openalex")
+
+    result = await _score_candidates(items, entry, db_path, source="openalex")
+    if result:
+        return result, ""
+    return None, "score too low or author/year mismatch"
 
 
 async def _score_candidates(items: list[dict], entry: ReferenceEntry,

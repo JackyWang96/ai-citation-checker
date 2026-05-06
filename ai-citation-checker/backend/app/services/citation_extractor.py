@@ -97,5 +97,5 @@ def _extract_title(text: str) -> str:
 
 
 def _extract_doi(text: str) -> str | None:
-    m = re.search(r'https?://doi\.org/\S+', text)
-    return m.group(0).rstrip('.,;') if m else None
+    m = re.search(r'https?://doi\.org/(\S+)', text)
+    return m.group(1).rstrip('.,;') if m else None

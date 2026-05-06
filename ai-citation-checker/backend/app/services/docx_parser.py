@@ -43,8 +43,12 @@ def parse_docx(data: bytes) -> ParsedDocument:
                 break
             runs = [(r.text, r.italic is True) for r in para.runs if r.text]
             fmt = para.paragraph_format
+            style_fmt = para.style.paragraph_format if para.style else None
+            direct_indent = fmt.first_line_indent
+            style_indent = style_fmt.first_line_indent if style_fmt else None
             hanging = (
-                fmt.first_line_indent is not None and fmt.first_line_indent < 0
+                (direct_indent is not None and direct_indent < 0)
+                or (direct_indent is None and style_indent is not None and style_indent < 0)
             )
             ref_paras.append(ReferenceParagraph(
                 raw_text=para.text,

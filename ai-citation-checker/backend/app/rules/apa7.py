@@ -61,9 +61,11 @@ def check_doi_format(para: ReferenceParagraph) -> Optional[CitationIssue]:
 
 def check_author_separator(para: ReferenceParagraph) -> Optional[CitationIssue]:
     """R007: Multiple authors joined by ', &' not 'and'."""
-    # Check if text has the pattern of multiple authors (name, initial. and/or name, initial.)
-    has_multiple_authors = bool(re.search(r'[A-Z][a-zA-Z]+,\s+[A-Z]\.', para.raw_text))
-    if has_multiple_authors and _AND_RE.search(para.raw_text):
+    # Only check the author section (text before the year parenthesis)
+    year_match = _YEAR_PARENS_RE.search(para.raw_text)
+    author_section = para.raw_text[:year_match.start()] if year_match else para.raw_text
+    has_multiple_authors = bool(re.search(r'[A-Z][a-zA-Z]+,\s+[A-Z]\.', author_section))
+    if has_multiple_authors and _AND_RE.search(author_section):
         return _issue("R007", "Multiple authors should use ', & ' not 'and' (APA 7th R007)")
     return None
 
