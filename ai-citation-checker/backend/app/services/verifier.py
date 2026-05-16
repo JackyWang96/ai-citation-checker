@@ -14,6 +14,7 @@ from app.config import CROSSREF_MAILTO
 CROSSREF_BASE = "https://api.crossref.org/works"
 OPENALEX_BASE = "https://api.openalex.org/works"
 SCORE_EXACT = 100
+SCORE_NEAR_EXACT = 95   # title is essentially identical (small punctuation/spelling diffs)
 SCORE_FUZZY_MIN = 85
 
 
@@ -29,7 +30,25 @@ class VerifyResult:
     not_found_reason: Optional[str] = None
 
 
+def _is_web_reference(entry: ReferenceEntry) -> bool:
+    """Web/organisation citations ('Retrieved from https://...') aren't in
+    academic databases — don't bother querying, just flag as unverifiable."""
+    txt = entry.raw_text.lower()
+    return (
+        not entry.doi
+        and ("retrieved" in txt or "retrieved from" in txt)
+        and "doi.org" not in txt
+    )
+
+
 async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
+    # 0. Web/organisation reference — skip verification
+    if _is_web_reference(entry):
+        return VerifyResult(
+            found=False,
+            not_found_reason="web/organisation reference — not in academic databases",
+        )
+
     # 1. Cache lookup
     cached = await get_cached_reference(
         db_path, entry.doi, entry.title_normalized,
@@ -170,7 +189,8 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
     scored = []
     for item in items:
         cand_title = (item.get("title") or [""])[0]
-        cand_authors = item.get("author") or []
+        # For edited books, Crossref puts editors in `editor`, not `author`.
+        cand_authors = item.get("author") or item.get("editor") or []
         cand_year = ((item.get("published") or {}).get("date-parts") or [[0]])[0][0]
         cand_first_author = (cand_authors[0].get("family") or "") if cand_authors else ""
 
@@ -178,8 +198,14 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
             entry.title_normalized,
             _norm(cand_title),
         )
-        author_match = _norm(cand_first_author) == entry.first_author_normalized
-        year_match = abs(cand_year - entry.year) <= 1
+        # Treat missing metadata as "unknown" rather than "mismatch" — Crossref
+        # often has partial records for book chapters (one entry has authors,
+        # another has the year, etc.). We don't want to reject either.
+        author_match = (
+            not cand_authors
+            or _author_surname_match(_norm(cand_first_author), entry.first_author_normalized)
+        )
+        year_match = cand_year == 0 or abs(cand_year - entry.year) <= 1
 
         scored.append((title_score, author_match, year_match, item, cand_title))
 
@@ -187,7 +213,9 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
     author_year_matching = [
         (score, item, cand_title)
         for score, author_ok, year_ok, item, cand_title in scored
-        if author_ok and year_ok
+        # Accept near-exact title + author match even when year disagrees —
+        # handles republications (Crossref often has reprint year, not original).
+        if author_ok and (year_ok or score >= SCORE_NEAR_EXACT)
     ]
 
     # Filter to high-confidence matches for the primary result
@@ -237,6 +265,19 @@ async def verify_all(entries: list[ReferenceEntry], db_path: str,
             return await verify_reference(entry, db_path)
 
     return await asyncio.gather(*[_one(e) for e in entries])
+
+
+def _author_surname_match(cand: str, entry: str) -> bool:
+    """Compare normalized surnames, allowing one to drop a leading word.
+    Crossref sometimes truncates multi-word surnames like 'Pekarek Doehler' to
+    just 'Doehler' — accept that case, but don't accept unrelated names."""
+    if not cand or not entry:
+        return False
+    if cand == entry:
+        return True
+    cand_words = cand.split()
+    entry_words = entry.split()
+    return cand_words[-1] == entry_words[-1]
 
 
 def _norm(text: str) -> str:

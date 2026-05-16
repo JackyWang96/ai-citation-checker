@@ -1,10 +1,20 @@
 from __future__ import annotations
 import io
+import re
 from dataclasses import dataclass, field
 from docx import Document
 
 REFERENCE_HEADINGS = {"references", "bibliography", "works cited", "reference list"}
 STOP_HEADINGS = {"appendix", "appendices", "notes", "endnotes", "author note", "author notes"}
+
+# A new reference entry starts with one of:
+#   "Lastname, F." (one or more authors with initials)
+#   "Organisation Name (YYYY)"
+# Anything else is treated as a continuation of the previous entry.
+_REF_START_RE = re.compile(
+    r'^[A-ZÀ-Ɏ][\w\-\'‐‑\s]{0,80}?'
+    r'(?:,\s*[A-Z]\.|\(\d{4})'
+)
 
 
 @dataclass
@@ -50,6 +60,19 @@ def parse_docx(data: bytes) -> ParsedDocument:
                 (direct_indent is not None and direct_indent < 0)
                 or (direct_indent is None and style_indent is not None and style_indent < 0)
             )
+
+            # If this paragraph doesn't look like a new reference and we have a
+            # previous one, treat it as a continuation (merge into previous).
+            if ref_paras and not _REF_START_RE.match(txt):
+                prev = ref_paras[-1]
+                merged_text = prev.raw_text.rstrip() + " " + para.text.lstrip()
+                ref_paras[-1] = ReferenceParagraph(
+                    raw_text=merged_text,
+                    runs=prev.runs + runs,
+                    has_hanging_indent=prev.has_hanging_indent,
+                )
+                continue
+
             ref_paras.append(ReferenceParagraph(
                 raw_text=para.text,
                 runs=runs,

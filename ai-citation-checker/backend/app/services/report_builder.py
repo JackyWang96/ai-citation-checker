@@ -34,9 +34,12 @@ def build_report(
 
         if not vr.found:
             detail = vr.not_found_reason or "no match in Crossref or OpenAlex"
+            is_web_ref = "web/organisation" in (vr.not_found_reason or "")
             issues.append(CitationIssue(
-                type="not_found", severity="red", category="content",
-                reason="Reference not found",
+                type="not_found",
+                severity="yellow" if is_web_ref else "red",
+                category="content",
+                reason="Manual verification required" if is_web_ref else "Reference not found",
                 detail=detail,
             ))
         else:
