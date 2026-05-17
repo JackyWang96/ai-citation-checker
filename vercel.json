@@ -1,8 +1,6 @@
 {
-  "rootDirectory": "ai-citation-checker/frontend",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm ci",
+  "buildCommand": "cd ai-citation-checker/frontend && npm ci && npm run build",
+  "outputDirectory": "ai-citation-checker/frontend/dist",
   "framework": "vite",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
