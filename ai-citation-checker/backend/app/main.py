@@ -1,3 +1,5 @@
+import os
+import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
@@ -14,6 +16,23 @@ from app.routes.upload import router as upload_router
 from app.routes.report import router as report_router
 
 STATIC_DIR = Path(__file__).parent.parent.parent.parent / "frontend" / "dist"
+
+
+def _git_sha() -> str:
+    sha = os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_SHA")
+    if sha:
+        return sha[:7]
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=Path(__file__).parent.parent.parent.parent,
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        return "unknown"
+
+
+GIT_SHA = _git_sha()
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["10/minute"])
 
@@ -40,7 +59,11 @@ def _make_app() -> FastAPI:
 
     @application.get("/healthz", include_in_schema=False)
     async def healthz():
-        return JSONResponse({"status": "ok"})
+        return JSONResponse({"status": "ok", "version": GIT_SHA})
+
+    @application.get("/version", include_in_schema=False)
+    async def version():
+        return JSONResponse({"version": GIT_SHA})
 
     if STATIC_DIR.exists():
         application.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")

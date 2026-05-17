@@ -1,0 +1,1270 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e7]
+        - generic [ref=e12]: Citation Checker
+      - generic [ref=e14]:
+        - text: Wang & Roever 2024_AP_Final.docx
+        - generic [ref=e15]: · 74 citations found
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - img [ref=e19]
+            - generic [ref=e22]: 68%
+          - generic [ref=e23]:
+            - generic [ref=e24]: Needs Review
+            - generic [ref=e25]: citation score
+        - generic [ref=e27]:
+          - generic [ref=e28]: "50"
+          - generic [ref=e29]: pass
+        - generic [ref=e30]:
+          - generic [ref=e31]: "14"
+          - generic [ref=e32]: warning
+        - generic [ref=e33]:
+          - generic [ref=e34]: "10"
+          - generic [ref=e35]: error
+        - generic [ref=e37]:
+          - img [ref=e38]
+          - text: Adding DOIs removes ambiguity
+        - button "中文" [ref=e41] [cursor=pointer]
+    - generic [ref=e42]:
+      - generic [ref=e44]:
+        - heading "Essay Text" [level=2] [ref=e45]
+        - generic [ref=e46]:
+          - generic [ref=e47]: "Interactional competence in online text chat: Prefatory moves, entitlement, and contingency in L2 requests"
+          - generic [ref=e48]: Xingcheng Wang & Carsten Roever
+          - generic [ref=e49]: University of Melbourne
+          - generic [ref=e50]: Abstract
+          - generic [ref=e51]: This study explores the development of L2 learners’ interactional competence (IC) in online text chat involving request scenarios. Against the background of research on L2 IC development in spoken interaction, which had shown increased use of prefatory moves with increasing IC, we investigate how learners establish shared background knowledge in text chat through preliminary moves and whether the medium facilitates more prefatory moves at lower IC levels. We also explored how learners orient to entitlement and contingency associated with a possible grant through the selection of syntactic forms. 72 learners of English at three different proficiency levels and 16 English L1 speakers engaged in two dyadic role plays on WeChat. Online interactional data demonstrated L2 learners’ following a similar trajectory in the deployment of prefatory moves as in spoken interaction, using more prefatory moves and designing them more tightly to the interlocutor’s epistemic status as their proficiency and IC increase. Lower-level learners overwhelmingly produced I want/need or can/could structures whereas higher-level learners also used I wonder if constructions to accommodate potential contingencies related to their requests though not as systematically as native speakers. We discuss methodological and developmental implications from these findings for L2 pragmatics teaching and testing.
+          - generic [ref=e52]: "Keywords: interactional competence, online interaction, text chat, intersubjectivity, requests, second language pragmatics"
+          - generic [ref=e53]: Introduction
+          - generic [ref=e54]: In conversational settings, interlocutors work together to construct courses of actions that unfold in a sequential manner. Pekarek Doehler (2021) defines such an ability as interactional competence (IC), which is represented by the interactant’s understanding of the interactional context and normative expectations of social practices, and the deployment of sequential tools (e.g., turn-taking) and (para)linguistic resources to engage in social actions and make moves that are locally relevant.
+          - text: While participants in interaction have a multitude of options available for performing social actions, the need to establish intersubjectivity and maintain harmonious interpersonal relationships makes some options preferable to others. Research in conversation analysis over the last decade has found that interactants’ choices of actions are guided by an overt orientation to establishing an epistemic equilibrium
+          - generic [ref=e55]: (Heritage, 2012a)
+          - generic [ref=e56]: ensuring that all interactants have shared background knowledge and thus ensuring intersubjectivity. It has also been established that actions which potentially threaten social harmony, such as requests, are typically sequentially organized as dispreferred, with background information and affiliative moves preceding a sequentially delayed core action. Action formation of the core action is influenced by an orientation to norms of social conduct, e.g., in the recruitment of assistance by means of requests, perceptions of entitlement and contingency (Drew & Couper-Kuhlen, 2014; Fox & Heinemann, 2021; Trott & Rossano, 2020).
+          - generic [ref=e57]: Prefatory moves, also termed “preliminaries”, in the pre-expansion phase prior to a core request do important double duty. On the one hand, they ensure epistemic equilibrium by giving the requestee background information necessary to react to the request. Simultaneously, they implement dispreferred sequence organization through foreshadowing but delaying the core request, allowing the requestee to signal their likely unwillingness to grant or preempt the request through an offer. However, research on the L2 development of interactional competence (IC) has repeatedly shown that lower-proficiency L2 learners provide no or limited background information (Al-Gahtani & Roever, 2012; Wu & Roever, 2021; Young, 2019), instead foregrounding the core social action. This has been attributed to processing constraints, with lower-level learners being unable to muster the linguistic resources to produce preliminary moves under the time pressure of spoken interaction (Al-Gahtani & Roever, 2018; Wu & Roever, 2021).
+          - generic [ref=e58]: No previous work exists on whether a different modality, such as text chat, might reduce time pressure and thereby facilitate the provision of background information. More generally, there is no previous research with L2 learners on how epistemic equilibrium is established in this medium and how orientations to norms of social conduct are made visible.
+          - text: Informed by conversation analysis (CA)
+          - generic [ref=e59]: (Sacks, 1995)
+          - generic [ref=e60]: ", this study aims to explore L2 English learners’ IC in online written interaction and particularly investigates how prefatory moves show an orientation to epistemic status and request formation differs based on entitlement and contingency."
+          - generic [ref=e61]: Background
+          - generic [ref=e62]: 2.1 Requesting in L2
+          - text: When producing requests in mundane talk (but not necessarily institutional talk, see Fox, 2015), requesters tend to preface their upcoming request with preliminaries, typically explanations, accounts, checks on preconditions and pre-pres (Schegloff, 1980, 2007). These elements of dispreferred sequence organization project a prospective base first-pair part (FPP) (e.g., a request, suggestion, invitation) and mobilize recipiency
+          - generic [ref=e63]: (Stivers & Rossano, 2010)
+          - text: ", while allowing recipients to block the project foreshadowed by the pre-sequence or pre-empt it with a preferred action (e.g., an offer in the case of a request) (Schegloff, 2007; Sidnell, 2010). Preliminary moves can also be done through visual and non-verbal cues to “enlist someone’s assistance”"
+          - generic [ref=e64]: (Drew & Couper-Kuhlen, 2014, p.17)
+          - generic [ref=e65]: ", without the help having been solicited. Such (embodied) attempts to address immediate, local needs and problems are termed recruitment (see Kendrick & Drew, 2016; Schegloff, 2006 for more details)."
+          - text: Pre-sequences also function to reconcile the information imbalance between interlocutors. Interactants recipient design their utterances in accordance with each other’s “territories of knowledge”
+          - generic [ref=e66]: (Heritage, 2012a, p. 32)
+          - text: ", to which the speaker and the recipient(s) have access to different degrees. The term ‘epistemic gradient’"
+          - generic [ref=e67]: (Heritage, 2012b)
+          - generic [ref=e68]: was proposed to describe the relative epistemic status between interlocutors as more knowledgeable [K+] or less knowledgeable [K-], which shifts over the course of an interaction. Epistemically, preliminaries constitute a K+ initiation, which provides background to the interlocutor, thereby creating shared knowledge and increasingly establishing intersubjectivity.
+          - generic [ref=e69]: Following a pre-sequence, the core requestive action itself is typically mitigated with interrogatives, hedges and formulaic expressions, and the selection of these formatting tools has been shown to reflect the speaker’s entitlement to make the request and the contingencies that might impact its being granted (Curl & Drew, 2008; Trott & Rossano, 2020). While this has been a fruitful area of CA research, less work exists on how L2 users manage epistemics in preliminaries and orientation to entitlement and contingency in core requests.
+          - text: Previous work on dispreference organization in L2 requesting has focused on pre-requests that include backgrounds and/or accounts to establish the recognizability of a potential request (Al-Gahtani, 2022; Al-Gahtani & Roever, 2012, 2014; Kobayashi & Rinnert, 2003; Taleghani-Nikazm & Huth, 2010) as part of a larger research program on pre-ness
+          - generic [ref=e70]: (Schegloff, 2007)
+          - generic [ref=e71]: .
+          - generic [ref=e72]: These studies of L2 requests have shown clear differences between higher- and lower-IC learners. In Kobayashi and Rinnert’s (2003) cross-sectional study using role plays in the Japanese EFL context, higher-proficiency learners substantially produced a greater variety of supportive moves such as pre-pre (Can I ask you a favor?), grounders/accounts, pre-conditions (Can you speak English well?) than lower-proficiency learners in high-imposition requests. Also, higher-level learners tended to front-load those moves more often than lower-level learners and yet occasional overloaded pre-requests by higher-level learners inadvertently impaired the progressivity of the talk-in-interaction.
+          - generic [ref=e73]: In a similar vein, Al-Gahtani and Roever (2012) demonstrated noticeable differences in the production of pre-expansions between upper- and lower-level Saudi learners of English, indicating a strong effect of L2 proficiency on IC. Higher-level learners often mitigated and delayed core requests by producing preparatory moves (e.g., checking availability, backgrounds, accounts, etc.) and relying on the interlocutor’s response to those moves to evaluate the likelihood of acceptance, whereas lower-level learners formulated their request first and relied on the interlocutor to elicit backgrounds or explanations before granting the request. These findings are resonant with Al-Gahtani and Roever’s (2014) longitudinal study on L2 Arabic requests, which suggested a substantial increase in the use of prefatory moves with increased proficiency. Lower-proficiency learners, who rarely did prefatory work at the outset of the study, also displayed a clear developmental pattern in their deployment of preliminaries over a 5-month period.
+          - generic [ref=e74]: Lower IC interactants’ lack of prefacing not only limits their dispreference organization, but it also means that the interlocutor is not given the reason and motivation for the upcoming dispreferred action, thereby leaving them in a K- status. Learners’ development towards providing more background and frontloading it before the core request indicates that learners do orient to epistemics but are unable to make this orientation overt at lower levels. Al-Gahtani and Roever (2018) suggest that excessive cognitive processing load prevents lower-proficiency L2 interactants from constructing and deploying prefatory accounts and explanations under the time pressure of conversation whereas higher-proficiency participants are able to do so due to their faster and more automatized processing.
+          - generic [ref=e75]: "Less work in L2 IC has been done on request formatting. General findings indicate that learners have a wider range of formatting options available as their IC increases and that the linguistic tools they deploy become more fine-tuned to the discourse context and interpersonal situation (Al-Gahtani & Roever, 2012, 2018; Pekarek Doehler, 2019). Only a few studies investigated learners’ possible orientation to entitlement and contingency in L2 requests (e.g., Malabarba, 2022, Youn, 2023). Youn (2023) examined how grammatical resources (e.g., complex constructions) were deployed by low-intermediate to advanced level learners in the formation of L2 requests involving varying degree of entitlement and contingencies. 102 ESL learners engaged with an interlocutor in two request scenarios: requesting a recommendation letter with a short notice (low-entitlement) and requesting advising time regarding a course project (high-entitlement). Higher-level learners consistently used more complex grammatical constructions (e.g., bi-clausal if construction such as I wonder if) to show orientation to the lack of entitlement and possible contingencies related to their requests. The result is also supported by the point biserial correlation between the use of complex syntactic constructions and participants’ role-play performance. Higher-level learners tended to produce complex syntactic constructions more frequently in the low-entitlement situation than lower-level learners (r = .58). The weaker correlation (r = .284) observed in the scenario where entitlement is already established suggests that higher-level learners may not find it imperative to use complex syntactic structures while forming the request, as the need to signal entitlement is minimal."
+          - generic [ref=e76]: While previous studies have shed light on how L2 learners locally manage prefatory moves to foreshadow and mitigate imminent requests and circumvent rejections, more empirical studies are needed to clarify how epistemic status, entitlement, and contingency come into play while L2 speakers produce requests and how this would be different in computer-mediated communication (CMC).
+          - generic [ref=e77]: 2.2 Entitlement and Contingency in requests
+          - text: With regard to requests, entitlement is broadly defined as a requester’s rights to and expectations of the recipient’s ability and willingness to grant the request(s)
+          - generic [ref=e78]: (Trott & Rossano, 2020)
+          - text: . Curl and Drew (2008) found that orientation to entitlement was an important factor in request formatting, either with modals (e.g., Could you do X) or embedded modals (I wonder if you could X), in requests made through everyday calls (with friends or family members) and after-hours medical calls (with GPs). They found that the speakers’ selection of one form over the other relied on whether they were entitled to ask for help and their understanding of the contingencies surrounding the granting of the request (i.e., whether the condition to fulfill the request was met). Specifically, high entitlement and low contingency motivated Can/Could you forms, whereas low entitlement and high contingency led to I wonder if forms. Research on how the selection of request forms is regulated by speakers’ perception of their entitlement and contingency in each interactional circumstance has extended to a greater variety of interactional features and relations, including positive/negative interrogatives
+          - generic [ref=e79]: (Heinemann, 2006)
+          - text: ", parent-child interactions (Craven & Potter, 2010; Ogiermann, 2015), request urgency"
+          - generic [ref=e80]: (Drew & Walker, 2010)
+          - text: ", and experimental research on formatting preferences"
+          - generic [ref=e81]: (Trott & Rossano, 2020)
+          - generic [ref=e82]: . However, no work exists that investigates how displays of orientation to entitlement and contingency might develop in L2 IC, despite a growing body of work on the sequential organization and formatting of dispreferred social actions, such as requests, in L2 interactions.
+          - generic [ref=e83]: 2.3 CA for CMC
+          - text: Broadly, CMC refers to person-to-person communication facilitated by computer-based technologies and devices. It allows users to engage in synchronous (real-time) and asynchronous (non-concurrent) interaction across different modalities, e.g., text chat and video calls. In recent years, the use of CMC has increased dramatically and different modalities (e.g., text message, voice/video calls) have been integrated into one single platform, such as WhatsApp, WeChat, and Zoom
+          - generic [ref=e84]: (Herring, 2013)
+          - generic [ref=e85]: .
+          - text: Various approaches and theories have been proposed to understand the similarities and dissimilarities between spoken face-to-face and written CMC interactions
+          - generic [ref=e86]: (Meredith, 2020)
+          - text: . Due to lack of context cues and paralinguistic features, such as body movement, gestures, facial expressions, and intonation, text-based interaction is considered to be less efficient due to its compromised rate of social exchange
+          - generic [ref=e87]: (Walther, 1992)
+          - text: . Since the process of composing messages is not visible to others, messages are not available until they are ‘physically’ sent to the chat, often resulting in cross-turn posting in text chat
+          - generic [ref=e88]: (Garcia & Jacobs, 1999)
+          - generic [ref=e89]: . The disrupted adjacency organization sometimes make written CMC equivocal and chaotic.
+          - text: However, this should not be taken as that text chat is inferior to spoken communication. On the contrary, text chat and other types of CMC, due to their unique medium-specific characteristics and resources (e.g., emojis), can be examined without much dependence on spoken interaction patterns
+          - generic [ref=e90]: (Meredith et al., 2021)
+          - text: . Despite the inherent differences in interaction across modalities, increasingly detailed analyses of how online interactions sequentially unfold have been conducted using and drawing on CA methodology. CA-informed L2 studies have focused on a variety of interactional practices in online written interaction, such as repairs
+          - generic [ref=e91]: (Tudini, 2013)
+          - text: ", conversational floor and coherence (Markman, 2013; Simpson, 2013; Tudini, 2015), and openings and closings (Abe & Roever, 2019, 2020; Gonzales, 2013). Overall, findings have shown that sequential organization of online written interaction differs from that of face-to-face interaction in many aspects, depending on the type of CMC tools, the medium’s synchronicity, the number and the role of participants, and the purpose and context of the interaction. Specifically, interactional features including the turn-taking system in online text chat are not identical to that in offline spoken interaction. Due to the invisibility of message transition and possible network latency issues, turns are more split and adjacency pairs are often disrupted in text chat. However, participants generally show high tolerance to the less predictable turn-taking mechanism and compensate for the paucity of visual and auditory cues via explicit addressivity, cross-turn reference, composing shorter turns, reviewing chat logs, and using emojis. To maintain social interaction and solidarity, L2 learners also tend to disregard linguistic problems and focus on collaborative interactional work"
+          - generic [ref=e92]: (Tudini, 2013)
+          - generic [ref=e93]: .
+          - generic [ref=e94]: Less developmental research exists on the production of pre-sequences by L2 speakers in L2 online interactions, with the only exception being Malabarba’s (2022) on deontics in WhatsApp interaction involving requests and Abe and Roever’s (2019) study on online task openings. Malabarba (2022) investigated longitudinal changes of a B1-level learner’s organized requests (“asking for answer key for non-mandatory exercises”) to the instructor. Results showed that the learner gradually reduced negotiation of deontic rights between her and the instructor and started to produce prefaces (e.g., accounts) to the request. In terms of requestive format, the learner substituted a declarative format (you can X) with a more conventional interrogative (can you X). Despite its fine-grained analysis, Malabarba (2022) provided limited insights into how learners at different L2 proficiency levels may (not) produce prefaces and modulate their requests based on different levels of entitlement and contingency. Echoing spoken L2 IC research, Abe and Roever (2019) found that the occurrence of preliminaries preceding first-idea proffer increased with L2 proficiency and extended pre-sequences were only seen in high-level learners’ chat. Abe and Roever’s (2019) study did not, however, involve role plays on social actions such as requests that typically include extensive preliminary moves for higher proficiency learners but no or less prefatory work for lower proficiency learners. Some studies (e.g., Al-Gahtani & Roever, 2018; Wu & Roever, 2021) have suggested that the absence of prefatory moves may be due to cognitive processing overload in lower proficiency learners as they have less automatized comprehension and production skills. Given the much-reduced time pressure of computer-mediated chat interaction compared to spoken interaction, we are interested in whether lower proficiency learners interacting through the medium of computer-mediated chat might show more prefatory work and fine-tuned formation of their requests.
+          - generic [ref=e95]: The current study
+          - generic [ref=e96]: "This CA-informed cross-sectional study aims to investigate how L2 speakers of English at three different proficiency levels do prefatory work while producing requests in online dyadic interaction. We investigate how learners’ orientation to epistemics are reflected in their preliminary moves and how entitlement and contingency might influence syntactic forms for formulating requests at different levels of L2 proficiency and IC. We are also interested in evaluating whether processing constraints on providing prefatory moves can be ameliorated by the affordances of the medium. Our research questions are:"
+          - generic [ref=e97]: How does L2 proficiency affect learners’ prefatory moves including their orientation to epistemics in online request interaction?
+          - generic [ref=e98]: Does the affordance of planning time in the written modality reduce proficiency effects compared to spoken interactions?
+          - generic [ref=e99]: To what extent do L2 learners at different proficiency levels visibly orient to differences in entitlement and contingency in the implementation of their requests?
+          - generic [ref=e100]: 4. Methodology
+          - generic [ref=e101]: 4.1 Participants
+          - generic [ref=e102]: A total of 72 Chinese learners of English (17 male and 55 female) and 16 English native speakers of Australian English (4 male, 12 female) participated in the study. At the time of data collection, L2 speakers were final-year high school students (22) and university students (50), with an age range from 17 to 30 years old (Mean = 22, SD = 4.03). Native speakers were also tertiary students and aged between 18 to 30 years old (Mean = 22, SD = 3.86). All L2 participants started learning English as a second language from primary school and their L2 learning experience ranged from 9 to 21 years (Mean = 13, SD = 4.25). Participants also reported their learning experience of other languages including Korean, Romanian, German, Japanese, Spanish, Malaysian, and Russian, but they had only attained beginner-intermediate proficiency in their additional language. L2 participants were divided into three proficiency levels (B1, B2, and C1 of the CEFR) based on their self-reported IELTS speaking scores (band 4-8, with Mean = 6.12, SD = .98) (see IELTS Partners, 2023, for mapping of IELTS scores on to CEFR levels). IELTS has been widely recognized as a standardized language assessment for English as a second language. In this study, participants’ IELTS speaking scores serve as an indicator of their general language proficiency that is particularly relevant to their ability to engage in social interactions. Participants also self-reported the time elapsed since they took IELTS exam, which ranged from 6 to 12 months prior to the data collection.There were 21 participants at B1 level, 29 at B2 level, and 22 at C1 level. In terms of length of residence in English-speaking countries, about 60% of L2 participants had no overseas studying/staying experience. Only fifteen L2 participants (5 B2-level and 10 C1-level learners) had study-abroad experience for over 24 months. In the group of native speakers, two participants were monolingual, while the remaining fourteen participants had studied additional languages, including Japanese, Mandarin, Malaysian, French, Italian, Hebrew, Spanish, Indonesian, Vietnamese, Korean, and German (from beginner to intermediate proficiency levels).
+          - generic [ref=e103]: The role-play interlocutor was a native speaker of English who held a Master of Applied Linguistics and was trained by one of the researchers before the data collection. The use of only one interlocutor was to eliminate potential variability between different interlocutors and to standardize the interactional frame, making those interactions more comparable across participants.
+          - generic [ref=e104]: 4.2 Instruments
+          - generic [ref=e105]: 4.2.1 Open role-play tasks
+          - generic [ref=e106]: As a part of a larger project investigating L2 learners’ IC in online written interaction, two role-play tasks involving request scenarios were administered through instant messaging platform WeChat. Role-play tasks were modelled on previously validated studies (e.g., Ikeda, 2017, 2021) and underwent several rounds of pre-pilot and pilot studies with both native speakers and specialists in the field of L2 pragmatics and IC. This iterative process ensured the authenticity and efficacy of the tasks in eliciting the target IC features. To examine how L2 speakers locally managed their interactional practices to accommodate potential entitlement and contingency while making requests, the role plays were designed to differ in entitlement and contingency (see Appendices A and B).
+          - generic [ref=e107]: In the first scenario (RK1), the participant messages his/her professor to obtain a letter of recommendation to apply for an online summer camp after having sent the professor an email without a reply. The scenario stipulates that the interaction occurs late Friday night, with the application due the coming Monday. In scenario 2 (RK2), the participant messages his/her best friend Ann who lives nearby to collect a package (iPhone 12) delivered to the doorstep of his/her house.
+          - generic [ref=e108]: RK1 was designed for the participant to have lower entitlement to get their request fulfilled as a professor is not required to provide a recommendation letter. In addition, the short notice of the request made it less likely that the professor would be able to provide the letter (high contingency). By contrast, in RK2 the participant had higher entitlement due to the rights and obligations of a ‘best-friend’ relationship and contingency was low, given that the interlocutor lived close by.
+          - generic [ref=e109]: To ensure longer interaction and make the tasks more challenging for L2 speakers, each scenario contained additional complications only known to the role-play interlocutor. In RK1, the complication is that the interlocutor leaves early the next morning for a road trip and is unavailable until Sunday afternoon. In RK2, the interlocutor is waiting for an annual online sale which starts shortly, and it will take her about 15-20 minutes to complete the transaction.
+          - generic [ref=e110]: "4.2.2 Technological affordances: WeChat"
+          - generic [ref=e111]: WeChat (Tencent Holdings Limited, 2018) was selected as the text-based CMC tool in data collection for the current study, since L2 participants were from China and other popular social apps (e.g., WhatsApp, LINE, Messenger) were not downloadable at the time of data collection in mainland China. Although WeChat provides users with text- and voice-messaging and voice/video calls and conferencing, only text-based messages were allowed in the current study and none of the participants sent voice/video messages. Like many other well-known instant messaging apps (e.g., WhatsApp), user can see that the interlocutor is in the process of typing a message, but messages are not visible until they are sent to the chatting area. Other functions on WeChat such as ‘recall’ (i.e., allowing users to call back a sent message by long pressing on the message and choosing to ‘recall’) and ‘quote’ (i.e., citing a specific turn/post and responding to that through long pressing on that particular message), and how to access those functions and emojis was described in a manual given to participants prior to the data collection.
+          - generic [ref=e112]: 4.3 Procedures
+          - generic [ref=e113]: A WeChat group was created to conduct the role-plays. The researcher was present to facilitate task transitions. This allowed participants to perceive the interlocutor as a conversational partner, enhancing their focus on role-play tasks, while the interlocutor had flexibility to prioritize real-time interaction over a semi-structured script. After role-plays were performed, all data were immediately formatted and imported to Nvivo (QSR International Pty Ltd., 2020) where data coding and subsequent analysis of participants’ prefatory work and request forms were done.
+          - generic [ref=e114]: For data analysis, we first identified the core request, which we defined as the post to which the interlocutor responded as a request. We then defined prefatory moves as posts leading up to the core request, but not including greetings, how-are-you enquiries, and other generics at the outset of the talk. We then inspected the data closely to identify tendencies in how different groups managed prefatory work with regards to its preference organization and orientation towards epistemics. These analyses addressed Research Questions 1 and 2.
+          - generic [ref=e115]: "We examined the core request for its syntactic formation and coded each request as one of the following categories: declarative statements (I want/I need X), interrogatives using modals (Can/could you X?), complex constructions (e.g., I wonder if X), and interlocutor offers (i.e., offers that pre-empt the upcoming request). We then cross-tabulated request forms by groups to see if there were clear differences in the distribution of syntactic forms between the two scenarios. This analysis addressed Research Question 3."
+          - generic [ref=e116]: Results
+          - generic [ref=e117]: In this section we will first discuss prefatory moves in the role plays and participants’ orientation to epistemic status apparent in prefaces to the request. We will then turn to the syntactic forms of requests and the impact of entitlement and contingency on formatting. All excerpts and extracted posts are reproduced directly from the text chat, and any grammatical or spelling errors have been maintained in their original form.
+          - generic [ref=e118]: 5.1 Prefatory moves
+          - generic [ref=e119]: Like in spoken face-to-face interaction, prefatory moves in our data generally followed openings such as greetings, summons, and ritual exchanges (e.g., how are you?). These preliminaries could be generic (apologetic moves, checking availability, and checking email) or type-specific (pre-pre, backgrounds, and accounts).
+          - generic [ref=e120]: Table 1 presents the breakdown of different types of prefatory moves used by participants in RK1 and RK2. In RK1, seven B1 learners did not preface the request with any preliminaries, whereas all higher-level learners (except one B1 learner) and NS participants produced various generic or type-specific prefatory moves to address their and the interlocutor’s epistemic gaps. In RK2, more participants tended to produce preliminaries. Only three B1, one B2, and one C1 learner refrained from any employing any preliminary moves before their base request. It is also noteworthy that, in both scenarios, higher-level learners generally produced a greater number of generic and type-specific prefatory moves than lower-level learners.
+          - generic [ref=e121]: Table 1. Frequency of prefatory moves (by number of participants)
+          - generic [ref=e122]: 5.1.1 Lower-intermediate learners
+          - generic [ref=e123]: The absence of any prefatory work was common in lower-level learners’ online written interaction (Excerpt 1).
+          - generic [ref=e124]: Excerpt 1. No prefatory work. (B1_M040, RK1)
+          - generic [ref=e125]: 1 00:00 => YX Good evening!Ms.Owen，
+          - generic [ref=e126]: Could you write a recommendation letter for me?
+          - generic [ref=e127]: 2 00:14 AL Hi YX
+          - generic [ref=e128]: 3 00:19 AL What exactly do you need?
+          - generic [ref=e129]: 4 02:20 YX Hi.I need upload a letter of recommendation.
+          - generic [ref=e130]: "[(Quote: What exactly do you need?)]"
+          - generic [ref=e131]: In Excerpt 1, YX offers a greeting in post 1, followed by a request for a recommendation letter. In post 3, although the interlocutor shows her uptake of the message, she produces an adverbial enhancer exactly, implying her request for additional information. Despite this, in YX’s post 4 does not respond to the prior post as an inquiry for further information to establish intersubjectivity and as an opportunity to balance the epistemic status. This is striking considering the sufficient time gap (approximately 2 minutes) between posts 3 and 4 and the fact that YX directly quotes the interlocutor’s response. This can be compared with Excerpts 2 and 3, where higher-level learners demonstrated their abilities to construct preparatory sequences preceding their production of base requests, although the types of those preliminaries and the extent to which the prefatory work had been done varied between participants at B2 and C1 level.
+          - generic [ref=e132]: 5.1.2 Upper-intermediate learners
+          - generic [ref=e133]: B2 learners were more likely to use preliminary moves but their sequential placement was not always prior to the core request, as demonstrated in Excerpt 2.
+          - generic [ref=e134]: Excerpt 2. Limited prefatory work. (B2_M018, RK1)
+          - generic [ref=e135]: 1 00:00 => SQ Hi Grace, are you there?
+          - generic [ref=e136]: 2 00:20 => SQ I'm sorry to disturb you so late
+          - generic [ref=e137]: 3 00:41 AL Hi Siqi, how can I help?
+          - generic [ref=e138]: 4 01:42 SQ I emailed you a few days ago,
+          - generic [ref=e139]: I guess you might be busy without seeing it
+          - generic [ref=e140]: 5 02:00 AL Sorry, I haven’t seen any emails
+          - generic [ref=e141]: 6 02:04 AL What do you need?
+          - generic [ref=e142]: 7 04:00 SQ Could you write a recommendation letter for me?
+          - generic [ref=e143]: 8 04:30 AL When do you need it by?
+          - generic [ref=e144]: 9 04:30 SQ Umm... I plan to apply for an online summer camp,
+          - generic [ref=e145]: and I need a letter of recommendation from an authoritative person
+          - generic [ref=e146]: 10 04:57 SQ Next Monday
+          - text: In Excerpt 2, SQ opens the conversation with a greeting and the interlocutor’s name in post 1. However, instead of producing a base request immediately afterwards like YX in Excerpt 1, SQ presents an availability-checking sequence, which is a generic pre-sequence that can precede most speech acts (e.g., invitations, offers, requests) to secure attention
+          - generic [ref=e147]: (Schegloff, 2007)
+          - text: and mobilize recipiency
+          - generic [ref=e148]: (Stivers & Rossano, 2010)
+          - generic [ref=e149]: . The apologetic move in post 2 demonstrates SQ’s orientation to social norms (requesting a recommendation letter late at night) and promotes social affiliation. In post 3, after a greeting, the interlocutor (AL) seeks clarification about SQ's true intention, but SQ's response doesn't directly address this inquiry and instead references the unanswered email thereby potentially giving the professor an opportunity to acknowledge receipt of the email and offer to write a letter. Although SQ mitigates her accusation of AL’s not responding to the email through a hedger I guess and modal verbs might be, AL still evaluated those sequences as a complaint, as indicated by her subsequent apology in post 5. AL revisits her inquiry in post 6, prompting SQ to finally make her base request in post 7. The very long pause of 1:56 minutes between posts 6 and 7 is notable, especially in light of post 7 being only eight words long. Rather than use this extended time to narrow the information gap with the interlocutor and provide background information, SQ frontloads the request and follows it up with an account in post 9, which overlaps with the interlocutor’s timeframe query in post 8. While it could be argued that SQ’s post 7 is prompted by the interlocutor inquiry in post 6, higher IC participants prioritize closing the epistemic gap, as demonstrated in Excerpts 3 and 4 below.
+          - generic [ref=e150]: 5.1.3 Advanced learners
+          - generic [ref=e151]: C1-level learners almost invariably produced prefatory moves relevant to the core social action in RK1 and RK2 with only one exception in RK2 where the participant immediately made the request after greeting in the same post. Excerpt 3 demonstrates a typical higher IC learners’ organization of preliminaries.
+          - generic [ref=e152]: Excerpt 3. Prefatory work by a C1 learner. (C1_M046, RK1)
+          - generic [ref=e153]: 1 00:00 => SY Hi Ms. Owen,
+          - generic [ref=e154]: sorry to bother you this late on weekends.
+          - generic [ref=e155]: 2 00:27 => SY I have filed my application for an online summer camp
+          - generic [ref=e156]: to improve my leadership and speaking skills.
+          - generic [ref=e157]: However, in order to enter this summer camp,
+          - generic [ref=e158]: I was required to upload a recommendation letter
+          - generic [ref=e159]: and the deadline is next Monday...
+          - generic [ref=e160]: 3 00:58 SY So I was wondering if you could send me
+          - generic [ref=e161]: the recommendation letter
+          - generic [ref=e162]: at your earliest convenience.
+          - generic [ref=e163]: 4 01:06 AL I see
+          - generic [ref=e164]: 5 01:24 AL Well I’m going out of town early tomorrow
+          - generic [ref=e165]: so the soonest I could send you something would be
+          - generic [ref=e166]: Sunday afternoon - would that work?
+          - generic [ref=e167]: 6 02:08 SY Yes! That'll work. Thank you so much for your help! ❤️
+          - generic [ref=e168]: Like in previous two excerpts, SY opens the conversation with a greeting, an address term, and an apologetic move (post 1), immediately after which she presents detailed background (e.g., application for a summer camp and deadline) and account (e.g., requirement of a recommendation letter) in post 2, which equalizes the unbalanced epistemic status between her and the interlocutor AL. Those type-specific pre-sequences establish intersubjectivity and lay the groundwork for the imminent request (post 3). AL’s uptake of the prefatory work that SY did is reflected in her changed state in post 4 (standalone I see) where no further information elicitation is required before AL produced a conditional offer in post 5. Compared to the B2-level learner’s post-loaded request-relevant information, SY’s fully front-loaded information instantaneously placed the interlocutor’s position on the epistemic gradient closer to her own [K+] status and circumvents the possible back-and-forth in the information exchange, thus smoothly furthering the progress of the interaction. It is noticeable that higher-level learners overwhelmingly produced pre-sequences to enable the recipient’s response and project a dispreferred core action, whereas lower-level learners did so less frequently.
+          - generic [ref=e169]: 5.1.4 English native speakers
+          - generic [ref=e170]: English native speakers, similar to higher-level L2 learners, consistently marked their requests as dispreferred through the production of preliminary moves including pre-pres, background, raw accounts, apologies, etc. They also consistently showed orientation to entitlement and contingency relevant to the request. Native speakers demonstrated a larger repertoire of linguistic devices and the more fine-tuning formation of their preliminaries and affiliative moves (e.g., expressing gratitude or compliment), overtly displaying their orientation to social relationships and solidarity, as shown in Excerpt 4.
+          - generic [ref=e171]: Excerpt 4. Prefatory and affiliative moves by a native speaker. (NS_NS08, RK1)
+          - generic [ref=e172]: 1 00:00 => RD Hi Ms Owen, hope you're doing good :) If it's a good
+          - generic [ref=e173]: time to chat, I would love to ask you about something!
+          - generic [ref=e174]: 2 00:24 AL Hi RD, what did you need?
+          - generic [ref=e175]: 3 05:15 => RD I'm applying for a leadership and public speaking
+          - generic [ref=e176]: training camp over summer and the places are really competitive. The organisers wanted us to submit a recommendation letter from one of our teachers and I was hoping you'd do the honours :)
+          - generic [ref=e177]: 4 05:25 => RD You are my favourite teacher and I have definitely
+          - generic [ref=e178]: learnt so much from you, so it would mean a lot to me
+          - generic [ref=e179]: if you could help out!
+          - generic [ref=e180]: 5 05:54 AL Sounds like a great program - when is the letter due?
+          - generic [ref=e181]: 6 08:46 RD The organisers have requested for it to be submitted
+          - generic [ref=e182]: on Monday. I was worried that my email that I flicked
+          - generic [ref=e183]: over with regards to this a couple of days might have gotten sent to your junk folder hence I messaged you :)
+          - generic [ref=e184]: 7 09:51 AL I think it might have, I haven’t seen your email sorry
+          - generic [ref=e185]: 8 09:59 AL I’m going out of town early tomorrow morning
+          - generic [ref=e186]: so the soonest I could send you anything would be
+          - generic [ref=e187]: Sunday afternoon - would that work?
+          - generic [ref=e188]: 9 11:03 RD That would be awesome! I really appreciate your help
+          - generic [ref=e189]: Ms Owen
+          - generic [ref=e190]: RD initiates the conversation with a greeting, an address term, and a well-wishing (hope you’re doing good :)), followed by a conditional clause to check the interlocutor AL’s availability and a pre-pre (I would love to ask you about something!) foreshadowing an upcoming request (post 1). In post 2, AL returns the greeting and produces an interrogative to obtain more information from RD, who provides detailed background (e.g., application for the training camp) and legitimate accounts (e.g., fierce competition, submission requirement) that contribute to the shared knowledge and intersubjectivity between her and the interlocutor (post 3). More interestingly, RD follows up with a compliment that AL is her most-liked instructor who has provided joyful learning experiences, thus strengthening the rationale behind the request (post 4). This additional post-request compliment is rarely seen in L2 learner data. Further, if-clauses in post 1 (if it’s a good time to chat) and post 4 (if you could help out!) strongly indicated RD’s orientation to her lack of entitlement and high contingency.
+          - generic [ref=e191]: Given the tendencies described above, proficiency had a strong effect on the preference organization of participants’ requests and their overt orientation to epistemics. It did not appear that the reduction of time pressure afforded by the medium led to more and more highly fine-tuned prefatory work.
+          - generic [ref=e192]: We now turn to how entitlement to a request and contingencies on the grant of the request were reflected through their formatting of the request.
+          - generic [ref=e193]: 5.2 Choices of syntactic forms
+          - generic [ref=e194]: Table 2 shows the relative proportions of request formats for each group in each role play. All groups displayed some degree of orientation to the entitlement and contingency of the request. In RK1, learners tended to show more orientation to their lack of entitlement and possible contingencies using complex constructions (e.g., I wonder if) with increased L2 proficiency. In RK2 (high entitlement/low contingency), modals were substantially used in B1 and B2 groups (91% and 84%, respectively), and C1-level learners used modals in a majority of cases (47%) but also other formulations, such as need/want (10%) and complex constructions (31%). By contrast, NS participants did not use modals or any form other than “I wonder if” or a complex construction in the RK1. However, in RK2, the majority of NS requests were formulated with a modal (usually could) with “wonder” and other complex constructions accounting for less than 40% of their requests. No other forms (need/want) were used.
+          - generic [ref=e195]: Table 2. Syntactic forms for each group in each scenario (in %)
+          - generic [ref=e196]: Note. RK1 = requesting a recommendation letter (low entitlement, high contingency), RK2 = requesting collection of a package (high entitlement, low contingency)
+          - generic [ref=e197]: 5.2.1 Lower-intermediate learners
+          - generic [ref=e198]: In the B1 group, modals accounted for most request forms in both scenarios, which was not the case in any of the other groups. However, B1 learners used more modals in RK2 (high entitlement / low contingency) than in RK1 (low entitlement / high contingency), and in RK1 they used far more “need/want” statements than the other groups. They never used formulations with “wonder” and other complex constructions were used very rarely.
+          - generic [ref=e199]: Excerpt 5 shows a request formulation with “need you to” (post 4), which does not display any acknowledgement of possible lack of entitlement or the contingencies associated with the situation.
+          - generic [ref=e200]: Excerpt 5. Request with "need you to". (B1_M049, RK1)
+          - generic [ref=e201]: 1 0:00 AL Excuse me, teacher. Can you do me a favor now？
+          - generic [ref=e202]: 2 0:29 AL Hi YW
+          - generic [ref=e203]: 3 0:32 AL What do you need?
+          - generic [ref=e204]: 4 2:48 YW Sorry to bother you so late. I want to apply for a summer
+          - generic [ref=e205]: camp to improve my leadership and presentation skills,
+          - generic [ref=e206]: because I don't think I'm doing very well in this field.
+          - generic [ref=e207]: => But I need you to write a letter of recommendation for
+          - generic [ref=e208]: => me. 😜
+          - generic [ref=e209]: 5 3:04 AL When do you need the letter by?
+          - generic [ref=e210]: 6 3:57 YW Next Monday
+          - generic [ref=e211]: It is worth noting that the interlocutor AL uses the verb “need” in post 3 and it could be argued that YI just incorporates it in her post 4. However, AL quite frequently asked a similar question with other groups as well, and those learners either did not use “need” in their response or followed it with a request formulation that reflects entitlement and contingency, such as Excerpt 2 above.
+          - generic [ref=e212]: Similarly, Excerpt 6 from RK2 shows a formulation with “can” (post 7) and no acknowledgment of the contingencies associated with the situation, even though the interlocutor had made it clear in post 4 that these contingencies are significant.
+          - generic [ref=e213]: Excerpt 6. Request with modal "can". (B1_M006, RK2)
+          - generic [ref=e214]: 1 0:00 RC excuse me
+          - generic [ref=e215]: 2 0:51 AL Hi RC! What’s up?
+          - generic [ref=e216]: 3 1:22 RC Do you have time now?
+          - generic [ref=e217]: 4 1:56 AL Well I’m at home waiting for this huge online sale to
+          - generic [ref=e218]: start! It’s only once a year so I’ve been waiting for ages😍
+          - generic [ref=e219]: 5 2:02 AL But what’s up?
+          - generic [ref=e220]: 6 4:37 RC my new phone has been left outside my door
+          - generic [ref=e221]: 7 5:23 => RC Canyou collect the package for me
+          - generic [ref=e222]: It is apparent from the frequency counts and the examples that learners at B1 level showed little orientation to entitlement and contingency, using modals in most cases. However, from B2 onwards (and native speakers) were more likely to use complex constructions in the low entitlement/high contingency scenario, and modals in the high entitlement/low contingency scenario.
+          - generic [ref=e223]: 5.2.2 Upper-intermediate learners
+          - generic [ref=e224]: While there was also a sizeable number of modals used at B2 level in RK1, B2 learners deployed more complex constructions (e.g., I wonder if) to account for the majority of requests, addressing their lack of entitlement and contingency issues. In RK2, they strongly preferred modals, more than the C1 and NS groups, with a stronger representation of “can” than in RK 1 and just a smattering of complex constructions.
+          - generic [ref=e225]: Excerpt 7 shows a request with “wondering” (post 5) from RK1 but it is noticeable that there is no form of “to be”, neither “am” nor “was”.
+          - generic [ref=e226]: Excerpt 7. Request with "wondering". (B2_M025, RK1)
+          - generic [ref=e227]: 1 0:00 YU Hi 😊 Owen, I hope you are well. Sorry to bother you
+          - generic [ref=e228]: at this time. I had sent you an email for the summer camp recommendation letter. Did you receive it?
+          - generic [ref=e229]: 2 1:24 AL Hi YU
+          - generic [ref=e230]: 3 1:32 AL I haven’t seen the email sorry
+          - generic [ref=e231]: 4 1:38 AL What exactly do you need?
+          - generic [ref=e232]: 5 3:33 YU Ah, I applied for a summer camp for improving leadership
+          - generic [ref=e233]: and speaking skills, and the application need a
+          - generic [ref=e234]: => recommendation letter. I just wondering if you could
+          - generic [ref=e235]: => write it for me.
+          - generic [ref=e236]: "Excerpt 8 is also from RK 1 and shows a request format with “could” (post 5) and an emoji (“red rose”), displaying a stronger orientation towards entitlement than the formatting with “can” (post 11) in RK2 shown in Excerpt 9:"
+          - generic [ref=e237]: Excerpt 8. Request with "could" and an emoji “red rose”. (B2_M010, RK1)
+          - generic [ref=e238]: 1 0:00 YH Good evening Grace, sorry for bothering you so late.
+          - generic [ref=e239]: 2 0:42 AL Hi YH
+          - generic [ref=e240]: 3 0:46 AL What do you need?
+          - generic [ref=e241]: 4 2:23 YH I'm applying for a summer camp to improve my leadership
+          - generic [ref=e242]: and speaking ability, but this needs a recommendation letter from our teacher.
+          - generic [ref=e243]: 5 3:31 => YH Could you write this letter for me🌹
+          - generic [ref=e244]: Excerpt 9. Request with "can". (B2_M004, RK2)
+          - generic [ref=e245]: 1 0:00 WL Hi Ann
+          - generic [ref=e246]: 2 0:16 WL what are you doing now 😃
+          - generic [ref=e247]: 3 0:17 AL Hey WL! How’s it going?
+          - generic [ref=e248]: 4 0:33 AL I’m just at home waiting for this HUUUGE online sale
+          - generic [ref=e249]: to start 😍
+          - generic [ref=e250]: 5 0:41 AL It’s only once a year and I’ve been waiting!!!
+          - generic [ref=e251]: 6 1:08 WL its so exciting isnt it😁
+          - generic [ref=e252]: 7 1:32 AL Yup! The discounts are so good and
+          - generic [ref=e253]: there are a couple of things I want to grab
+          - generic [ref=e254]: 8 2:03 WL could you do me a favor~
+          - generic [ref=e255]: 9 2:14 AL What’s up?
+          - generic [ref=e256]: 10 2:47 WL there is a package outside my door
+          - generic [ref=e257]: but i am not at home now
+          - generic [ref=e258]: 11 3:37 => WL can you collect it for me and when i am back,
+          - generic [ref=e259]: i will come to your home
+          - generic [ref=e260]: Given their attempt at using wonder if in RK1 and the differentiation in formulating requests with modals in RK1 and RK2, it is apparent that B2 learners are able to muster linguistic tools to show orientation to entitlement and contingency, though perhaps not in highly conventional ways.
+          - generic [ref=e261]: 5.2.3 Advanced learners
+          - generic [ref=e262]: C1 learners used more than twice as many formulations with “wonder” or a complex construction in RK1 than other formatting options and modals were the most common format in RK2. Similar to B2 learners, C1 learners also used modals in a sizeable number of RK1 role plays. They also used some “want/need” formulations in both role plays and occasionally elicited interlocutor offers through outlining the problem by means of accounts projecting an upcoming request.
+          - generic [ref=e263]: Excerpt 10 from RK 1 demonstrates a request formatted with “I was wondering” (post 4), and Excerpt 11 from RK 1 exhibits a request with conditional modal “could” (post 8). Excerpt 12 is a request from RK 2 also using modal “could” (post 18).
+          - generic [ref=e264]: Excerpt 10. Request with "wonder". (C1_M052, RK 1)
+          - generic [ref=e265]: 1 0:00 YG How's going Owen
+          - generic [ref=e266]: 2 0:48 AL Hi YG
+          - generic [ref=e267]: 3 0:54 AL What do you need?
+          - generic [ref=e268]: 4 2:59 => YG I am applying for a summer camp recently, I was wondering
+          - generic [ref=e269]: => if you could write a recommend letter for me?
+          - generic [ref=e270]: Excerpt 11. Request with modal. (C1_M055, RK 1)
+          - generic [ref=e271]: 1 0:00 QN Hi Ms.Owen, I am QN
+          - generic [ref=e272]: 2 0:12 AL Hi QN
+          - generic [ref=e273]: 3 0:16 AL How can I help?
+          - generic [ref=e274]: 4 1:38 QN I just want to ask did you see my email
+          - generic [ref=e275]: that I sent two days ago?
+          - generic [ref=e276]: 5 1:57 AL No, sorry, I haven’t seen it
+          - generic [ref=e277]: 6 2:28 QN It’s about my application to an online summer camp
+          - generic [ref=e278]: 7 2:37 QN It’s okay~
+          - generic [ref=e279]: "[(Quote: No, sorry, I haven’t seen it)]"
+          - generic [ref=e280]: 8 3:47 => QN If you have more free time could you please read the mail
+          - generic [ref=e281]: and help me about a recommendation letter?
+          - generic [ref=e282]: Excerpt 12. Request with modal. (C1_M058, RK2)
+          - generic [ref=e283]: （posts 1-8 are omitted, including greetings and ritual exchanges）
+          - generic [ref=e284]: 9 1:56 JX Can you do me a favor? Are you at home now?
+          - generic [ref=e285]: 10 3:07 JX Oh, thanks. You know, I am at a cinema in the city.
+          - generic [ref=e286]: I am watching a movie with my parents.
+          - generic [ref=e287]: 11 3:50 AL Sounds fun 😊
+          - generic [ref=e288]: 12 3:53 JX But I received a phone call and the deliver man told me
+          - generic [ref=e289]: I have received a package.
+          - generic [ref=e290]: 13 4:23 JX It might be my new i-phone.
+          - generic [ref=e291]: 14 5:14 JX But the driver left it outside my door.
+          - generic [ref=e292]: I am a bit afraid that it might be stolen.
+          - generic [ref=e293]: 15 6:23 AL Wow, new phone! So exciting!!
+          - generic [ref=e294]: 16 6:27 JX As the movie still has 1 hour to go.
+          - generic [ref=e295]: 17 6:58 Al Yea, bad timing with the movie
+          - generic [ref=e296]: 18 7:05 => JX So could you please help me collect the package?
+          - generic [ref=e297]: You can bring it to your hom first.
+          - generic [ref=e298]: Excerpt 10 is a typical formulation with “wonder” (post 4), most of which were formulated as “was wondering” with a small number formatted as “am wondering”. Their tentativeness conveys participants’ understanding of their low entitlement. By contrast, Excerpt 11 is formulated with “could” (post 8), but it does acknowledge contingency in the opening of the post (if you have more free time). There is no obvious orientation to low entitlement. Similarly, Excerpt 12 uses “could” (post 18), and the second part of the post (You can bring it to your home first) appears to acknowledge contingency by proposing a course of action that requires minimum effort (beyond the requested collection) from the interlocutor.
+          - generic [ref=e299]: Overall, C1 learners use more conventional ways of demonstrating their orientation to entitlement and contingency and can deploy linguistic resources for this purpose.
+          - generic [ref=e300]: 5.2.4 English native speakers
+          - generic [ref=e301]: The NS group demonstrates their orientation to entitlement and contingencies noticeably differently from the L2 groups. Complex constructions were the only forms that NS used to formulate requests in RK1, whereas modals were also used by NS in RK2.
+          - generic [ref=e302]: "Excerpt 13 and Excerpt 14 show complex constructions by NS participants in RK1:"
+          - generic [ref=e303]: Excerpt 13. Complex construction by NS. (NS_NS14, RK1)
+          - generic [ref=e304]: 1 0:00 EM Hi Ms Owen,
+          - generic [ref=e305]: 2 0:30 AL Hi EM
+          - generic [ref=e306]: 3 0:47 EM I am so sorry to send a message this late.
+          - generic [ref=e307]: I am not sure if you got my previous message
+          - generic [ref=e308]: but I would greatly appreciate your help with something.
+          - generic [ref=e309]: 4 1:22 EM I am after a letter of recommendation for a summer camp
+          - generic [ref=e310]: => if that is something you can help me with?
+          - generic [ref=e311]: Excerpt 14. Complex construction by NS. (NS_NS10, RK1)
+          - generic [ref=e312]: 1 0:00 => EM Hi Ms Owen, I apologise for the late message but would it
+          - generic [ref=e313]: be alright to ask you for a reccomendation letter?
+          - generic [ref=e314]: In Excerpt 13, the participant’s formulation orients towards the contingencies of granting the request (using an if-clause) (post 4) and in Excerpt 14 the participant explicitly queries whether they are entitled to make the request (would it be alright, post 1).
+          - generic [ref=e315]: Excerpt 15 shows the formulation of a request using a modal from RK2. The use of the conditional modal and politeness marker “please” displays the NS participant’s orientation towards high entitlement (i.e., best friends) and possible low contingency (i.e., availability and living close) that (post 1).
+          - generic [ref=e316]: Excerpt 15. Modal formatted request (NS_NS11, RK2)
+          - generic [ref=e317]: 1 0:00 => EM Hey Ann! Are you free rn? If you are, could you please
+          - generic [ref=e318]: check whether i have a package outside my house and
+          - generic [ref=e319]: collect it for me?
+          - generic [ref=e320]: NS have a much broader range of linguistic tools available for reflecting their orientation to entitlement and contingency, and they configure them strikingly different from the learner groups in RK1, but more similarly in RK2.
+          - generic [ref=e321]: 6. Discussion
+          - generic [ref=e322]: In this article, we set out to demonstrate that an interlocutor’s interactional abilities in making requests can be detected through how they organize prefatory moves and thereby actively address epistemic gaps while orienting to social harmony. Additionally, we explored how interlocutors at different proficiency levels show orientation to their rights and potential contingencies pertinent to the forthcoming requests. We found proficiency-based differences between our participants in both areas and see no indication that the lack of time pressure in the medium of chat reduced proficiency effects.
+          - generic [ref=e323]: 6.1 Prefatory work in L2 requests and the role of processing
+          - generic [ref=e324]: We found that lower-level learners did little prefatory work and tended to make a request directly after the greeting/ritual exchanges or produce minimal or peripheral pre-sequences (e.g., email/availability checking) prior to a base request. They thereby did not fill epistemic gaps between themselves and their interlocutor and did not attend much to relational work. As proficiency increased, the amount of prefatory work did as well, with learners providing accounts for their request, though at B2 level they sometimes still foregrounded the request itself. Only at C1 level and among NS participants were accounts preceding the request typical and relational work also became common and quite sophisticated.
+          - generic [ref=e325]: This increase of prefatory work with proficiency is in line with previous studies such as Kobayashi and Rinnert (2003) and Al-Gahtani and Roever (2012) for requests and Al-Gahtani and Roever (2018) and Wu and Roever (2021) for refusals. Unlike some of these earlier studies, our study did not include very low-level learners. So, it is unlikely that even among our lowest level group a lack of linguistic resources would have played a major role in the absence of prefatory moves in their requests. A possibility that has been raised by Al-Gahtani and Roever (2018) and Wu and Roever (2021) is lower-level learners’ limited processing load, which may have pushed them to prioritize the ‘business’ and rush through the task. While this is plausible, there was no time limit for participants to role play and there were considerable time gaps (i.e., message composing time) between posts as can be seen in data. Therefore, we would argue in contrast to Al-Gahtani and Roever (2018) and Wu and Roever (2021) that L2 proficiency or other learners’ individual differences (e.g., working memory) is not likely to be a major contributor to lack of preliminary moves.
+          - generic [ref=e326]: An alternative explanation for proficiency’s overriding effect on preliminaries is that the considerable effort involved in conversation for lower-level learners, even with little or no time pressure, leads learners to focus on the core message of request, discarding elements (such as accounts and affiliative moves) not crucial to this goal. Making the request early on without prefatory work gets the central task done quickly and potentially efficiently if no further negotiation is required. It also puts the onus of further enquiring about reasons for the request on the interlocutor, rather than requiring an effortful articulation of these reasons on the part of the learner, as Al-Gahtani and Roever (2012) have shown.
+          - generic [ref=e327]: We do not mean to imply, however, that such a sequential organization is a strategic choice by the learners. It is more likely that lower-level learners lack members’ ‘methods’ to do relational work, implement a dispreference, and even out epistemic gradients, i.e., they may have a limited inventory of socio-culturally appropriate practices to move the interlocutor’s epistemic status in favour of the progressivity of the interaction. This may be similar to story-telling by lower-level learners, who may not mark the upcoming story as such (“Something funny happened to me today”) or situate with regard to time and place (Hellermann, 2008; Pekarek Doehler & Berger, 2018). While learners have the necessary linguistic tools available to provide background information targeting epistemic differences with the interlocutor, they may not know how to configure them for that purpose in terms of formatting and sequence organization.
+          - generic [ref=e328]: By contrast, higher-level learners organized requests as dispreferred social actions and deployed more diversified techniques (e.g., apologetic moves, compliment, checking availability or email), with pre-sequences occurring in most B2-level and almost all C1-level learners’ interaction. B2-level learners often produced generic pre-sequences and occasionally post-loaded backgrounds or accounts of the request, whereas C1-level learners commonly presented type-specific pre-sequences and front-loaded them. Through adding or receiving information incrementally, high-level learners could recalibrate their understanding of the interlocutor’s epistemic status, thus deploying context-sensitive actions that fit in the ‘circumstantial details of the interaction’ in situ (Pekarek Doehler & Pochon-Berger, 2015, p. 262). However, higher-level learners occasionally oversupplied information (e.g., mentioning unanswered email in RK1) that could potentially damage social harmony and impede the progressivity of the interaction. This may indicate their ongoing development of members’ knowledge (Pekarek Doehler, 2019) and contrasts with a consistent orientation to entitlement and contingency and a larger repertoire of linguistic resources available to native speakers.
+          - generic [ref=e329]: 6.2 Syntactic forms in making requests
+          - generic [ref=e330]: Lower-level learners, particularly at B1-level, did not show an overt orientation to entitlement and contingency in their requests. This can be seen in their undifferentiated use of the forms I want/I need in RK1. These forms are normally produced to form “a telling rather than an asking” in service encounters, where customers/requesters display their strong entitlement to require assistance from a service provider who is commonly obliged to fulfill the request (Craven & Potter, 2010; Kendrick & Drew, 2016). However, in RK1 and RK2 the interlocutor does not have the obligation to write a letter of recommendation or collect a package for the participant and the use of those declarative forms shows lower-proficiency learners’ lack of orientation to the interlocutor’s capacity and willingness to do so.
+          - generic [ref=e331]: Apart from the declarative forms, modals such as can/could you X were used by learners across all proficiency levels in both request scenarios. The occurrences of modals in RK2 (collecting a package) are expected as the requester is likely entitled to make such a request, considering the urgency, low imposition, and the close relationship between the interactants. However, by using modals in RK1, most B1- and B2-level learners and half of C1-level learners treated their request of a recommendation letter as minimally contingent and presupposed their rights to ask the interlocutor to write the letter on the weekend. They recipient designed the request to show their orientation to the interlocutor’s capability of writing a recommendation letter (can vs. cannot) rather than the contingencies such as conflicting schedules or willingness. Although the polar-question format (can/could you X) is less direct and leaves the interlocutor to decide whether to perform the requested action (Lindström, 2005), learners who invariantly used modals in both request scenarios show a lack of sensitivity for mapping linguistic forms to interactional context and locally adapting them to fit the circumstantial details.
+          - generic [ref=e332]: With increased L2 proficiency and IC, learners (mostly at C1-level) displayed a stronger orientation to entitlement and contingency in their requests. Over fifty percent of C1-level learners produced embedded modals I wonder if or alike in RK1 (requesting a recommendation letter) and modals can/could you X in RK2 (requesting the collection of a package). However, the fact that only half of C1-level learners showed context-sensitivity and adjusted their choices of syntactic forms in the construction of requests shows that high proficiency is no guarantee of fine-tuned interactional performance (see also Roever & Dai, 2021). Rather, a finely tuned understanding of social norms around entitlement and contingency together with a mapping of linguistic tools to these considerations is necessary for high levels of interactional performance and proficiency alone is no guarantee.
+          - generic [ref=e333]: It is also interesting that among native speakers, the low entitlement / high contingency scenario RK1 invariably elicited I wonder if or another complex construction. This almost deterministic outcome was not found in any of the learner groups. By contrast, native speaker responses showed more variation for the high entitlement / low contingency scenario RK2, as did most learner groups. This greater variation in RK2 may be due to respondents varying in their evaluation of the degree of contingency in RK2 or in their views of friends’ entitlement to make requests of each other. Alternatively, the role play instructions may have underspecified the relationship with the interlocutor in RK2, who was described as a “close friend”, but degrees of friendship may vary even among intimates, leaving the construction of the exact relationship up to the participant.
+          - generic [ref=e334]: 7. Conclusion
+          - generic [ref=e335]: We set out to investigate what the effect of proficiency is on the organization of request interactions through text chat. We found similar tendencies as have been described in spoken interactions, i.e., lower-level learners tended to frontload the core request whereas higher-level learners did more prefatory work and provided background knowledge, thereby demonstrating an orientation to the epistemic gradient between the interlocutor and themselves. With increasing proficiency, learners did more work to establish shared knowledge and more finely targeted their talk to the interlocutor’s knowledge status. We hypothesize that lower-level learners’ lack of prefatory moves may be due to a focus on conveying the core request message, or to a lack of member’s methods, neither of which benefitted from the greater time and lower processing demands afforded by the medium.
+          - generic [ref=e336]: We also found a fairly sharp difference between lower-level learners at B1 level and higher-level learner groups in displaying an orientation to entitlement and contingency in request formation. Lower-level learners’ less diversified syntactic formatting of request and strong reliance on modals shows their developing sensitivity to entitlement and contingency and lack of form-function mapping. Higher-level groups showed a distinct leaning towards modals for the high entitlement and low contingency scenario and complex constructions for the low entitlement and high contingency scenario, evidencing greater sensitivity to entitlement and contingency.
+          - generic [ref=e337]: "One limitation of our study is the limited range of entitlement and contingency levels and their combination: it would be interesting to see how learners manage scenarios with even more entitlement and less contingency, or even less entitlement and more contingency than we included. Our learners were also from a homogenous L1 background, and there may well be transfer effects in interactional performance, so it would be interesting to investigate other backgrounds as well. We also did not make learner background factors like residence or exposure a factor in our study so we cannot identify to what extent socialization plays a role and how it relates to proficiency. Future research could compare learners of similar proficiency but with different degrees of residence or experience to tease out such effects. Finally, our use of role play scenarios means that our data is not identical to natural data, especially regarding eliciting offers through pre-sequences, which was rare in our data but may occur more commonly in natural discourse. However, our data is still likely to reflect learners’ interactional abilities, which they could also deploy in real-world settings."
+          - text: From a methodological standpoint, this study took a novel approach to investigating L2 speakers’ request-making abilities. Instead of relying solely on traditional context variables such as power, social distance, and imposition as outlined in politeness
+          - generic [ref=e338]: theory (Brown & Levinso
+          - generic [ref=e339]: n, 1987), we incorporated epistemic knowledge, entitlement, and contingency as key factors influencing the interactional strategies employed by L2 speakers at different proficiency levels. Pedagogically, language instructors can demonstrate how sequential tools (e.g., preliminary moves) and linguistic devices (e.g., diverse syntactic forms) can be used to refine social interactions. Role-play tasks serve as an effective starting point to help learners enhance their contextual sensitivity and practice these interactional tools.
+          - generic [ref=e340]: "Contact:"
+          - generic [ref=e341]: Xingcheng Wang (Corresponding author)
+          - generic [ref=e342]: "ORCID ID: https://orcid.org/0000-0002-3730-1128"
+          - generic [ref=e343]: "Email: xingchengw1@unimelb.edu.au"
+          - generic [ref=e344]: Carsten Roever
+          - generic [ref=e345]: "ORCID ID: https://orcid.org/0000-0002-1055-6331"
+          - generic [ref=e346]: "Email: carsten@unimelb.edu.au"
+          - generic [ref=e347]: "Address:"
+          - generic [ref=e348]: School of Languages and Linguistics
+          - generic [ref=e349]: University of Melbourne, Parkville, VIC, 3052, Australia
+          - text: Refe
+        - generic [ref=e350]:
+          - heading "References" [level=2] [ref=e351]
+          - generic [ref=e352]:
+            - generic [ref=e353] [cursor=pointer]: "Abe, M., & Roever, C. (2019). Interactional competence in L2 text-chat interactions: First-idea proffering in task openings. Journal of Pragmatics, 144, 1–14. https://doi.org/10.1016/j.pragma.2019.03.001"
+            - generic [ref=e354] [cursor=pointer]: "Abe, M., & Roever, C. (2020). Task closings in L2 text-chat interactions: A study of L2 interactional competence. CALICO Journal, 37(1), 23–45. https://doi.org/10.1558/cj.38562"
+            - generic [ref=e355] [cursor=pointer]: "Al-Gahtani, S. (2022). The development of L2 interactional competence in Arabic: The case of multiple requests. Foreign Language Annals, 55(2), 610–634. https://doi.org/10.1111/flan.12603"
+            - generic [ref=e356] [cursor=pointer]: Al-Gahtani, S., & Roever, C. (2012). Proficiency and sequential organization of L2 requests. Applied Linguistics, 33(1), 42–65. https://doi.org/10.1093/applin/amr031
+            - generic [ref=e357] [cursor=pointer]: Al-Gahtani, S., & Roever, C. (2014). Preference structure in L2 Arabic requests. Intercultural Pragmatics, 11(4), 619–643. https://doi.org/10.1515/ip-2014-0027
+            - generic [ref=e358] [cursor=pointer]: Al-Gahtani, S., & Roever, C. (2018). Proficiency and preference organization in second language refusals. Journal of Pragmatics, 129, 140–153. https://doi.org/10.1016/j.pragma.2018.01.014
+            - generic [ref=e359] [cursor=pointer]: "Brown, P., & Levinson, S. (1987). Politeness: Some universals in language. Cambridge University Press."
+            - generic [ref=e360] [cursor=pointer]: "Craven, A., & Potter, J. (2010). Directives: Entitlement and contingency in action. Discourse Studies, 12(4), 419–442. https://doi.org/10.1177/1461445610370126"
+            - generic [ref=e361] [cursor=pointer]: "Curl, T. S., & Drew, P. (2008). Contingency and action: A comparison of two forms of requesting. Research on Language and Social Interaction, 41(2), 129–153. https://doi.org/10.1080/08351810802028613"
+            - generic [ref=e362] [cursor=pointer]: Drew, P., & Couper-Kuhlen, E. (Eds.). (2014). Requesting in social interaction. John Benjamins Publishing Company.
+            - generic [ref=e363] [cursor=pointer]: Drew, P., & Walker, T. (2010). Citizens’ emergency calls Requesting assistance in calls to the police. In M. Coulthard & A. Johnson (Eds.), The Routledge Handbook of Forensic Linguistics (pp. 95–110). Routledge.
+            - generic [ref=e364] [cursor=pointer]: Fox, B. (2015). On the notion of pre-request. Discourse Studies, 17(1), 41–63. https://doi.org/10.1177/1461445614557762
+            - generic [ref=e365] [cursor=pointer]: Fox, B. A., & Heinemann, T. (2021). Are They Requests? An Exploration of Declaratives of Trouble in Service Encounters. Research on Language and Social Interaction, 54(1), 20–38. https://doi.org/10.1080/08351813.2020.1864154
+            - generic [ref=e366] [cursor=pointer]: "Galaczi, E. D. (2014). Interactional competence across proficiency levels: How do learners manage interaction in paired speaking tests? Applied Linguistics, 35(5), 553–574. https://doi.org/10.1093/applin/amt017"
+            - generic [ref=e367] [cursor=pointer]: "Garcia, A. C., & Jacobs, J. B. (1999). The eyes of the beholder: Understanding the turn-taking system in quasi-synchronous computer-mediated communication. Research on Language and Social Interaction, 32(4), 337–367. https://doi.org/10.1207/S15327973rls3204_2"
+            - generic [ref=e368] [cursor=pointer]: "Gonzales, A. (2013). Development of politeness strategies in participatory online environments: A case study. In N. Taguchi & J. M. Sykes (Eds.), Technology in Interlanguage Pragmatics Research and Teaching (pp. 101–120). John Benjamins Publishing Company. https://doi.org/10.1075/lllt.36.06gon"
+            - generic [ref=e369] [cursor=pointer]: "Heinemann, T. (2006). ‘Will you or can’t you?’: Displaying entitlement in interrogative requests. Journal of Pragmatics, 38(7), 1081–1104. https://doi.org/10.1016/j.pragma.2005.09.013"
+            - generic [ref=e370] [cursor=pointer]: Hellermann, J. (2008). Social Actions for Classroom Language Learning. Multilingual Matters.
+            - generic [ref=e371] [cursor=pointer]: "Heritage, J. (2012a). The epistemic engine: Sequence organization and territories of knowledge. Research on Language and Social Interaction, 45(1), 30–52. https://doi.org/10.1080/08351813.2012.646685"
+            - generic [ref=e372] [cursor=pointer]: "Heritage, J. (2012b). Epistemics in action: Action formation and territories of knowledge. Research on Language & Social Interaction, 45(1), 1–29. https://doi.org/10.1080/08351813.2012.646684"
+            - generic [ref=e373] [cursor=pointer]: "Herring, S. C. (2013). Discourse in Web 2.0: Familiar, reconfigured, and emergent. In D. Tannen & A. M. Trester (Eds.), Discourse 2.0: Language and new media (pp. 1–25). Georgetown University Press."
+            - generic [ref=e374] [cursor=pointer]: IELTS Partners (2023). IELTS and the CEFR. Retrieved 22 November 2023 from https://ielts.org/organisations/ielts-for-organisations/compare-ielts/ielts-and-the-cefr
+            - generic [ref=e375] [cursor=pointer]: "Kendrick, K. H., & Drew, P. (2016). Recruitment: Offers, requests, and the organization of assistance in interaction. Research on Language and Social Interaction, 49(1), 1–19. https://doi.org/10.1080/08351813.2016.1126436"
+            - generic [ref=e376] [cursor=pointer]: "Kobayashi, H., & Rinnert, C. (2003). Coping with high imposition requests: High vs. Low proficiency EFL students in Japan. In A. M. Flor, A. Fernández Guerra, & E. Usó Juan (Eds.), Pragmatic Competence and Foreign Language Teaching (pp. 161–184). Publicacions de la Universitat Jaume I."
+            - generic [ref=e377] [cursor=pointer]: "Lindström, A. (2005). Language as social action: A study of how senior citizens request assistance with practical tasks in the Swedish home help service. In A. Hakulinen & M. Selting (Eds.), Syntax and lexis in conversation: Studies on the use of linguistic resources in talk-in-interaction (pp. 209–230). John Benjamins."
+            - generic [ref=e378] [cursor=pointer]: "Malabarba, T. (2022). Requesting on WhatsApp: The interplay of interactional competence and deontics in English as an additional language. TESOL in Context, 30(2). https://doi.org/10.21153/tesol2022vol30no2art1516"
+            - generic [ref=e379] [cursor=pointer]: Markman, K. M. (2013). Conversational coherence in small group chat. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-mediated communication (pp. 539–564). De Gruyter Mouton.
+            - generic [ref=e380] [cursor=pointer]: Meredith, J. (2020). Conversation analysis, cyberpsychology and online interaction. Social and Personality Psychology Compass, 14(5), 285–294. https://doi.org/10.1111/spc3.12529
+            - generic [ref=e381] [cursor=pointer]: "Meredith, J., Giles, D., Stommel, W. (2021). Introduction: The Microanalysis of Digital Interaction. In J. Meredith, D. Giles, W. Stommel (Eds.), Analysing Digital Interaction (pp. 1-21). Palgrave Macmillan. https://doi.org/10.1007/978-3-030-64922-7_1"
+            - generic [ref=e382] [cursor=pointer]: Ogiermann, E. (2015). In/directness in Polish children’s requests at the dinner table. Journal of Pragmatics, 82, 67–82. https://doi.org/10.1016/j.pragma.2015.03.007
+            - generic [ref=e383] [cursor=pointer]: "Pekarek Doehler, S. (2019). On the Nature and the Development of L2 Interactional Competence: State of the Art and Implications for Praxis. In M. R. Salaberry & S. Kunitz (Eds.), Teaching and Testing L2 Interactional Competence (pp. 25–59). Routledge."
+            - generic [ref=e384] [cursor=pointer]: "Pekarek Doehler, S. (2021). Toward a coherent understanding of L2 interactional competence: Epistemologies of language learning and teaching. In S. Kunitz, N. Markee & O. Sert (Eds.), Classroom-based conversation analytic research: Theoretical and applied perspectives on pedagogy (pp. 19-33). Springer."
+            - generic [ref=e385] [cursor=pointer]: "Pekarek Doehler, S., & Berger, E. (2018). L2 interactional competence as increased ability for context-sensitive conduct: A longitudinal study of story-openings. Applied Linguistics, 39(4), 555–578. https://doi.org/10.1093/applin/amw021"
+            - generic [ref=e386] [cursor=pointer]: "Pekarek Doehler, S., & Pochon-Berger, E. (2015). The development of L2 interactional competence: Evidence from turn-taking organization, sequence organization, repair organization and preference organization. In T. Cadierno & S. W. Eskildsen (Eds.), Usage-Based Perspectives on Second Language Learning (pp. 233–268). De Gruyter Mouton. https://doi.org/10.1515/9783110378528-012"
+            - generic [ref=e387] [cursor=pointer]: QSR International Pty Ltd. (2020). NVivo (released in March 2020).
+            - generic [ref=e388] [cursor=pointer]: "Roever, C., & Dai, D. W. (2021). Reconceptualising interactional competence for language testing. In M. R. Salaberry & A. R. Burch (Eds.), Assessing speaking in context: Expanding the construct and its applications (pp. 23–49). Multilingual Matters. https://www.degruyter.com/document/doi/10.21832/9781788923828-003/html"
+            - generic [ref=e389] [cursor=pointer]: Sacks, H. (1995). Lectures on conversation, volumes I and II. Blackwell.
+            - generic [ref=e390] [cursor=pointer]: "Schegloff, E. A. (1980). Preliminaries to preliminaries: “Can I ask you a question?” Sociological Inquiry, 50(3–4), 104–152. https://doi.org/10.1111/j.1475-682X.1980.tb00018.x"
+            - generic [ref=e391] [cursor=pointer]: "Schegloff, E. A. (2006). Interaction: The infrastructure for social institutions, the natural ecological niche for language, and the arena in which culture is situated. In N. J. Enfield & S. C. Levinson (Eds.), Roots of human sociality: Culture, cognition and interaction (pp. 70–96). Oxford, England: Berg."
+            - generic [ref=e392] [cursor=pointer]: Schegloff, E. A. (2007). Sequence organization in interaction. Cambridge University Press.
+            - generic [ref=e393] [cursor=pointer]: "Sidnell, Jack (2010). Conversation analysis: An introduction. Wiley-Blackwell."
+            - generic [ref=e394] [cursor=pointer]: Simpson, J. (2013). Conversational floor in computer-mediated discourse. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-Mediated communication (pp. 515–538). De Gruyter Mouton. doi/10.1515/9783110214468.515
+            - generic [ref=e395] [cursor=pointer]: Stivers, T., & Rossano, F. (2010). Mobilizing response. Research on Language and Social Interaction, 43(1), 3–31. https://doi.org/10.1080/08351810903471258
+            - generic [ref=e396] [cursor=pointer]: "Taleghani-Nikazm, C., & Huth, T. (2010). L2 requests: Preference structure in talk-in-interaction. Multilingua, 29(2), 185–202. https://doi.org/10.1515/mult.2010.008"
+            - generic [ref=e397] [cursor=pointer]: Tencent Holdings Limited. (2018). WeChat.
+            - generic [ref=e398] [cursor=pointer]: "Terasaki, A. K. (2004). Pre-announcement sequences in conversation. In G. H. Lerner (Ed.), Conversation analysis: Studies from the first generation (pp. 171–223). John Benjamins."
+            - generic [ref=e399] [cursor=pointer]: Trott, S., & Rossano, F. (2020). The role of entitlement in formatting preferences across requesters and recipients. Discourse Processes, 57(7), 551–572. https://doi.org/10.1080/0163853X.2020.1719796
+            - generic [ref=e400] [cursor=pointer]: Tudini, V. (2013). Form-focused social repertoires in an online language learning partnership. Journal of Pragmatics, 50(1), 187–202. https://doi.org/10.1016/j.pragma.2012.12.005
+            - generic [ref=e401] [cursor=pointer]: Tudini, V. (2015). Extending prior posts in dyadic online text chat. Discourse Processes, 52(8), 642–669. https://doi.org/10.1080/0163853X.2014.969138
+            - generic [ref=e402] [cursor=pointer]: "Walther, J. B. (1992). Interpersonal effects in computer-mediated interaction: A relational perspective. Communication Research, 19, 52–90. https://doi.org/10.1177/009365092019001003"
+            - generic [ref=e403] [cursor=pointer]: Wu, J., & Roever, C. (2021). Proficiency and preference organization in second language mandarin chinese refusals. Modern Language Journal, 105(4), 897–918. https://doi.org/10.1111/modl.12736
+            - generic [ref=e404] [cursor=pointer]: "Youn, S. J. (2023). Grammar as validity evidence for assessing L2 interactional competence: The case of requests in role-play interaction. Applied Pragmatics 5(2), 174-201. https://doi.org/10.1075/ap.00012.you"
+            - generic [ref=e405] [cursor=pointer]: Young, R. F. (2019). Interactional competence and L2 pragmatics. In N. Taguchi (Ed.), The Routledge Handbook of Second Language Acquisition and Pragmatics (1st ed., pp. 93–110). Routledge. https://doi.org/10.4324/9781351164085-7
+      - generic [ref=e406]:
+        - generic [ref=e407]:
+          - button "All(74)" [ref=e408] [cursor=pointer]
+          - button "Error(10)" [ref=e409] [cursor=pointer]
+          - button "Warning(14)" [ref=e410] [cursor=pointer]
+          - button "Pass(50)" [ref=e411] [cursor=pointer]
+        - generic [ref=e412]:
+          - generic [ref=e415] [cursor=pointer]:
+            - generic [ref=e416]: ✓
+            - generic [ref=e417]:
+              - generic [ref=e418]:
+                - generic [ref=e419]: r1
+                - generic [ref=e420]: ·
+                - generic [ref=e421]: reference
+                - generic [ref=e422]: ● Pass
+              - generic [ref=e423]: "Abe, M., & Roever, C. (2019). Interactional competence in L2 text-chat interactions: First-idea proffering in task openings. Journal of Pragmatics, 144, 1–14. https://doi.org/10.1016/j.pragma.2019.03.001"
+              - generic [ref=e424]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e427] [cursor=pointer]:
+            - generic [ref=e428]: ✓
+            - generic [ref=e429]:
+              - generic [ref=e430]:
+                - generic [ref=e431]: r2
+                - generic [ref=e432]: ·
+                - generic [ref=e433]: reference
+                - generic [ref=e434]: ● Pass
+              - generic [ref=e435]: "Abe, M., & Roever, C. (2020). Task closings in L2 text-chat interactions: A study of L2 interactional competence. CALICO Journal, 37(1), 23–45. https://doi.org/10.1558/cj.38562"
+              - generic [ref=e436]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e439] [cursor=pointer]:
+            - generic [ref=e440]: ✓
+            - generic [ref=e441]:
+              - generic [ref=e442]:
+                - generic [ref=e443]: r3
+                - generic [ref=e444]: ·
+                - generic [ref=e445]: reference
+                - generic [ref=e446]: ● Pass
+              - generic [ref=e447]: "Al-Gahtani, S. (2022). The development of L2 interactional competence in Arabic: The case of multiple requests. Foreign Language Annals, 55(2), 610–634. https://doi.org/10.1111/flan.12603"
+              - generic [ref=e448]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e451] [cursor=pointer]:
+            - generic [ref=e452]: ✓
+            - generic [ref=e453]:
+              - generic [ref=e454]:
+                - generic [ref=e455]: r4
+                - generic [ref=e456]: ·
+                - generic [ref=e457]: reference
+                - generic [ref=e458]: ● Pass
+              - generic [ref=e459]: Al-Gahtani, S., & Roever, C. (2012). Proficiency and sequential organization of L2 requests. Applied Linguistics, 33(1), 42–65. https://doi.org/10.1093/applin/amr031
+              - generic [ref=e460]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e463] [cursor=pointer]:
+            - generic [ref=e464]: ✓
+            - generic [ref=e465]:
+              - generic [ref=e466]:
+                - generic [ref=e467]: r5
+                - generic [ref=e468]: ·
+                - generic [ref=e469]: reference
+                - generic [ref=e470]: ● Pass
+              - generic [ref=e471]: Al-Gahtani, S., & Roever, C. (2014). Preference structure in L2 Arabic requests. Intercultural Pragmatics, 11(4), 619–643. https://doi.org/10.1515/ip-2014-0027
+              - generic [ref=e472]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e475] [cursor=pointer]:
+            - generic [ref=e476]: ✓
+            - generic [ref=e477]:
+              - generic [ref=e478]:
+                - generic [ref=e479]: r6
+                - generic [ref=e480]: ·
+                - generic [ref=e481]: reference
+                - generic [ref=e482]: ● Pass
+              - generic [ref=e483]: Al-Gahtani, S., & Roever, C. (2018). Proficiency and preference organization in second language refusals. Journal of Pragmatics, 129, 140–153. https://doi.org/10.1016/j.pragma.2018.01.014
+              - generic [ref=e484]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e487] [cursor=pointer]:
+            - generic [ref=e488]: ✓
+            - generic [ref=e489]:
+              - generic [ref=e490]:
+                - generic [ref=e491]: r7
+                - generic [ref=e492]: ·
+                - generic [ref=e493]: reference
+                - generic [ref=e494]: ● Pass
+              - generic [ref=e495]: "Brown, P., & Levinson, S. (1987). Politeness: Some universals in language. Cambridge University Press."
+              - generic [ref=e496]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e499] [cursor=pointer]:
+            - generic [ref=e500]: ✓
+            - generic [ref=e501]:
+              - generic [ref=e502]:
+                - generic [ref=e503]: r8
+                - generic [ref=e504]: ·
+                - generic [ref=e505]: reference
+                - generic [ref=e506]: ● Pass
+              - generic [ref=e507]: "Craven, A., & Potter, J. (2010). Directives: Entitlement and contingency in action. Discourse Studies, 12(4), 419–442. https://doi.org/10.1177/1461445610370126"
+              - generic [ref=e508]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e511] [cursor=pointer]:
+            - generic [ref=e512]: ✓
+            - generic [ref=e513]:
+              - generic [ref=e514]:
+                - generic [ref=e515]: r9
+                - generic [ref=e516]: ·
+                - generic [ref=e517]: reference
+                - generic [ref=e518]: ● Pass
+              - generic [ref=e519]: "Curl, T. S., & Drew, P. (2008). Contingency and action: A comparison of two forms of requesting. Research on Language and Social Interaction, 41(2), 129–153. https://doi.org/10.1080/08351810802028613"
+              - generic [ref=e520]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e523] [cursor=pointer]:
+            - generic [ref=e524]: ✕
+            - generic [ref=e525]:
+              - generic [ref=e526]:
+                - generic [ref=e527]: r10
+                - generic [ref=e528]: ·
+                - generic [ref=e529]: reference
+                - generic [ref=e530]: ● Error
+              - generic [ref=e531]: Drew, P., & Couper-Kuhlen, E. (Eds.). (2014). Requesting in social interaction. John Benjamins Publishing Company.
+              - generic [ref=e532]:
+                - generic [ref=e534]: Content
+                - generic [ref=e535]: Reference not found
+                - generic [ref=e536]: "Crossref: score too low or author/year mismatch · OpenAlex: timeout"
+          - generic [ref=e539] [cursor=pointer]:
+            - generic [ref=e540]: ✕
+            - generic [ref=e541]:
+              - generic [ref=e542]:
+                - generic [ref=e543]: r11
+                - generic [ref=e544]: ·
+                - generic [ref=e545]: reference
+                - generic [ref=e546]: ● Error
+              - generic [ref=e547]: Drew, P., & Walker, T. (2010). Citizens’ emergency calls Requesting assistance in calls to the police. In M. Coulthard & A. Johnson (Eds.), The Routledge Handbook of Forensic Linguistics (pp. 95–110). Routledge.
+              - generic [ref=e548]:
+                - generic [ref=e550]: Content
+                - generic [ref=e551]: Reference not found
+                - generic [ref=e552]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e555] [cursor=pointer]:
+            - generic [ref=e556]: ✓
+            - generic [ref=e557]:
+              - generic [ref=e558]:
+                - generic [ref=e559]: r12
+                - generic [ref=e560]: ·
+                - generic [ref=e561]: reference
+                - generic [ref=e562]: ● Pass
+              - generic [ref=e563]: Fox, B. (2015). On the notion of pre-request. Discourse Studies, 17(1), 41–63. https://doi.org/10.1177/1461445614557762
+              - generic [ref=e564]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e567] [cursor=pointer]:
+            - generic [ref=e568]: ✓
+            - generic [ref=e569]:
+              - generic [ref=e570]:
+                - generic [ref=e571]: r13
+                - generic [ref=e572]: ·
+                - generic [ref=e573]: reference
+                - generic [ref=e574]: ● Pass
+              - generic [ref=e575]: Fox, B. A., & Heinemann, T. (2021). Are They Requests? An Exploration of Declaratives of Trouble in Service Encounters. Research on Language and Social Interaction, 54(1), 20–38. https://doi.org/10.1080/08351813.2020.1864154
+              - generic [ref=e576]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e579] [cursor=pointer]:
+            - generic [ref=e580]: ✓
+            - generic [ref=e581]:
+              - generic [ref=e582]:
+                - generic [ref=e583]: r14
+                - generic [ref=e584]: ·
+                - generic [ref=e585]: reference
+                - generic [ref=e586]: ● Pass
+              - generic [ref=e587]: "Galaczi, E. D. (2014). Interactional competence across proficiency levels: How do learners manage interaction in paired speaking tests? Applied Linguistics, 35(5), 553–574. https://doi.org/10.1093/applin/amt017"
+              - generic [ref=e588]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e591] [cursor=pointer]:
+            - generic [ref=e592]: ✓
+            - generic [ref=e593]:
+              - generic [ref=e594]:
+                - generic [ref=e595]: r15
+                - generic [ref=e596]: ·
+                - generic [ref=e597]: reference
+                - generic [ref=e598]: ● Pass
+              - generic [ref=e599]: "Garcia, A. C., & Jacobs, J. B. (1999). The eyes of the beholder: Understanding the turn-taking system in quasi-synchronous computer-mediated communication. Research on Language and Social Interaction, 32(4), 337–367. https://doi.org/10.1207/S15327973rls3204_2"
+              - generic [ref=e600]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e603] [cursor=pointer]:
+            - generic [ref=e604]: "!"
+            - generic [ref=e605]:
+              - generic [ref=e606]:
+                - generic [ref=e607]: r16
+                - generic [ref=e608]: ·
+                - generic [ref=e609]: reference
+                - generic [ref=e610]: ● Warning
+              - generic [ref=e611]: "Gonzales, A. (2013). Development of politeness strategies in participatory online environments: A case study. In N. Taguchi & J. M. Sykes (Eds.), Technology in Interlanguage Pragmatics Research and Teaching (pp. 101–120). John Benjamins Publishing Company. https://doi.org/10.1075/lllt.36.06gon"
+              - generic [ref=e612]:
+                - generic [ref=e614]: Content
+                - generic [ref=e615]: Title does not match authoritative record
+                - generic [ref=e616]:
+                  - generic [ref=e617]: expected
+                  - generic [ref=e618]: Chapter 5. Development of politeness strategies in participatory online environments
+                  - generic [ref=e619]: actual
+                  - generic [ref=e620]: development of politeness strategies in participatory online environments a case study
+          - generic [ref=e623] [cursor=pointer]:
+            - generic [ref=e624]: ✓
+            - generic [ref=e625]:
+              - generic [ref=e626]:
+                - generic [ref=e627]: r17
+                - generic [ref=e628]: ·
+                - generic [ref=e629]: reference
+                - generic [ref=e630]: ● Pass
+              - generic [ref=e631]: "Heinemann, T. (2006). ‘Will you or can’t you?’: Displaying entitlement in interrogative requests. Journal of Pragmatics, 38(7), 1081–1104. https://doi.org/10.1016/j.pragma.2005.09.013"
+              - generic [ref=e632]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e635] [cursor=pointer]:
+            - generic [ref=e636]: ✓
+            - generic [ref=e637]:
+              - generic [ref=e638]:
+                - generic [ref=e639]: r18
+                - generic [ref=e640]: ·
+                - generic [ref=e641]: reference
+                - generic [ref=e642]: ● Pass
+              - generic [ref=e643]: Hellermann, J. (2008). Social Actions for Classroom Language Learning. Multilingual Matters.
+              - generic [ref=e644]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e647] [cursor=pointer]:
+            - generic [ref=e648]: ✓
+            - generic [ref=e649]:
+              - generic [ref=e650]:
+                - generic [ref=e651]: r19
+                - generic [ref=e652]: ·
+                - generic [ref=e653]: reference
+                - generic [ref=e654]: ● Pass
+              - generic [ref=e655]: "Heritage, J. (2012a). The epistemic engine: Sequence organization and territories of knowledge. Research on Language and Social Interaction, 45(1), 30–52. https://doi.org/10.1080/08351813.2012.646685"
+              - generic [ref=e656]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e659] [cursor=pointer]:
+            - generic [ref=e660]: ✓
+            - generic [ref=e661]:
+              - generic [ref=e662]:
+                - generic [ref=e663]: r20
+                - generic [ref=e664]: ·
+                - generic [ref=e665]: reference
+                - generic [ref=e666]: ● Pass
+              - generic [ref=e667]: "Heritage, J. (2012b). Epistemics in action: Action formation and territories of knowledge. Research on Language & Social Interaction, 45(1), 1–29. https://doi.org/10.1080/08351813.2012.646684"
+              - generic [ref=e668]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e671] [cursor=pointer]:
+            - generic [ref=e672]: ✕
+            - generic [ref=e673]:
+              - generic [ref=e674]:
+                - generic [ref=e675]: r21
+                - generic [ref=e676]: ·
+                - generic [ref=e677]: reference
+                - generic [ref=e678]: ● Error
+              - generic [ref=e679]: "Herring, S. C. (2013). Discourse in Web 2.0: Familiar, reconfigured, and emergent. In D. Tannen & A. M. Trester (Eds.), Discourse 2.0: Language and new media (pp. 1–25). Georgetown University Press."
+              - generic [ref=e680]:
+                - generic [ref=e682]: Content
+                - generic [ref=e683]: Reference not found
+                - generic [ref=e684]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e687] [cursor=pointer]:
+            - generic [ref=e688]: ✕
+            - generic [ref=e689]:
+              - generic [ref=e690]:
+                - generic [ref=e691]: r22
+                - generic [ref=e692]: ·
+                - generic [ref=e693]: reference
+                - generic [ref=e694]: ● Error
+              - generic [ref=e695]: IELTS Partners (2023). IELTS and the CEFR. Retrieved 22 November 2023 from https://ielts.org/organisations/ielts-for-organisations/compare-ielts/ielts-and-the-cefr
+              - generic [ref=e696]:
+                - generic [ref=e698]: Content
+                - generic [ref=e699]: Reference not found
+                - generic [ref=e700]: "Crossref: score too low or author/year mismatch · OpenAlex: timeout"
+          - generic [ref=e703] [cursor=pointer]:
+            - generic [ref=e704]: ✓
+            - generic [ref=e705]:
+              - generic [ref=e706]:
+                - generic [ref=e707]: r23
+                - generic [ref=e708]: ·
+                - generic [ref=e709]: reference
+                - generic [ref=e710]: ● Pass
+              - generic [ref=e711]: "Kendrick, K. H., & Drew, P. (2016). Recruitment: Offers, requests, and the organization of assistance in interaction. Research on Language and Social Interaction, 49(1), 1–19. https://doi.org/10.1080/08351813.2016.1126436"
+              - generic [ref=e712]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e715] [cursor=pointer]:
+            - generic [ref=e716]: ✕
+            - generic [ref=e717]:
+              - generic [ref=e718]:
+                - generic [ref=e719]: r24
+                - generic [ref=e720]: ·
+                - generic [ref=e721]: reference
+                - generic [ref=e722]: ● Error
+              - generic [ref=e723]: "Kobayashi, H., & Rinnert, C. (2003). Coping with high imposition requests: High vs. Low proficiency EFL students in Japan. In A. M. Flor, A. Fernández Guerra, & E. Usó Juan (Eds.), Pragmatic Competence and Foreign Language Teaching (pp. 161–184). Publicacions de la Universitat Jaume I."
+              - generic [ref=e724]:
+                - generic [ref=e726]: Content
+                - generic [ref=e727]: Reference not found
+                - generic [ref=e728]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e731] [cursor=pointer]:
+            - generic [ref=e732]: "!"
+            - generic [ref=e733]:
+              - generic [ref=e734]:
+                - generic [ref=e735]: r25
+                - generic [ref=e736]: ·
+                - generic [ref=e737]: reference
+                - generic [ref=e738]: ● Warning
+              - generic [ref=e739]: "Lindström, A. (2005). Language as social action: A study of how senior citizens request assistance with practical tasks in the Swedish home help service. In A. Hakulinen & M. Selting (Eds.), Syntax and lexis in conversation: Studies on the use of linguistic resources in talk-in-interaction (pp. 209–230). John Benjamins."
+              - generic [ref=e740]:
+                - generic [ref=e742]: Content
+                - generic [ref=e743]: Journal name does not match authoritative record
+                - generic [ref=e744]:
+                  - generic [ref=e745]: expected
+                  - generic [ref=e746]: Studies in Discourse and Grammar
+                  - generic [ref=e747]: actual
+              - generic [ref=e749]:
+                - generic [ref=e750]:
+                  - generic [ref=e751]: Format
+                  - generic [ref=e752]: R001
+                - generic [ref=e753]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e756] [cursor=pointer]:
+            - generic [ref=e757]: ✓
+            - generic [ref=e758]:
+              - generic [ref=e759]:
+                - generic [ref=e760]: r26
+                - generic [ref=e761]: ·
+                - generic [ref=e762]: reference
+                - generic [ref=e763]: ● Pass
+              - generic [ref=e764]: "Malabarba, T. (2022). Requesting on WhatsApp: The interplay of interactional competence and deontics in English as an additional language. TESOL in Context, 30(2). https://doi.org/10.21153/tesol2022vol30no2art1516"
+              - generic [ref=e765]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e768] [cursor=pointer]:
+            - generic [ref=e769]: ✓
+            - generic [ref=e770]:
+              - generic [ref=e771]:
+                - generic [ref=e772]: r27
+                - generic [ref=e773]: ·
+                - generic [ref=e774]: reference
+                - generic [ref=e775]: ● Pass
+              - generic [ref=e776]: Markman, K. M. (2013). Conversational coherence in small group chat. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-mediated communication (pp. 539–564). De Gruyter Mouton.
+              - generic [ref=e777]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e780] [cursor=pointer]:
+            - generic [ref=e781]: "!"
+            - generic [ref=e782]:
+              - generic [ref=e783]:
+                - generic [ref=e784]: r28
+                - generic [ref=e785]: ·
+                - generic [ref=e786]: reference
+                - generic [ref=e787]: ● Warning
+              - generic [ref=e788]: Meredith, J. (2020). Conversation analysis, cyberpsychology and online interaction. Social and Personality Psychology Compass, 14(5), 285–294. https://doi.org/10.1111/spc3.12529
+              - generic [ref=e789]:
+                - generic [ref=e791]: Ambiguous
+                - generic [ref=e792]: Multiple papers found for same author+year — verify you cited the right one
+                - generic [ref=e793]: "Other titles: Conversation Analysis and Online Interaction, Using Conversation Analysis and Discursive Psychology to Analyse Online Data"
+          - generic [ref=e796] [cursor=pointer]:
+            - generic [ref=e797]: ✓
+            - generic [ref=e798]:
+              - generic [ref=e799]:
+                - generic [ref=e800]: r29
+                - generic [ref=e801]: ·
+                - generic [ref=e802]: reference
+                - generic [ref=e803]: ● Pass
+              - generic [ref=e804]: "Meredith, J., Giles, D., Stommel, W. (2021). Introduction: The Microanalysis of Digital Interaction. In J. Meredith, D. Giles, W. Stommel (Eds.), Analysing Digital Interaction (pp. 1-21). Palgrave Macmillan. https://doi.org/10.1007/978-3-030-64922-7_1"
+              - generic [ref=e805]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e808] [cursor=pointer]:
+            - generic [ref=e809]: ✓
+            - generic [ref=e810]:
+              - generic [ref=e811]:
+                - generic [ref=e812]: r30
+                - generic [ref=e813]: ·
+                - generic [ref=e814]: reference
+                - generic [ref=e815]: ● Pass
+              - generic [ref=e816]: Ogiermann, E. (2015). In/directness in Polish children’s requests at the dinner table. Journal of Pragmatics, 82, 67–82. https://doi.org/10.1016/j.pragma.2015.03.007
+              - generic [ref=e817]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e820] [cursor=pointer]:
+            - generic [ref=e821]: ✕
+            - generic [ref=e822]:
+              - generic [ref=e823]:
+                - generic [ref=e824]: r31
+                - generic [ref=e825]: ·
+                - generic [ref=e826]: reference
+                - generic [ref=e827]: ● Error
+              - generic [ref=e828]: "Pekarek Doehler, S. (2019). On the Nature and the Development of L2 Interactional Competence: State of the Art and Implications for Praxis. In M. R. Salaberry & S. Kunitz (Eds.), Teaching and Testing L2 Interactional Competence (pp. 25–59). Routledge."
+              - generic [ref=e829]:
+                - generic [ref=e831]: Content
+                - generic [ref=e832]: Reference not found
+                - generic [ref=e833]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e836] [cursor=pointer]:
+            - generic [ref=e837]: "!"
+            - generic [ref=e838]:
+              - generic [ref=e839]:
+                - generic [ref=e840]: r32
+                - generic [ref=e841]: ·
+                - generic [ref=e842]: reference
+                - generic [ref=e843]: ● Warning
+              - generic [ref=e844]: "Pekarek Doehler, S. (2021). Toward a coherent understanding of L2 interactional competence: Epistemologies of language learning and teaching. In S. Kunitz, N. Markee & O. Sert (Eds.), Classroom-based conversation analytic research: Theoretical and applied perspectives on pedagogy (pp. 19-33). Springer."
+              - generic [ref=e845]:
+                - generic [ref=e846]:
+                  - generic [ref=e847]: Format
+                  - generic [ref=e848]: R001
+                - generic [ref=e849]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e852] [cursor=pointer]:
+            - generic [ref=e853]: ✕
+            - generic [ref=e854]:
+              - generic [ref=e855]:
+                - generic [ref=e856]: r33
+                - generic [ref=e857]: ·
+                - generic [ref=e858]: reference
+                - generic [ref=e859]: ● Error
+              - generic [ref=e860]: "Pekarek Doehler, S., & Berger, E. (2018). L2 interactional competence as increased ability for context-sensitive conduct: A longitudinal study of story-openings. Applied Linguistics, 39(4), 555–578. https://doi.org/10.1093/applin/amw021"
+              - generic [ref=e861]:
+                - generic [ref=e863]: Content
+                - generic [ref=e864]: Reference not found
+                - generic [ref=e865]: "DOI lookup: HTTP 429 · Crossref: HTTP 429 · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e868] [cursor=pointer]:
+            - generic [ref=e869]: "!"
+            - generic [ref=e870]:
+              - generic [ref=e871]:
+                - generic [ref=e872]: r34
+                - generic [ref=e873]: ·
+                - generic [ref=e874]: reference
+                - generic [ref=e875]: ● Warning
+              - generic [ref=e876]: "Pekarek Doehler, S., & Pochon-Berger, E. (2015). The development of L2 interactional competence: Evidence from turn-taking organization, sequence organization, repair organization and preference organization. In T. Cadierno & S. W. Eskildsen (Eds.), Usage-Based Perspectives on Second Language Learning (pp. 233–268). De Gruyter Mouton. https://doi.org/10.1515/9783110378528-012"
+              - generic [ref=e877]:
+                - generic [ref=e878]:
+                  - generic [ref=e879]: Format
+                  - generic [ref=e880]: R001
+                - generic [ref=e881]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e884] [cursor=pointer]:
+            - generic [ref=e885]: ✕
+            - generic [ref=e886]:
+              - generic [ref=e887]:
+                - generic [ref=e888]: r35
+                - generic [ref=e889]: ·
+                - generic [ref=e890]: reference
+                - generic [ref=e891]: ● Error
+              - generic [ref=e892]: QSR International Pty Ltd. (2020). NVivo (released in March 2020).
+              - generic [ref=e893]:
+                - generic [ref=e895]: Content
+                - generic [ref=e896]: Reference not found
+                - generic [ref=e897]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e900] [cursor=pointer]:
+            - generic [ref=e901]: ✓
+            - generic [ref=e902]:
+              - generic [ref=e903]:
+                - generic [ref=e904]: r36
+                - generic [ref=e905]: ·
+                - generic [ref=e906]: reference
+                - generic [ref=e907]: ● Pass
+              - generic [ref=e908]: "Roever, C., & Dai, D. W. (2021). Reconceptualising interactional competence for language testing. In M. R. Salaberry & A. R. Burch (Eds.), Assessing speaking in context: Expanding the construct and its applications (pp. 23–49). Multilingual Matters. https://www.degruyter.com/document/doi/10.21832/9781788923828-003/html"
+              - generic [ref=e909]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e912] [cursor=pointer]:
+            - generic [ref=e913]: ✓
+            - generic [ref=e914]:
+              - generic [ref=e915]:
+                - generic [ref=e916]: r37
+                - generic [ref=e917]: ·
+                - generic [ref=e918]: reference
+                - generic [ref=e919]: ● Pass
+              - generic [ref=e920]: Sacks, H. (1995). Lectures on conversation, volumes I and II. Blackwell.
+              - generic [ref=e921]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e924] [cursor=pointer]:
+            - generic [ref=e925]: ✓
+            - generic [ref=e926]:
+              - generic [ref=e927]:
+                - generic [ref=e928]: r38
+                - generic [ref=e929]: ·
+                - generic [ref=e930]: reference
+                - generic [ref=e931]: ● Pass
+              - generic [ref=e932]: "Schegloff, E. A. (1980). Preliminaries to preliminaries: “Can I ask you a question?” Sociological Inquiry, 50(3–4), 104–152. https://doi.org/10.1111/j.1475-682X.1980.tb00018.x"
+              - generic [ref=e933]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e936] [cursor=pointer]:
+            - generic [ref=e937]: ✕
+            - generic [ref=e938]:
+              - generic [ref=e939]:
+                - generic [ref=e940]: r39
+                - generic [ref=e941]: ·
+                - generic [ref=e942]: reference
+                - generic [ref=e943]: ● Error
+              - generic [ref=e944]: "Schegloff, E. A. (2006). Interaction: The infrastructure for social institutions, the natural ecological niche for language, and the arena in which culture is situated. In N. J. Enfield & S. C. Levinson (Eds.), Roots of human sociality: Culture, cognition and interaction (pp. 70–96). Oxford, England: Berg."
+              - generic [ref=e945]:
+                - generic [ref=e947]: Content
+                - generic [ref=e948]: Reference not found
+                - generic [ref=e949]: "Crossref: score too low or author/year mismatch · OpenAlex: timeout"
+          - generic [ref=e952] [cursor=pointer]:
+            - generic [ref=e953]: ✓
+            - generic [ref=e954]:
+              - generic [ref=e955]:
+                - generic [ref=e956]: r40
+                - generic [ref=e957]: ·
+                - generic [ref=e958]: reference
+                - generic [ref=e959]: ● Pass
+              - generic [ref=e960]: Schegloff, E. A. (2007). Sequence organization in interaction. Cambridge University Press.
+              - generic [ref=e961]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e964] [cursor=pointer]:
+            - generic [ref=e965]: "!"
+            - generic [ref=e966]:
+              - generic [ref=e967]:
+                - generic [ref=e968]: r41
+                - generic [ref=e969]: ·
+                - generic [ref=e970]: reference
+                - generic [ref=e971]: ● Warning
+              - generic [ref=e972]: "Sidnell, Jack (2010). Conversation analysis: An introduction. Wiley-Blackwell."
+              - generic [ref=e973]:
+                - generic [ref=e975]: Content
+                - generic [ref=e976]: Title does not match authoritative record
+                - generic [ref=e977]:
+                  - generic [ref=e978]: expected
+                  - generic [ref=e979]: 18. Conversation Analysis
+                  - generic [ref=e980]: actual
+                  - generic [ref=e981]: conversation analysis an introduction
+              - generic [ref=e982]:
+                - generic [ref=e983]:
+                  - generic [ref=e984]: Format
+                  - generic [ref=e985]: R001
+                - generic [ref=e986]: Author format should be Last, F. M. (APA 7th R001)
+              - generic [ref=e987]:
+                - generic [ref=e988]:
+                  - generic [ref=e989]: Format
+                  - generic [ref=e990]: R006
+                - generic [ref=e991]: Reference paragraph should use hanging indent (APA 7th R006)
+              - generic [ref=e992]:
+                - generic [ref=e994]: Ambiguous
+                - generic [ref=e995]: Multiple papers found for same author+year — verify you cited the right one
+                - generic [ref=e996]: "Other titles: Conversation Analysis, Conversation Analysis"
+          - generic [ref=e999] [cursor=pointer]:
+            - generic [ref=e1000]: ✓
+            - generic [ref=e1001]:
+              - generic [ref=e1002]:
+                - generic [ref=e1003]: r42
+                - generic [ref=e1004]: ·
+                - generic [ref=e1005]: reference
+                - generic [ref=e1006]: ● Pass
+              - generic [ref=e1007]: Simpson, J. (2013). Conversational floor in computer-mediated discourse. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-Mediated communication (pp. 515–538). De Gruyter Mouton. doi/10.1515/9783110214468.515
+              - generic [ref=e1008]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1011] [cursor=pointer]:
+            - generic [ref=e1012]: ✓
+            - generic [ref=e1013]:
+              - generic [ref=e1014]:
+                - generic [ref=e1015]: r43
+                - generic [ref=e1016]: ·
+                - generic [ref=e1017]: reference
+                - generic [ref=e1018]: ● Pass
+              - generic [ref=e1019]: Stivers, T., & Rossano, F. (2010). Mobilizing response. Research on Language and Social Interaction, 43(1), 3–31. https://doi.org/10.1080/08351810903471258
+              - generic [ref=e1020]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1023] [cursor=pointer]:
+            - generic [ref=e1024]: ✓
+            - generic [ref=e1025]:
+              - generic [ref=e1026]:
+                - generic [ref=e1027]: r44
+                - generic [ref=e1028]: ·
+                - generic [ref=e1029]: reference
+                - generic [ref=e1030]: ● Pass
+              - generic [ref=e1031]: "Taleghani-Nikazm, C., & Huth, T. (2010). L2 requests: Preference structure in talk-in-interaction. Multilingua, 29(2), 185–202. https://doi.org/10.1515/mult.2010.008"
+              - generic [ref=e1032]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1035] [cursor=pointer]:
+            - generic [ref=e1036]: ✕
+            - generic [ref=e1037]:
+              - generic [ref=e1038]:
+                - generic [ref=e1039]: r45
+                - generic [ref=e1040]: ·
+                - generic [ref=e1041]: reference
+                - generic [ref=e1042]: ● Error
+              - generic [ref=e1043]: Tencent Holdings Limited. (2018). WeChat.
+              - generic [ref=e1044]:
+                - generic [ref=e1046]: Content
+                - generic [ref=e1047]: Reference not found
+                - generic [ref=e1048]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e1051] [cursor=pointer]:
+            - generic [ref=e1052]: ✓
+            - generic [ref=e1053]:
+              - generic [ref=e1054]:
+                - generic [ref=e1055]: r46
+                - generic [ref=e1056]: ·
+                - generic [ref=e1057]: reference
+                - generic [ref=e1058]: ● Pass
+              - generic [ref=e1059]: "Terasaki, A. K. (2004). Pre-announcement sequences in conversation. In G. H. Lerner (Ed.), Conversation analysis: Studies from the first generation (pp. 171–223). John Benjamins."
+              - generic [ref=e1060]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1063] [cursor=pointer]:
+            - generic [ref=e1064]: ✓
+            - generic [ref=e1065]:
+              - generic [ref=e1066]:
+                - generic [ref=e1067]: r47
+                - generic [ref=e1068]: ·
+                - generic [ref=e1069]: reference
+                - generic [ref=e1070]: ● Pass
+              - generic [ref=e1071]: Trott, S., & Rossano, F. (2020). The role of entitlement in formatting preferences across requesters and recipients. Discourse Processes, 57(7), 551–572. https://doi.org/10.1080/0163853X.2020.1719796
+              - generic [ref=e1072]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1075] [cursor=pointer]:
+            - generic [ref=e1076]: ✓
+            - generic [ref=e1077]:
+              - generic [ref=e1078]:
+                - generic [ref=e1079]: r48
+                - generic [ref=e1080]: ·
+                - generic [ref=e1081]: reference
+                - generic [ref=e1082]: ● Pass
+              - generic [ref=e1083]: Tudini, V. (2013). Form-focused social repertoires in an online language learning partnership. Journal of Pragmatics, 50(1), 187–202. https://doi.org/10.1016/j.pragma.2012.12.005
+              - generic [ref=e1084]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1087] [cursor=pointer]:
+            - generic [ref=e1088]: ✓
+            - generic [ref=e1089]:
+              - generic [ref=e1090]:
+                - generic [ref=e1091]: r49
+                - generic [ref=e1092]: ·
+                - generic [ref=e1093]: reference
+                - generic [ref=e1094]: ● Pass
+              - generic [ref=e1095]: Tudini, V. (2015). Extending prior posts in dyadic online text chat. Discourse Processes, 52(8), 642–669. https://doi.org/10.1080/0163853X.2014.969138
+              - generic [ref=e1096]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1099] [cursor=pointer]:
+            - generic [ref=e1100]: ✓
+            - generic [ref=e1101]:
+              - generic [ref=e1102]:
+                - generic [ref=e1103]: r50
+                - generic [ref=e1104]: ·
+                - generic [ref=e1105]: reference
+                - generic [ref=e1106]: ● Pass
+              - generic [ref=e1107]: "Walther, J. B. (1992). Interpersonal effects in computer-mediated interaction: A relational perspective. Communication Research, 19, 52–90. https://doi.org/10.1177/009365092019001003"
+              - generic [ref=e1108]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1111] [cursor=pointer]:
+            - generic [ref=e1112]: ✓
+            - generic [ref=e1113]:
+              - generic [ref=e1114]:
+                - generic [ref=e1115]: r51
+                - generic [ref=e1116]: ·
+                - generic [ref=e1117]: reference
+                - generic [ref=e1118]: ● Pass
+              - generic [ref=e1119]: Wu, J., & Roever, C. (2021). Proficiency and preference organization in second language mandarin chinese refusals. Modern Language Journal, 105(4), 897–918. https://doi.org/10.1111/modl.12736
+              - generic [ref=e1120]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1123] [cursor=pointer]:
+            - generic [ref=e1124]: ✓
+            - generic [ref=e1125]:
+              - generic [ref=e1126]:
+                - generic [ref=e1127]: r52
+                - generic [ref=e1128]: ·
+                - generic [ref=e1129]: reference
+                - generic [ref=e1130]: ● Pass
+              - generic [ref=e1131]: "Youn, S. J. (2023). Grammar as validity evidence for assessing L2 interactional competence: The case of requests in role-play interaction. Applied Pragmatics 5(2), 174-201. https://doi.org/10.1075/ap.00012.you"
+              - generic [ref=e1132]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1135] [cursor=pointer]:
+            - generic [ref=e1136]: ✓
+            - generic [ref=e1137]:
+              - generic [ref=e1138]:
+                - generic [ref=e1139]: r53
+                - generic [ref=e1140]: ·
+                - generic [ref=e1141]: reference
+                - generic [ref=e1142]: ● Pass
+              - generic [ref=e1143]: Young, R. F. (2019). Interactional competence and L2 pragmatics. In N. Taguchi (Ed.), The Routledge Handbook of Second Language Acquisition and Pragmatics (1st ed., pp. 93–110). Routledge. https://doi.org/10.4324/9781351164085-7
+              - generic [ref=e1144]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1147] [cursor=pointer]:
+            - generic [ref=e1148]: ✓
+            - generic [ref=e1149]:
+              - generic [ref=e1150]:
+                - generic [ref=e1151]: i54
+                - generic [ref=e1152]: ·
+                - generic [ref=e1153]: in-text
+                - generic [ref=e1154]: ● Pass
+              - generic [ref=e1155]: (Heritage, 2012a)
+              - generic [ref=e1156]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1159] [cursor=pointer]:
+            - generic [ref=e1160]: ✓
+            - generic [ref=e1161]:
+              - generic [ref=e1162]:
+                - generic [ref=e1163]: i55
+                - generic [ref=e1164]: ·
+                - generic [ref=e1165]: in-text
+                - generic [ref=e1166]: ● Pass
+              - generic [ref=e1167]: (Sacks, 1995)
+              - generic [ref=e1168]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1171] [cursor=pointer]:
+            - generic [ref=e1172]: "!"
+            - generic [ref=e1173]:
+              - generic [ref=e1174]:
+                - generic [ref=e1175]: i56
+                - generic [ref=e1176]: ·
+                - generic [ref=e1177]: in-text
+                - generic [ref=e1178]: ● Warning
+              - generic [ref=e1179]: (Stivers & Rossano, 2010)
+              - generic [ref=e1180]:
+                - generic [ref=e1182]: Orphan
+                - generic [ref=e1183]: No matching entry found in Reference List
+                - generic [ref=e1184]: In-text cites (Stivers & Rossano, 2010) but no reference entry matches
+          - generic [ref=e1187] [cursor=pointer]:
+            - generic [ref=e1188]: "!"
+            - generic [ref=e1189]:
+              - generic [ref=e1190]:
+                - generic [ref=e1191]: i57
+                - generic [ref=e1192]: ·
+                - generic [ref=e1193]: in-text
+                - generic [ref=e1194]: ● Warning
+              - generic [ref=e1195]: (Drew & Couper-Kuhlen, 2014, p.17)
+              - generic [ref=e1196]:
+                - generic [ref=e1198]: Orphan
+                - generic [ref=e1199]: No matching entry found in Reference List
+                - generic [ref=e1200]: In-text cites (Drew & Couper-Kuhlen, 2014) but no reference entry matches
+          - generic [ref=e1203] [cursor=pointer]:
+            - generic [ref=e1204]: ✓
+            - generic [ref=e1205]:
+              - generic [ref=e1206]:
+                - generic [ref=e1207]: i58
+                - generic [ref=e1208]: ·
+                - generic [ref=e1209]: in-text
+                - generic [ref=e1210]: ● Pass
+              - generic [ref=e1211]: (Heritage, 2012a, p. 32)
+              - generic [ref=e1212]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1215] [cursor=pointer]:
+            - generic [ref=e1216]: ✓
+            - generic [ref=e1217]:
+              - generic [ref=e1218]:
+                - generic [ref=e1219]: i59
+                - generic [ref=e1220]: ·
+                - generic [ref=e1221]: in-text
+                - generic [ref=e1222]: ● Pass
+              - generic [ref=e1223]: (Heritage, 2012b)
+              - generic [ref=e1224]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1227] [cursor=pointer]:
+            - generic [ref=e1228]: ✓
+            - generic [ref=e1229]:
+              - generic [ref=e1230]:
+                - generic [ref=e1231]: i60
+                - generic [ref=e1232]: ·
+                - generic [ref=e1233]: in-text
+                - generic [ref=e1234]: ● Pass
+              - generic [ref=e1235]: (Schegloff, 2007)
+              - generic [ref=e1236]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1239] [cursor=pointer]:
+            - generic [ref=e1240]: "!"
+            - generic [ref=e1241]:
+              - generic [ref=e1242]:
+                - generic [ref=e1243]: i61
+                - generic [ref=e1244]: ·
+                - generic [ref=e1245]: in-text
+                - generic [ref=e1246]: ● Warning
+              - generic [ref=e1247]: (Trott & Rossano, 2020)
+              - generic [ref=e1248]:
+                - generic [ref=e1250]: Orphan
+                - generic [ref=e1251]: No matching entry found in Reference List
+                - generic [ref=e1252]: In-text cites (Trott & Rossano, 2020) but no reference entry matches
+          - generic [ref=e1255] [cursor=pointer]:
+            - generic [ref=e1256]: ✓
+            - generic [ref=e1257]:
+              - generic [ref=e1258]:
+                - generic [ref=e1259]: i62
+                - generic [ref=e1260]: ·
+                - generic [ref=e1261]: in-text
+                - generic [ref=e1262]: ● Pass
+              - generic [ref=e1263]: (Heinemann, 2006)
+              - generic [ref=e1264]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1267] [cursor=pointer]:
+            - generic [ref=e1268]: "!"
+            - generic [ref=e1269]:
+              - generic [ref=e1270]:
+                - generic [ref=e1271]: i63
+                - generic [ref=e1272]: ·
+                - generic [ref=e1273]: in-text
+                - generic [ref=e1274]: ● Warning
+              - generic [ref=e1275]: (Drew & Walker, 2010)
+              - generic [ref=e1276]:
+                - generic [ref=e1278]: Orphan
+                - generic [ref=e1279]: No matching entry found in Reference List
+                - generic [ref=e1280]: In-text cites (Drew & Walker, 2010) but no reference entry matches
+          - generic [ref=e1283] [cursor=pointer]:
+            - generic [ref=e1284]: "!"
+            - generic [ref=e1285]:
+              - generic [ref=e1286]:
+                - generic [ref=e1287]: i64
+                - generic [ref=e1288]: ·
+                - generic [ref=e1289]: in-text
+                - generic [ref=e1290]: ● Warning
+              - generic [ref=e1291]: (Trott & Rossano, 2020)
+              - generic [ref=e1292]:
+                - generic [ref=e1294]: Orphan
+                - generic [ref=e1295]: No matching entry found in Reference List
+                - generic [ref=e1296]: In-text cites (Trott & Rossano, 2020) but no reference entry matches
+          - generic [ref=e1299] [cursor=pointer]:
+            - generic [ref=e1300]: ✓
+            - generic [ref=e1301]:
+              - generic [ref=e1302]:
+                - generic [ref=e1303]: i65
+                - generic [ref=e1304]: ·
+                - generic [ref=e1305]: in-text
+                - generic [ref=e1306]: ● Pass
+              - generic [ref=e1307]: (Herring, 2013)
+              - generic [ref=e1308]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1311] [cursor=pointer]:
+            - generic [ref=e1312]: ✓
+            - generic [ref=e1313]:
+              - generic [ref=e1314]:
+                - generic [ref=e1315]: i66
+                - generic [ref=e1316]: ·
+                - generic [ref=e1317]: in-text
+                - generic [ref=e1318]: ● Pass
+              - generic [ref=e1319]: (Meredith, 2020)
+              - generic [ref=e1320]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1323] [cursor=pointer]:
+            - generic [ref=e1324]: ✓
+            - generic [ref=e1325]:
+              - generic [ref=e1326]:
+                - generic [ref=e1327]: i67
+                - generic [ref=e1328]: ·
+                - generic [ref=e1329]: in-text
+                - generic [ref=e1330]: ● Pass
+              - generic [ref=e1331]: (Walther, 1992)
+              - generic [ref=e1332]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1335] [cursor=pointer]:
+            - generic [ref=e1336]: "!"
+            - generic [ref=e1337]:
+              - generic [ref=e1338]:
+                - generic [ref=e1339]: i68
+                - generic [ref=e1340]: ·
+                - generic [ref=e1341]: in-text
+                - generic [ref=e1342]: ● Warning
+              - generic [ref=e1343]: (Garcia & Jacobs, 1999)
+              - generic [ref=e1344]:
+                - generic [ref=e1346]: Orphan
+                - generic [ref=e1347]: No matching entry found in Reference List
+                - generic [ref=e1348]: In-text cites (Garcia & Jacobs, 1999) but no reference entry matches
+          - generic [ref=e1351] [cursor=pointer]:
+            - generic [ref=e1352]: ✓
+            - generic [ref=e1353]:
+              - generic [ref=e1354]:
+                - generic [ref=e1355]: i69
+                - generic [ref=e1356]: ·
+                - generic [ref=e1357]: in-text
+                - generic [ref=e1358]: ● Pass
+              - generic [ref=e1359]: (Meredith et al., 2021)
+              - generic [ref=e1360]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1363] [cursor=pointer]:
+            - generic [ref=e1364]: ✓
+            - generic [ref=e1365]:
+              - generic [ref=e1366]:
+                - generic [ref=e1367]: i70
+                - generic [ref=e1368]: ·
+                - generic [ref=e1369]: in-text
+                - generic [ref=e1370]: ● Pass
+              - generic [ref=e1371]: (Tudini, 2013)
+              - generic [ref=e1372]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1375] [cursor=pointer]:
+            - generic [ref=e1376]: ✓
+            - generic [ref=e1377]:
+              - generic [ref=e1378]:
+                - generic [ref=e1379]: i71
+                - generic [ref=e1380]: ·
+                - generic [ref=e1381]: in-text
+                - generic [ref=e1382]: ● Pass
+              - generic [ref=e1383]: (Tudini, 2013)
+              - generic [ref=e1384]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1387] [cursor=pointer]:
+            - generic [ref=e1388]: ✓
+            - generic [ref=e1389]:
+              - generic [ref=e1390]:
+                - generic [ref=e1391]: i72
+                - generic [ref=e1392]: ·
+                - generic [ref=e1393]: in-text
+                - generic [ref=e1394]: ● Pass
+              - generic [ref=e1395]: (Schegloff, 2007)
+              - generic [ref=e1396]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1399] [cursor=pointer]:
+            - generic [ref=e1400]: "!"
+            - generic [ref=e1401]:
+              - generic [ref=e1402]:
+                - generic [ref=e1403]: i73
+                - generic [ref=e1404]: ·
+                - generic [ref=e1405]: in-text
+                - generic [ref=e1406]: ● Warning
+              - generic [ref=e1407]: (Stivers & Rossano, 2010)
+              - generic [ref=e1408]:
+                - generic [ref=e1410]: Orphan
+                - generic [ref=e1411]: No matching entry found in Reference List
+                - generic [ref=e1412]: In-text cites (Stivers & Rossano, 2010) but no reference entry matches
+          - generic [ref=e1415] [cursor=pointer]:
+            - generic [ref=e1416]: "!"
+            - generic [ref=e1417]:
+              - generic [ref=e1418]:
+                - generic [ref=e1419]: i74
+                - generic [ref=e1420]: ·
+                - generic [ref=e1421]: in-text
+                - generic [ref=e1422]: ● Warning
+              - generic [ref=e1423]: (Brown & Levinson, 1987)
+              - generic [ref=e1424]:
+                - generic [ref=e1426]: Orphan
+                - generic [ref=e1427]: No matching entry found in Reference List
+                - generic [ref=e1428]: In-text cites (Brown & Levinson, 1987) but no reference entry matches
+        - generic [ref=e1429]:
+          - generic [ref=e1430]: Expires in 23h 59m
+          - button "Copy share link" [ref=e1431] [cursor=pointer]
+  - generic "Built 2026-05-17T10:01:21.856Z · 1b7b1cb": v17/05/2026, 20:01 · 1b7b1cb
