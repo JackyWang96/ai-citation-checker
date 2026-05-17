@@ -1,0 +1,900 @@
+- generic [ref=e2]:
+  - generic [ref=e31]:
+    - banner [ref=e32]:
+      - generic [ref=e33]:
+        - img [ref=e34]
+        - generic [ref=e39]: Citation Checker
+      - generic [ref=e41]:
+        - text: test.docx
+        - generic [ref=e42]: · 71 citations found
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - img [ref=e46]
+            - generic [ref=e49]: 73%
+          - generic [ref=e50]:
+            - generic [ref=e51]: Mostly Good
+            - generic [ref=e52]: citation score
+        - generic [ref=e54]:
+          - generic [ref=e55]: "52"
+          - generic [ref=e56]: pass
+        - generic [ref=e57]:
+          - generic [ref=e58]: "17"
+          - generic [ref=e59]: warning
+        - generic [ref=e60]:
+          - generic [ref=e61]: "2"
+          - generic [ref=e62]: error
+        - button "中文" [ref=e64] [cursor=pointer]
+    - generic [ref=e65]:
+      - generic [ref=e67]:
+        - heading "Essay Text" [level=2] [ref=e68]
+        - generic [ref=e69]:
+          - heading "References" [level=2] [ref=e70]
+          - generic [ref=e71]:
+            - generic [ref=e72] [cursor=pointer]: "Abe, M., & Roever, C. (2019). Interactional competence in L2 text-chat interactions: First-idea proffering in task openings. Journal of Pragmatics, 144, 1–14. https://doi.org/10.1016/j.pragma.2019.03.001"
+            - generic [ref=e73] [cursor=pointer]: "Abe, M., & Roever, C. (2020). Task closings in L2 text-chat interactions: A study of L2 interactional competence. CALICO Journal, 37(1), 23–45. https://doi.org/10.1558/cj.38562"
+            - generic [ref=e74] [cursor=pointer]: "Al-Gahtani, S. (2022). The development of L2 interactional competence in Arabic: The case of multiple requests. Foreign Language Annals, 55(2), 610–634. https://doi.org/10.1111/flan.12603"
+            - generic [ref=e75] [cursor=pointer]: Al-Gahtani, S., & Roever, C. (2012). Proficiency and sequential organization of L2 requests. Applied Linguistics, 33(1), 42–65. https://doi.org/10.1093/applin/amr031
+            - generic [ref=e76] [cursor=pointer]: Al-Gahtani, S., & Roever, C. (2014). Preference structure in L2 Arabic requests. Intercultural Pragmatics, 11(4), 619–643. https://doi.org/10.1515/ip-2014-0027
+            - generic [ref=e77] [cursor=pointer]: Al-Gahtani, S., & Roever, C. (2018). Proficiency and preference organization in second language refusals. Journal of Pragmatics, 129, 140–153. https://doi.org/10.1016/j.pragma.2018.01.014
+            - generic [ref=e78] [cursor=pointer]: "Brown, P., & Levinson, S. (1987). Politeness: Some universals in language. Cambridge University Press."
+            - generic [ref=e79] [cursor=pointer]: "Craven, A., & Potter, J. (2010). Directives: Entitlement and contingency in action. Discourse Studies, 12(4), 419–442. https://doi.org/10.1177/1461445610370126"
+            - generic [ref=e80] [cursor=pointer]: "Curl, T. S., & Drew, P. (2008). Contingency and action: A comparison of two forms of requesting. Research on Language and Social Interaction, 41(2), 129–153. https://doi.org/10.1080/08351810802028613"
+            - generic [ref=e81] [cursor=pointer]: Drew, P., & Couper-Kuhlen, E. (Eds.) (2014). Requesting in Social Interaction. John Benjamins Publishing Company.
+            - generic [ref=e82] [cursor=pointer]: Drew, P., & Walker, T. (2010). Citizens’ emergency calls Requesting assistance in calls to the police. In M. Coulthard & A. Johnson (Eds.), The Routledge Handbook of Forensic Linguistics (pp. 95–110). Routledge.
+            - generic [ref=e83] [cursor=pointer]: Fox, B. (2015). On the notion of pre-request. Discourse Studies, 17(1), 41–63. https://doi.org/10.1177/1461445614557762
+            - generic [ref=e84] [cursor=pointer]: Fox, B. A., & Heinemann, T. (2021). Are They Requests? An Exploration of Declaratives of Trouble in Service Encounters. Research on Language and Social Interaction, 54(1), 20–38. https://doi.org/10.1080/08351813.2020.1864154
+            - generic [ref=e85] [cursor=pointer]: "Galaczi, E. D. (2014). Interactional competence across proficiency levels: How do learners manage interaction in paired speaking tests? Applied Linguistics, 35(5), 553–574. https://doi.org/10.1093/applin/amt017"
+            - generic [ref=e86] [cursor=pointer]: "Garcia, A. C., & Jacobs, J. B. (1999). The eyes of the beholder: Understanding the turn-taking system in quasi-synchronous computer-mediated communication. Research on Language and Social Interaction, 32(4), 337–367. https://doi.org/10.1207/S15327973rls3204_2"
+            - generic [ref=e87] [cursor=pointer]: "Gonzales, A. (2013). Development of politeness strategies in participatory online environments: A case study. In N. Taguchi & J. M. Sykes (Eds.), Technology in Interlanguage Pragmatics Research and Teaching (pp. 101–120). John Benjamins Publishing Company. https://doi.org/10.1075/lllt.36.06gon"
+            - generic [ref=e88] [cursor=pointer]: "Heinemann, T. (2006). ‘Will you or can’t you?’: Displaying entitlement in interrogative requests. Journal of Pragmatics, 38(7), 1081–1104. https://doi.org/10.1016/j.pragma.2005.09.013"
+            - generic [ref=e89] [cursor=pointer]: Hellermann, J. (2008). Social Actions for Classroom Language Learning. Multilingual Matters.
+            - generic [ref=e90] [cursor=pointer]: "Heritage, J. (2012a). The epistemic engine: Sequence organization and territories of knowledge. Research on Language and Social Interaction, 45(1), 30–52. https://doi.org/10.1080/08351813.2012.646685"
+            - generic [ref=e91] [cursor=pointer]: "Heritage, J. (2012b). Epistemics in action: Action formation and territories of knowledge. Research on Language & Social Interaction, 45(1), 1–29. https://doi.org/10.1080/08351813.2012.646684"
+            - generic [ref=e92] [cursor=pointer]: "Herring, S. C. (2013). Discourse in Web 2.0: Familiar, reconfigured, and emergent. In D. Tannen & A. M. Trester (Eds.), Discourse 2.0: Language and new media (pp. 1–25). Georgetown University Press."
+            - generic [ref=e93] [cursor=pointer]: IELTS Partners (2023). IELTS and the CEFR. Retrieved 22 November 2023 from https://ielts.org/organisations/ielts-for-organisations/compare-ielts/ielts-and-the-cefr
+            - generic [ref=e94] [cursor=pointer]: "Kendrick, K. H., & Drew, P. (2016). Recruitment: Offers, requests, and the organization of assistance in interaction. Research on Language and Social Interaction, 49(1), 1–19. https://doi.org/10.1080/08351813.2016.1126436"
+            - generic [ref=e95] [cursor=pointer]: "Kobayashi, H., & Rinnert, C. (2003). Coping with high imposition requests: High vs. Low proficiency EFL students in Japan. In A. M. Flor, A. Fernández Guerra, & E. Usó Juan (Eds.), Pragmatic Competence and Foreign Language Teaching (pp. 161–184). Publicacions de la Universitat Jaume I."
+            - generic [ref=e96] [cursor=pointer]: "Lindström, A. (2005). Language as social action: A study of how senior citizens request assistance with practical tasks in the Swedish home help service. In A. Hakulinen & M. Selting (Eds.), Syntax and lexis in conversation: Studies on the use of linguistic resources in talk-in-interaction (pp. 209–230). John Benjamins."
+            - generic [ref=e97] [cursor=pointer]: "Malabarba, T. (2022). Requesting on WhatsApp: The interplay of interactional competence and deontics in English as an additional language. TESOL in Context, 30(2). https://doi.org/10.21153/tesol2022vol30no2art1516"
+            - generic [ref=e98] [cursor=pointer]: Markman, K. M. (2013). Conversational coherence in small group chat. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-mediated communication (pp. 539–564). De Gruyter Mouton.
+            - generic [ref=e99] [cursor=pointer]: Meredith, J. (2020). Conversation analysis, cyberpsychology and online interaction. Social and Personality Psychology Compass, 14(5), 285–294. https://doi.org/10.1111/spc3.12529
+            - generic [ref=e100] [cursor=pointer]: "Meredith, J., Giles, D., Stommel, W. (2021). Introduction: The Microanalysis of Digital Interaction. In J. Meredith, D. Giles, W. Stommel (Eds.), Analysing Digital Interaction (pp. 1-21). Palgrave Macmillan. https://doi.org/10.1007/978-3-030-64922-7_1"
+            - generic [ref=e101] [cursor=pointer]: Ogiermann, E. (2015). In/directness in Polish children’s requests at the dinner table. Journal of Pragmatics, 82, 67–82. https://doi.org/10.1016/j.pragma.2015.03.007
+            - generic [ref=e102] [cursor=pointer]: "Pekarek Doehler, S. (2019). On the Nature and the Development of L2 Interactional Competence: State of the Art and Implications for Praxis. In M. R. Salaberry & S. Kunitz (Eds.), Teaching and Testing L2 Interactional Competence (pp. 25–59). Routledge."
+            - generic [ref=e103] [cursor=pointer]: "Pekarek Doehler, S. (2021). Toward a coherent understanding of L2 interactional competence: Epistemologies of language learning and teaching. In S. Kunitz, N. Markee & O. Sert (Eds.), Classroom-based conversation analytic research: Theoretical and applied perspectives on pedagogy (pp. 19-33). Springer."
+            - generic [ref=e104] [cursor=pointer]: "Pekarek Doehler, S., & Berger, E. (2018). L2 interactional competence as increased ability for context-sensitive conduct: A longitudinal study of story-openings. Applied Linguistics, 39(4), 555–578. https://doi.org/10.1093/applin/amw021"
+            - generic [ref=e105] [cursor=pointer]: "Pekarek Doehler, S., & Pochon-Berger, E. (2015). The development of L2 interactional competence: Evidence from turn-taking organization, sequence organization, repair organization and preference organization. In T. Cadierno & S. W. Eskildsen (Eds.), Usage-Based Perspectives on Second Language Learning (pp. 233–268). De Gruyter Mouton. https://doi.org/10.1515/9783110378528-012 QSR International Pty Ltd. (2020). NVivo (released in March 2020)."
+            - generic [ref=e106] [cursor=pointer]: "Roever, C., & Dai, D. W. (2021). Reconceptualising interactional competence for language testing. In M. R. Salaberry & A. R. Burch (Eds.), Assessing speaking in context: Expanding the construct and its applications (pp. 23–49). Multilingual Matters. https://www.degruyter.com/document/doi/10.21832/9781788923828-003/html"
+            - generic [ref=e107] [cursor=pointer]: Sacks, H. (1995). Lectures on conversation, volumes I and II. Blackwell.
+            - generic [ref=e108] [cursor=pointer]: "Schegloff, E. A. (1980). Preliminaries to preliminaries: “Can I ask you a question?” Sociological Inquiry, 50(3–4), 104–152. https://doi.org/10.1111/j.1475-682X.1980.tb00018.x"
+            - generic [ref=e109] [cursor=pointer]: "Schegloff, E. A. (2006). Interaction: The infrastructure for social institutions, the natural ecological niche for language, and the arena in which culture is situated. In N. J. Enfield & S. C. Levinson (Eds.), Roots of human sociality: Culture, cognition and interaction (pp. 70–96). Oxford, England: Berg."
+            - generic [ref=e110] [cursor=pointer]: "Schegloff, E. A. (2007). Sequence organization in interaction. Cambridge University Press. Sidnell, Jack (2010). Conversation analysis: An introduction. Wiley-Blackwell."
+            - generic [ref=e111] [cursor=pointer]: Simpson, J. (2013). Conversational floor in computer-mediated discourse. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-Mediated communication (pp. 515–538). De Gruyter Mouton. doi/10.1515/9783110214468.515
+            - generic [ref=e112] [cursor=pointer]: Stivers, T., & Rossano, F. (2010). Mobilizing response. Research on Language and Social Interaction, 43(1), 3–31. https://doi.org/10.1080/08351810903471258
+            - generic [ref=e113] [cursor=pointer]: "Taleghani-Nikazm, C., & Huth, T. (2010). L2 requests: Preference structure in talk-in-interaction. Multilingua, 29(2), 185–202. https://doi.org/10.1515/mult.2010.008 Tencent Holdings Limited. (2018). WeChat."
+            - generic [ref=e114] [cursor=pointer]: "Terasaki, A. K. (2004). Pre-announcement sequences in conversation. In G. H. Lerner (Ed.), Conversation analysis: Studies from the first generation (pp. 171–223). John Benjamins."
+            - generic [ref=e115] [cursor=pointer]: Trott, S., & Rossano, F. (2020). The role of entitlement in formatting preferences across requesters and recipients. Discourse Processes, 57(7), 551–572. https://doi.org/10.1080/0163853X.2020.1719796
+            - generic [ref=e116] [cursor=pointer]: Tudini, V. (2013). Form-focused social repertoires in an online language learning partnership. Journal of Pragmatics, 50(1), 187–202. https://doi.org/10.1016/j.pragma.2012.12.005
+            - generic [ref=e117] [cursor=pointer]: Tudini, V. (2015). Extending prior posts in dyadic online text chat. Discourse Processes, 52(8), 642–669. https://doi.org/10.1080/0163853X.2014.969138
+            - generic [ref=e118] [cursor=pointer]: "Walther, J. B. (1992). Interpersonal effects in computer-mediated interaction: A relational perspective. Communication Research, 19, 52–90. https://doi.org/10.1177/009365092019001003"
+            - generic [ref=e119] [cursor=pointer]: Wu, J., & Roever, C. (2021). Proficiency and preference organization in second language mandarin chinese refusals. Modern Language Journal, 105(4), 897–918. https://doi.org/10.1111/modl.12736
+            - generic [ref=e120] [cursor=pointer]: "Youn, S. J. (2023). Grammar as validity evidence for assessing L2 interactional competence: The case of requests in role-play interaction. Applied Pragmatics 5(2), 174-201. https://doi.org/10.1075/ap.00012.you"
+            - generic [ref=e121] [cursor=pointer]: Young, R. F. (2019). Interactional competence and L2 pragmatics. In N. Taguchi (Ed.), The Routledge Handbook of Second Language Acquisition and Pragmatics (1st ed., pp. 93–110). Routledge. https://doi.org/10.4324/9781351164085-7
+      - generic [ref=e122]:
+        - generic [ref=e123]:
+          - button "All(71)" [ref=e124] [cursor=pointer]
+          - button "Error(2)" [ref=e125] [cursor=pointer]
+          - button "Warning(17)" [ref=e126] [cursor=pointer]
+          - button "Pass(52)" [ref=e127] [cursor=pointer]
+        - generic [ref=e128]:
+          - generic [ref=e131] [cursor=pointer]:
+            - generic [ref=e132]: ✓
+            - generic [ref=e133]:
+              - generic [ref=e134]:
+                - generic [ref=e135]: r1
+                - generic [ref=e136]: ·
+                - generic [ref=e137]: reference
+                - generic [ref=e138]: ● Pass
+              - generic [ref=e139]: "Abe, M., & Roever, C. (2019). Interactional competence in L2 text-chat interactions: First-idea proffering in task openings. Journal of Pragmatics, 144, 1–14. https://doi.org/10.1016/j.pragma.2019.03.001"
+              - generic [ref=e140]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e143] [cursor=pointer]:
+            - generic [ref=e144]: ✓
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - generic [ref=e147]: r2
+                - generic [ref=e148]: ·
+                - generic [ref=e149]: reference
+                - generic [ref=e150]: ● Pass
+              - generic [ref=e151]: "Abe, M., & Roever, C. (2020). Task closings in L2 text-chat interactions: A study of L2 interactional competence. CALICO Journal, 37(1), 23–45. https://doi.org/10.1558/cj.38562"
+              - generic [ref=e152]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e155] [cursor=pointer]:
+            - generic [ref=e156]: ✓
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - generic [ref=e159]: r3
+                - generic [ref=e160]: ·
+                - generic [ref=e161]: reference
+                - generic [ref=e162]: ● Pass
+              - generic [ref=e163]: "Al-Gahtani, S. (2022). The development of L2 interactional competence in Arabic: The case of multiple requests. Foreign Language Annals, 55(2), 610–634. https://doi.org/10.1111/flan.12603"
+              - generic [ref=e164]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e167] [cursor=pointer]:
+            - generic [ref=e168]: ✓
+            - generic [ref=e169]:
+              - generic [ref=e170]:
+                - generic [ref=e171]: r4
+                - generic [ref=e172]: ·
+                - generic [ref=e173]: reference
+                - generic [ref=e174]: ● Pass
+              - generic [ref=e175]: Al-Gahtani, S., & Roever, C. (2012). Proficiency and sequential organization of L2 requests. Applied Linguistics, 33(1), 42–65. https://doi.org/10.1093/applin/amr031
+              - generic [ref=e176]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e179] [cursor=pointer]:
+            - generic [ref=e180]: ✓
+            - generic [ref=e181]:
+              - generic [ref=e182]:
+                - generic [ref=e183]: r5
+                - generic [ref=e184]: ·
+                - generic [ref=e185]: reference
+                - generic [ref=e186]: ● Pass
+              - generic [ref=e187]: Al-Gahtani, S., & Roever, C. (2014). Preference structure in L2 Arabic requests. Intercultural Pragmatics, 11(4), 619–643. https://doi.org/10.1515/ip-2014-0027
+              - generic [ref=e188]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e191] [cursor=pointer]:
+            - generic [ref=e192]: ✓
+            - generic [ref=e193]:
+              - generic [ref=e194]:
+                - generic [ref=e195]: r6
+                - generic [ref=e196]: ·
+                - generic [ref=e197]: reference
+                - generic [ref=e198]: ● Pass
+              - generic [ref=e199]: Al-Gahtani, S., & Roever, C. (2018). Proficiency and preference organization in second language refusals. Journal of Pragmatics, 129, 140–153. https://doi.org/10.1016/j.pragma.2018.01.014
+              - generic [ref=e200]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e203] [cursor=pointer]:
+            - generic [ref=e204]: ✓
+            - generic [ref=e205]:
+              - generic [ref=e206]:
+                - generic [ref=e207]: r7
+                - generic [ref=e208]: ·
+                - generic [ref=e209]: reference
+                - generic [ref=e210]: ● Pass
+              - generic [ref=e211]: "Brown, P., & Levinson, S. (1987). Politeness: Some universals in language. Cambridge University Press."
+              - generic [ref=e212]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e215] [cursor=pointer]:
+            - generic [ref=e216]: ✓
+            - generic [ref=e217]:
+              - generic [ref=e218]:
+                - generic [ref=e219]: r8
+                - generic [ref=e220]: ·
+                - generic [ref=e221]: reference
+                - generic [ref=e222]: ● Pass
+              - generic [ref=e223]: "Craven, A., & Potter, J. (2010). Directives: Entitlement and contingency in action. Discourse Studies, 12(4), 419–442. https://doi.org/10.1177/1461445610370126"
+              - generic [ref=e224]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e227] [cursor=pointer]:
+            - generic [ref=e228]: ✓
+            - generic [ref=e229]:
+              - generic [ref=e230]:
+                - generic [ref=e231]: r9
+                - generic [ref=e232]: ·
+                - generic [ref=e233]: reference
+                - generic [ref=e234]: ● Pass
+              - generic [ref=e235]: "Curl, T. S., & Drew, P. (2008). Contingency and action: A comparison of two forms of requesting. Research on Language and Social Interaction, 41(2), 129–153. https://doi.org/10.1080/08351810802028613"
+              - generic [ref=e236]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e239] [cursor=pointer]:
+            - generic [ref=e240]: "!"
+            - generic [ref=e241]:
+              - generic [ref=e242]:
+                - generic [ref=e243]: r10
+                - generic [ref=e244]: ·
+                - generic [ref=e245]: reference
+                - generic [ref=e246]: ● Warning
+              - generic [ref=e247]: Drew, P., & Couper-Kuhlen, E. (Eds.) (2014). Requesting in Social Interaction. John Benjamins Publishing Company.
+              - generic [ref=e248]:
+                - generic [ref=e250]: Content
+                - generic [ref=e251]: Journal name does not match authoritative record
+                - generic [ref=e252]:
+                  - generic [ref=e253]: expected
+                  - generic [ref=e254]: Studies in Language and Social Interaction
+                  - generic [ref=e255]: actual
+          - generic [ref=e259] [cursor=pointer]:
+            - generic [ref=e260]: ✓
+            - generic [ref=e261]:
+              - generic [ref=e262]:
+                - generic [ref=e263]: r11
+                - generic [ref=e264]: ·
+                - generic [ref=e265]: reference
+                - generic [ref=e266]: ● Pass
+              - generic [ref=e267]: Drew, P., & Walker, T. (2010). Citizens’ emergency calls Requesting assistance in calls to the police. In M. Coulthard & A. Johnson (Eds.), The Routledge Handbook of Forensic Linguistics (pp. 95–110). Routledge.
+              - generic [ref=e268]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e271] [cursor=pointer]:
+            - generic [ref=e272]: ✓
+            - generic [ref=e273]:
+              - generic [ref=e274]:
+                - generic [ref=e275]: r12
+                - generic [ref=e276]: ·
+                - generic [ref=e277]: reference
+                - generic [ref=e278]: ● Pass
+              - generic [ref=e279]: Fox, B. (2015). On the notion of pre-request. Discourse Studies, 17(1), 41–63. https://doi.org/10.1177/1461445614557762
+              - generic [ref=e280]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e283] [cursor=pointer]:
+            - generic [ref=e284]: ✓
+            - generic [ref=e285]:
+              - generic [ref=e286]:
+                - generic [ref=e287]: r13
+                - generic [ref=e288]: ·
+                - generic [ref=e289]: reference
+                - generic [ref=e290]: ● Pass
+              - generic [ref=e291]: Fox, B. A., & Heinemann, T. (2021). Are They Requests? An Exploration of Declaratives of Trouble in Service Encounters. Research on Language and Social Interaction, 54(1), 20–38. https://doi.org/10.1080/08351813.2020.1864154
+              - generic [ref=e292]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e295] [cursor=pointer]:
+            - generic [ref=e296]: ✓
+            - generic [ref=e297]:
+              - generic [ref=e298]:
+                - generic [ref=e299]: r14
+                - generic [ref=e300]: ·
+                - generic [ref=e301]: reference
+                - generic [ref=e302]: ● Pass
+              - generic [ref=e303]: "Galaczi, E. D. (2014). Interactional competence across proficiency levels: How do learners manage interaction in paired speaking tests? Applied Linguistics, 35(5), 553–574. https://doi.org/10.1093/applin/amt017"
+              - generic [ref=e304]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e307] [cursor=pointer]:
+            - generic [ref=e308]: ✓
+            - generic [ref=e309]:
+              - generic [ref=e310]:
+                - generic [ref=e311]: r15
+                - generic [ref=e312]: ·
+                - generic [ref=e313]: reference
+                - generic [ref=e314]: ● Pass
+              - generic [ref=e315]: "Garcia, A. C., & Jacobs, J. B. (1999). The eyes of the beholder: Understanding the turn-taking system in quasi-synchronous computer-mediated communication. Research on Language and Social Interaction, 32(4), 337–367. https://doi.org/10.1207/S15327973rls3204_2"
+              - generic [ref=e316]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e319] [cursor=pointer]:
+            - generic [ref=e320]: "!"
+            - generic [ref=e321]:
+              - generic [ref=e322]:
+                - generic [ref=e323]: r16
+                - generic [ref=e324]: ·
+                - generic [ref=e325]: reference
+                - generic [ref=e326]: ● Warning
+              - generic [ref=e327]: "Gonzales, A. (2013). Development of politeness strategies in participatory online environments: A case study. In N. Taguchi & J. M. Sykes (Eds.), Technology in Interlanguage Pragmatics Research and Teaching (pp. 101–120). John Benjamins Publishing Company. https://doi.org/10.1075/lllt.36.06gon"
+              - generic [ref=e328]:
+                - generic [ref=e330]: Content
+                - generic [ref=e331]: Title does not match authoritative record
+                - generic [ref=e332]:
+                  - generic [ref=e333]: expected
+                  - generic [ref=e334]: Chapter 5. Development of politeness strategies in participatory online environments
+                  - generic [ref=e335]: actual
+                  - generic [ref=e336]: development of politeness strategies in participatory online environments a case study
+          - generic [ref=e339] [cursor=pointer]:
+            - generic [ref=e340]: ✓
+            - generic [ref=e341]:
+              - generic [ref=e342]:
+                - generic [ref=e343]: r17
+                - generic [ref=e344]: ·
+                - generic [ref=e345]: reference
+                - generic [ref=e346]: ● Pass
+              - generic [ref=e347]: "Heinemann, T. (2006). ‘Will you or can’t you?’: Displaying entitlement in interrogative requests. Journal of Pragmatics, 38(7), 1081–1104. https://doi.org/10.1016/j.pragma.2005.09.013"
+              - generic [ref=e348]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e351] [cursor=pointer]:
+            - generic [ref=e352]: ✓
+            - generic [ref=e353]:
+              - generic [ref=e354]:
+                - generic [ref=e355]: r18
+                - generic [ref=e356]: ·
+                - generic [ref=e357]: reference
+                - generic [ref=e358]: ● Pass
+              - generic [ref=e359]: Hellermann, J. (2008). Social Actions for Classroom Language Learning. Multilingual Matters.
+              - generic [ref=e360]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e363] [cursor=pointer]:
+            - generic [ref=e364]: ✓
+            - generic [ref=e365]:
+              - generic [ref=e366]:
+                - generic [ref=e367]: r19
+                - generic [ref=e368]: ·
+                - generic [ref=e369]: reference
+                - generic [ref=e370]: ● Pass
+              - generic [ref=e371]: "Heritage, J. (2012a). The epistemic engine: Sequence organization and territories of knowledge. Research on Language and Social Interaction, 45(1), 30–52. https://doi.org/10.1080/08351813.2012.646685"
+              - generic [ref=e372]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e375] [cursor=pointer]:
+            - generic [ref=e376]: ✓
+            - generic [ref=e377]:
+              - generic [ref=e378]:
+                - generic [ref=e379]: r20
+                - generic [ref=e380]: ·
+                - generic [ref=e381]: reference
+                - generic [ref=e382]: ● Pass
+              - generic [ref=e383]: "Heritage, J. (2012b). Epistemics in action: Action formation and territories of knowledge. Research on Language & Social Interaction, 45(1), 1–29. https://doi.org/10.1080/08351813.2012.646684"
+              - generic [ref=e384]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e387] [cursor=pointer]:
+            - generic [ref=e388]: ✕
+            - generic [ref=e389]:
+              - generic [ref=e390]:
+                - generic [ref=e391]: r21
+                - generic [ref=e392]: ·
+                - generic [ref=e393]: reference
+                - generic [ref=e394]: ● Error
+              - generic [ref=e395]: "Herring, S. C. (2013). Discourse in Web 2.0: Familiar, reconfigured, and emergent. In D. Tannen & A. M. Trester (Eds.), Discourse 2.0: Language and new media (pp. 1–25). Georgetown University Press."
+              - generic [ref=e396]:
+                - generic [ref=e398]: Content
+                - generic [ref=e399]: Reference not found
+                - generic [ref=e400]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e403] [cursor=pointer]:
+            - generic [ref=e404]: "!"
+            - generic [ref=e405]:
+              - generic [ref=e406]:
+                - generic [ref=e407]: r22
+                - generic [ref=e408]: ·
+                - generic [ref=e409]: reference
+                - generic [ref=e410]: ● Warning
+              - generic [ref=e411]: IELTS Partners (2023). IELTS and the CEFR. Retrieved 22 November 2023 from https://ielts.org/organisations/ielts-for-organisations/compare-ielts/ielts-and-the-cefr
+              - generic [ref=e412]:
+                - generic [ref=e414]: Content
+                - generic [ref=e415]: Manual verification required
+                - generic [ref=e416]: web/organisation reference — not in academic databases
+          - generic [ref=e419] [cursor=pointer]:
+            - generic [ref=e420]: ✓
+            - generic [ref=e421]:
+              - generic [ref=e422]:
+                - generic [ref=e423]: r23
+                - generic [ref=e424]: ·
+                - generic [ref=e425]: reference
+                - generic [ref=e426]: ● Pass
+              - generic [ref=e427]: "Kendrick, K. H., & Drew, P. (2016). Recruitment: Offers, requests, and the organization of assistance in interaction. Research on Language and Social Interaction, 49(1), 1–19. https://doi.org/10.1080/08351813.2016.1126436"
+              - generic [ref=e428]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e431] [cursor=pointer]:
+            - generic [ref=e432]: ✕
+            - generic [ref=e433]:
+              - generic [ref=e434]:
+                - generic [ref=e435]: r24
+                - generic [ref=e436]: ·
+                - generic [ref=e437]: reference
+                - generic [ref=e438]: ● Error
+              - generic [ref=e439]: "Kobayashi, H., & Rinnert, C. (2003). Coping with high imposition requests: High vs. Low proficiency EFL students in Japan. In A. M. Flor, A. Fernández Guerra, & E. Usó Juan (Eds.), Pragmatic Competence and Foreign Language Teaching (pp. 161–184). Publicacions de la Universitat Jaume I."
+              - generic [ref=e440]:
+                - generic [ref=e442]: Content
+                - generic [ref=e443]: Reference not found
+                - generic [ref=e444]: "Crossref: score too low or author/year mismatch · OpenAlex: score too low or author/year mismatch"
+          - generic [ref=e447] [cursor=pointer]:
+            - generic [ref=e448]: "!"
+            - generic [ref=e449]:
+              - generic [ref=e450]:
+                - generic [ref=e451]: r25
+                - generic [ref=e452]: ·
+                - generic [ref=e453]: reference
+                - generic [ref=e454]: ● Warning
+              - generic [ref=e455]: "Lindström, A. (2005). Language as social action: A study of how senior citizens request assistance with practical tasks in the Swedish home help service. In A. Hakulinen & M. Selting (Eds.), Syntax and lexis in conversation: Studies on the use of linguistic resources in talk-in-interaction (pp. 209–230). John Benjamins."
+              - generic [ref=e456]:
+                - generic [ref=e458]: Content
+                - generic [ref=e459]: Journal name does not match authoritative record
+                - generic [ref=e460]:
+                  - generic [ref=e461]: expected
+                  - generic [ref=e462]: Studies in Discourse and Grammar
+                  - generic [ref=e463]: actual
+              - generic [ref=e465]:
+                - generic [ref=e466]:
+                  - generic [ref=e467]: Format
+                  - generic [ref=e468]: R001
+                - generic [ref=e469]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e472] [cursor=pointer]:
+            - generic [ref=e473]: ✓
+            - generic [ref=e474]:
+              - generic [ref=e475]:
+                - generic [ref=e476]: r26
+                - generic [ref=e477]: ·
+                - generic [ref=e478]: reference
+                - generic [ref=e479]: ● Pass
+              - generic [ref=e480]: "Malabarba, T. (2022). Requesting on WhatsApp: The interplay of interactional competence and deontics in English as an additional language. TESOL in Context, 30(2). https://doi.org/10.21153/tesol2022vol30no2art1516"
+              - generic [ref=e481]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e484] [cursor=pointer]:
+            - generic [ref=e485]: ✓
+            - generic [ref=e486]:
+              - generic [ref=e487]:
+                - generic [ref=e488]: r27
+                - generic [ref=e489]: ·
+                - generic [ref=e490]: reference
+                - generic [ref=e491]: ● Pass
+              - generic [ref=e492]: Markman, K. M. (2013). Conversational coherence in small group chat. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-mediated communication (pp. 539–564). De Gruyter Mouton.
+              - generic [ref=e493]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e496] [cursor=pointer]:
+            - generic [ref=e497]: ✓
+            - generic [ref=e498]:
+              - generic [ref=e499]:
+                - generic [ref=e500]: r28
+                - generic [ref=e501]: ·
+                - generic [ref=e502]: reference
+                - generic [ref=e503]: ● Pass
+              - generic [ref=e504]: Meredith, J. (2020). Conversation analysis, cyberpsychology and online interaction. Social and Personality Psychology Compass, 14(5), 285–294. https://doi.org/10.1111/spc3.12529
+              - generic [ref=e505]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e508] [cursor=pointer]:
+            - generic [ref=e509]: ✓
+            - generic [ref=e510]:
+              - generic [ref=e511]:
+                - generic [ref=e512]: r29
+                - generic [ref=e513]: ·
+                - generic [ref=e514]: reference
+                - generic [ref=e515]: ● Pass
+              - generic [ref=e516]: "Meredith, J., Giles, D., Stommel, W. (2021). Introduction: The Microanalysis of Digital Interaction. In J. Meredith, D. Giles, W. Stommel (Eds.), Analysing Digital Interaction (pp. 1-21). Palgrave Macmillan. https://doi.org/10.1007/978-3-030-64922-7_1"
+              - generic [ref=e517]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e520] [cursor=pointer]:
+            - generic [ref=e521]: ✓
+            - generic [ref=e522]:
+              - generic [ref=e523]:
+                - generic [ref=e524]: r30
+                - generic [ref=e525]: ·
+                - generic [ref=e526]: reference
+                - generic [ref=e527]: ● Pass
+              - generic [ref=e528]: Ogiermann, E. (2015). In/directness in Polish children’s requests at the dinner table. Journal of Pragmatics, 82, 67–82. https://doi.org/10.1016/j.pragma.2015.03.007
+              - generic [ref=e529]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e532] [cursor=pointer]:
+            - generic [ref=e533]: "!"
+            - generic [ref=e534]:
+              - generic [ref=e535]:
+                - generic [ref=e536]: r31
+                - generic [ref=e537]: ·
+                - generic [ref=e538]: reference
+                - generic [ref=e539]: ● Warning
+              - generic [ref=e540]: "Pekarek Doehler, S. (2019). On the Nature and the Development of L2 Interactional Competence: State of the Art and Implications for Praxis. In M. R. Salaberry & S. Kunitz (Eds.), Teaching and Testing L2 Interactional Competence (pp. 25–59). Routledge."
+              - generic [ref=e541]:
+                - generic [ref=e543]: Content
+                - generic [ref=e544]: Author name mismatch
+                - generic [ref=e545]:
+                  - generic [ref=e546]: expected
+                  - generic [ref=e547]: Doehler
+                  - generic [ref=e548]: actual
+                  - generic [ref=e549]: Pekarek Doehler
+              - generic [ref=e550]:
+                - generic [ref=e551]:
+                  - generic [ref=e552]: Format
+                  - generic [ref=e553]: R001
+                - generic [ref=e554]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e557] [cursor=pointer]:
+            - generic [ref=e558]: "!"
+            - generic [ref=e559]:
+              - generic [ref=e560]:
+                - generic [ref=e561]: r32
+                - generic [ref=e562]: ·
+                - generic [ref=e563]: reference
+                - generic [ref=e564]: ● Warning
+              - generic [ref=e565]: "Pekarek Doehler, S. (2021). Toward a coherent understanding of L2 interactional competence: Epistemologies of language learning and teaching. In S. Kunitz, N. Markee & O. Sert (Eds.), Classroom-based conversation analytic research: Theoretical and applied perspectives on pedagogy (pp. 19-33). Springer."
+              - generic [ref=e566]:
+                - generic [ref=e567]:
+                  - generic [ref=e568]: Format
+                  - generic [ref=e569]: R001
+                - generic [ref=e570]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e573] [cursor=pointer]:
+            - generic [ref=e574]: "!"
+            - generic [ref=e575]:
+              - generic [ref=e576]:
+                - generic [ref=e577]: r33
+                - generic [ref=e578]: ·
+                - generic [ref=e579]: reference
+                - generic [ref=e580]: ● Warning
+              - generic [ref=e581]: "Pekarek Doehler, S., & Berger, E. (2018). L2 interactional competence as increased ability for context-sensitive conduct: A longitudinal study of story-openings. Applied Linguistics, 39(4), 555–578. https://doi.org/10.1093/applin/amw021"
+              - generic [ref=e582]:
+                - generic [ref=e584]: Content
+                - generic [ref=e585]: Year mismatch
+                - generic [ref=e586]:
+                  - generic [ref=e587]: expected
+                  - generic [ref=e588]: "2016"
+                  - generic [ref=e589]: actual
+                  - generic [ref=e590]: "2018"
+              - generic [ref=e591]:
+                - generic [ref=e592]:
+                  - generic [ref=e593]: Format
+                  - generic [ref=e594]: R001
+                - generic [ref=e595]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e598] [cursor=pointer]:
+            - generic [ref=e599]: "!"
+            - generic [ref=e600]:
+              - generic [ref=e601]:
+                - generic [ref=e602]: r34
+                - generic [ref=e603]: ·
+                - generic [ref=e604]: reference
+                - generic [ref=e605]: ● Warning
+              - generic [ref=e606]: "Pekarek Doehler, S., & Pochon-Berger, E. (2015). The development of L2 interactional competence: Evidence from turn-taking organization, sequence organization, repair organization and preference organization. In T. Cadierno & S. W. Eskildsen (Eds.), Usage-Based Perspectives on Second Language Learning (pp. 233–268). De Gruyter Mouton. https://doi.org/10.1515/9783110378528-012 QSR International Pty Ltd. (2020). NVivo (released in March 2020)."
+              - generic [ref=e607]:
+                - generic [ref=e608]:
+                  - generic [ref=e609]: Format
+                  - generic [ref=e610]: R001
+                - generic [ref=e611]: Author format should be Last, F. M. (APA 7th R001)
+          - generic [ref=e614] [cursor=pointer]:
+            - generic [ref=e615]: ✓
+            - generic [ref=e616]:
+              - generic [ref=e617]:
+                - generic [ref=e618]: r35
+                - generic [ref=e619]: ·
+                - generic [ref=e620]: reference
+                - generic [ref=e621]: ● Pass
+              - generic [ref=e622]: "Roever, C., & Dai, D. W. (2021). Reconceptualising interactional competence for language testing. In M. R. Salaberry & A. R. Burch (Eds.), Assessing speaking in context: Expanding the construct and its applications (pp. 23–49). Multilingual Matters. https://www.degruyter.com/document/doi/10.21832/9781788923828-003/html"
+              - generic [ref=e623]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e626] [cursor=pointer]:
+            - generic [ref=e627]: ✓
+            - generic [ref=e628]:
+              - generic [ref=e629]:
+                - generic [ref=e630]: r36
+                - generic [ref=e631]: ·
+                - generic [ref=e632]: reference
+                - generic [ref=e633]: ● Pass
+              - generic [ref=e634]: Sacks, H. (1995). Lectures on conversation, volumes I and II. Blackwell.
+              - generic [ref=e635]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e638] [cursor=pointer]:
+            - generic [ref=e639]: ✓
+            - generic [ref=e640]:
+              - generic [ref=e641]:
+                - generic [ref=e642]: r37
+                - generic [ref=e643]: ·
+                - generic [ref=e644]: reference
+                - generic [ref=e645]: ● Pass
+              - generic [ref=e646]: "Schegloff, E. A. (1980). Preliminaries to preliminaries: “Can I ask you a question?” Sociological Inquiry, 50(3–4), 104–152. https://doi.org/10.1111/j.1475-682X.1980.tb00018.x"
+              - generic [ref=e647]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e650] [cursor=pointer]:
+            - generic [ref=e651]: "!"
+            - generic [ref=e652]:
+              - generic [ref=e653]:
+                - generic [ref=e654]: r38
+                - generic [ref=e655]: ·
+                - generic [ref=e656]: reference
+                - generic [ref=e657]: ● Warning
+              - generic [ref=e658]: "Schegloff, E. A. (2006). Interaction: The infrastructure for social institutions, the natural ecological niche for language, and the arena in which culture is situated. In N. J. Enfield & S. C. Levinson (Eds.), Roots of human sociality: Culture, cognition and interaction (pp. 70–96). Oxford, England: Berg."
+              - generic [ref=e659]:
+                - generic [ref=e661]: Content
+                - generic [ref=e662]: Year mismatch
+                - generic [ref=e663]:
+                  - generic [ref=e664]: expected
+                  - generic [ref=e665]: "2020"
+                  - generic [ref=e666]: actual
+                  - generic [ref=e667]: "2006"
+          - generic [ref=e670] [cursor=pointer]:
+            - generic [ref=e671]: ✓
+            - generic [ref=e672]:
+              - generic [ref=e673]:
+                - generic [ref=e674]: r39
+                - generic [ref=e675]: ·
+                - generic [ref=e676]: reference
+                - generic [ref=e677]: ● Pass
+              - generic [ref=e678]: "Schegloff, E. A. (2007). Sequence organization in interaction. Cambridge University Press. Sidnell, Jack (2010). Conversation analysis: An introduction. Wiley-Blackwell."
+              - generic [ref=e679]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e682] [cursor=pointer]:
+            - generic [ref=e683]: ✓
+            - generic [ref=e684]:
+              - generic [ref=e685]:
+                - generic [ref=e686]: r40
+                - generic [ref=e687]: ·
+                - generic [ref=e688]: reference
+                - generic [ref=e689]: ● Pass
+              - generic [ref=e690]: Simpson, J. (2013). Conversational floor in computer-mediated discourse. In S. Herring, D. Stein, & T. Virtanen (Eds.), Pragmatics of computer-Mediated communication (pp. 515–538). De Gruyter Mouton. doi/10.1515/9783110214468.515
+              - generic [ref=e691]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e694] [cursor=pointer]:
+            - generic [ref=e695]: ✓
+            - generic [ref=e696]:
+              - generic [ref=e697]:
+                - generic [ref=e698]: r41
+                - generic [ref=e699]: ·
+                - generic [ref=e700]: reference
+                - generic [ref=e701]: ● Pass
+              - generic [ref=e702]: Stivers, T., & Rossano, F. (2010). Mobilizing response. Research on Language and Social Interaction, 43(1), 3–31. https://doi.org/10.1080/08351810903471258
+              - generic [ref=e703]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e706] [cursor=pointer]:
+            - generic [ref=e707]: ✓
+            - generic [ref=e708]:
+              - generic [ref=e709]:
+                - generic [ref=e710]: r42
+                - generic [ref=e711]: ·
+                - generic [ref=e712]: reference
+                - generic [ref=e713]: ● Pass
+              - generic [ref=e714]: "Taleghani-Nikazm, C., & Huth, T. (2010). L2 requests: Preference structure in talk-in-interaction. Multilingua, 29(2), 185–202. https://doi.org/10.1515/mult.2010.008 Tencent Holdings Limited. (2018). WeChat."
+              - generic [ref=e715]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e718] [cursor=pointer]:
+            - generic [ref=e719]: ✓
+            - generic [ref=e720]:
+              - generic [ref=e721]:
+                - generic [ref=e722]: r43
+                - generic [ref=e723]: ·
+                - generic [ref=e724]: reference
+                - generic [ref=e725]: ● Pass
+              - generic [ref=e726]: "Terasaki, A. K. (2004). Pre-announcement sequences in conversation. In G. H. Lerner (Ed.), Conversation analysis: Studies from the first generation (pp. 171–223). John Benjamins."
+              - generic [ref=e727]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e730] [cursor=pointer]:
+            - generic [ref=e731]: ✓
+            - generic [ref=e732]:
+              - generic [ref=e733]:
+                - generic [ref=e734]: r44
+                - generic [ref=e735]: ·
+                - generic [ref=e736]: reference
+                - generic [ref=e737]: ● Pass
+              - generic [ref=e738]: Trott, S., & Rossano, F. (2020). The role of entitlement in formatting preferences across requesters and recipients. Discourse Processes, 57(7), 551–572. https://doi.org/10.1080/0163853X.2020.1719796
+              - generic [ref=e739]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e742] [cursor=pointer]:
+            - generic [ref=e743]: ✓
+            - generic [ref=e744]:
+              - generic [ref=e745]:
+                - generic [ref=e746]: r45
+                - generic [ref=e747]: ·
+                - generic [ref=e748]: reference
+                - generic [ref=e749]: ● Pass
+              - generic [ref=e750]: Tudini, V. (2013). Form-focused social repertoires in an online language learning partnership. Journal of Pragmatics, 50(1), 187–202. https://doi.org/10.1016/j.pragma.2012.12.005
+              - generic [ref=e751]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e754] [cursor=pointer]:
+            - generic [ref=e755]: ✓
+            - generic [ref=e756]:
+              - generic [ref=e757]:
+                - generic [ref=e758]: r46
+                - generic [ref=e759]: ·
+                - generic [ref=e760]: reference
+                - generic [ref=e761]: ● Pass
+              - generic [ref=e762]: Tudini, V. (2015). Extending prior posts in dyadic online text chat. Discourse Processes, 52(8), 642–669. https://doi.org/10.1080/0163853X.2014.969138
+              - generic [ref=e763]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e766] [cursor=pointer]:
+            - generic [ref=e767]: ✓
+            - generic [ref=e768]:
+              - generic [ref=e769]:
+                - generic [ref=e770]: r47
+                - generic [ref=e771]: ·
+                - generic [ref=e772]: reference
+                - generic [ref=e773]: ● Pass
+              - generic [ref=e774]: "Walther, J. B. (1992). Interpersonal effects in computer-mediated interaction: A relational perspective. Communication Research, 19, 52–90. https://doi.org/10.1177/009365092019001003"
+              - generic [ref=e775]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e778] [cursor=pointer]:
+            - generic [ref=e779]: ✓
+            - generic [ref=e780]:
+              - generic [ref=e781]:
+                - generic [ref=e782]: r48
+                - generic [ref=e783]: ·
+                - generic [ref=e784]: reference
+                - generic [ref=e785]: ● Pass
+              - generic [ref=e786]: Wu, J., & Roever, C. (2021). Proficiency and preference organization in second language mandarin chinese refusals. Modern Language Journal, 105(4), 897–918. https://doi.org/10.1111/modl.12736
+              - generic [ref=e787]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e790] [cursor=pointer]:
+            - generic [ref=e791]: ✓
+            - generic [ref=e792]:
+              - generic [ref=e793]:
+                - generic [ref=e794]: r49
+                - generic [ref=e795]: ·
+                - generic [ref=e796]: reference
+                - generic [ref=e797]: ● Pass
+              - generic [ref=e798]: "Youn, S. J. (2023). Grammar as validity evidence for assessing L2 interactional competence: The case of requests in role-play interaction. Applied Pragmatics 5(2), 174-201. https://doi.org/10.1075/ap.00012.you"
+              - generic [ref=e799]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e802] [cursor=pointer]:
+            - generic [ref=e803]: ✓
+            - generic [ref=e804]:
+              - generic [ref=e805]:
+                - generic [ref=e806]: r50
+                - generic [ref=e807]: ·
+                - generic [ref=e808]: reference
+                - generic [ref=e809]: ● Pass
+              - generic [ref=e810]: Young, R. F. (2019). Interactional competence and L2 pragmatics. In N. Taguchi (Ed.), The Routledge Handbook of Second Language Acquisition and Pragmatics (1st ed., pp. 93–110). Routledge. https://doi.org/10.4324/9781351164085-7
+              - generic [ref=e811]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e814] [cursor=pointer]:
+            - generic [ref=e815]: ✓
+            - generic [ref=e816]:
+              - generic [ref=e817]:
+                - generic [ref=e818]: i51
+                - generic [ref=e819]: ·
+                - generic [ref=e820]: in-text
+                - generic [ref=e821]: ● Pass
+              - generic [ref=e822]: (Heritage, 2012a)
+              - generic [ref=e823]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e826] [cursor=pointer]:
+            - generic [ref=e827]: ✓
+            - generic [ref=e828]:
+              - generic [ref=e829]:
+                - generic [ref=e830]: i52
+                - generic [ref=e831]: ·
+                - generic [ref=e832]: in-text
+                - generic [ref=e833]: ● Pass
+              - generic [ref=e834]: (Sacks, 1995)
+              - generic [ref=e835]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e838] [cursor=pointer]:
+            - generic [ref=e839]: "!"
+            - generic [ref=e840]:
+              - generic [ref=e841]:
+                - generic [ref=e842]: i53
+                - generic [ref=e843]: ·
+                - generic [ref=e844]: in-text
+                - generic [ref=e845]: ● Warning
+              - generic [ref=e846]: (Stivers & Rossano, 2010)
+              - generic [ref=e847]:
+                - generic [ref=e849]: Orphan
+                - generic [ref=e850]: No matching entry found in Reference List
+                - generic [ref=e851]: In-text cites (Stivers & Rossano, 2010) but no reference entry matches
+          - generic [ref=e854] [cursor=pointer]:
+            - generic [ref=e855]: "!"
+            - generic [ref=e856]:
+              - generic [ref=e857]:
+                - generic [ref=e858]: i54
+                - generic [ref=e859]: ·
+                - generic [ref=e860]: in-text
+                - generic [ref=e861]: ● Warning
+              - generic [ref=e862]: (Drew & Couper-Kuhlen, 2014, p.17)
+              - generic [ref=e863]:
+                - generic [ref=e865]: Orphan
+                - generic [ref=e866]: No matching entry found in Reference List
+                - generic [ref=e867]: In-text cites (Drew & Couper-Kuhlen, 2014) but no reference entry matches
+          - generic [ref=e870] [cursor=pointer]:
+            - generic [ref=e871]: ✓
+            - generic [ref=e872]:
+              - generic [ref=e873]:
+                - generic [ref=e874]: i55
+                - generic [ref=e875]: ·
+                - generic [ref=e876]: in-text
+                - generic [ref=e877]: ● Pass
+              - generic [ref=e878]: (Heritage, 2012a, p. 32)
+              - generic [ref=e879]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e882] [cursor=pointer]:
+            - generic [ref=e883]: ✓
+            - generic [ref=e884]:
+              - generic [ref=e885]:
+                - generic [ref=e886]: i56
+                - generic [ref=e887]: ·
+                - generic [ref=e888]: in-text
+                - generic [ref=e889]: ● Pass
+              - generic [ref=e890]: (Heritage, 2012b)
+              - generic [ref=e891]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e894] [cursor=pointer]:
+            - generic [ref=e895]: ✓
+            - generic [ref=e896]:
+              - generic [ref=e897]:
+                - generic [ref=e898]: i57
+                - generic [ref=e899]: ·
+                - generic [ref=e900]: in-text
+                - generic [ref=e901]: ● Pass
+              - generic [ref=e902]: (Schegloff, 2007)
+              - generic [ref=e903]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e906] [cursor=pointer]:
+            - generic [ref=e907]: "!"
+            - generic [ref=e908]:
+              - generic [ref=e909]:
+                - generic [ref=e910]: i58
+                - generic [ref=e911]: ·
+                - generic [ref=e912]: in-text
+                - generic [ref=e913]: ● Warning
+              - generic [ref=e914]: (Trott & Rossano, 2020)
+              - generic [ref=e915]:
+                - generic [ref=e917]: Orphan
+                - generic [ref=e918]: No matching entry found in Reference List
+                - generic [ref=e919]: In-text cites (Trott & Rossano, 2020) but no reference entry matches
+          - generic [ref=e922] [cursor=pointer]:
+            - generic [ref=e923]: ✓
+            - generic [ref=e924]:
+              - generic [ref=e925]:
+                - generic [ref=e926]: i59
+                - generic [ref=e927]: ·
+                - generic [ref=e928]: in-text
+                - generic [ref=e929]: ● Pass
+              - generic [ref=e930]: (Heinemann, 2006)
+              - generic [ref=e931]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e934] [cursor=pointer]:
+            - generic [ref=e935]: "!"
+            - generic [ref=e936]:
+              - generic [ref=e937]:
+                - generic [ref=e938]: i60
+                - generic [ref=e939]: ·
+                - generic [ref=e940]: in-text
+                - generic [ref=e941]: ● Warning
+              - generic [ref=e942]: (Drew & Walker, 2010)
+              - generic [ref=e943]:
+                - generic [ref=e945]: Orphan
+                - generic [ref=e946]: No matching entry found in Reference List
+                - generic [ref=e947]: In-text cites (Drew & Walker, 2010) but no reference entry matches
+          - generic [ref=e950] [cursor=pointer]:
+            - generic [ref=e951]: "!"
+            - generic [ref=e952]:
+              - generic [ref=e953]:
+                - generic [ref=e954]: i61
+                - generic [ref=e955]: ·
+                - generic [ref=e956]: in-text
+                - generic [ref=e957]: ● Warning
+              - generic [ref=e958]: (Trott & Rossano, 2020)
+              - generic [ref=e959]:
+                - generic [ref=e961]: Orphan
+                - generic [ref=e962]: No matching entry found in Reference List
+                - generic [ref=e963]: In-text cites (Trott & Rossano, 2020) but no reference entry matches
+          - generic [ref=e966] [cursor=pointer]:
+            - generic [ref=e967]: ✓
+            - generic [ref=e968]:
+              - generic [ref=e969]:
+                - generic [ref=e970]: i62
+                - generic [ref=e971]: ·
+                - generic [ref=e972]: in-text
+                - generic [ref=e973]: ● Pass
+              - generic [ref=e974]: (Herring, 2013)
+              - generic [ref=e975]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e978] [cursor=pointer]:
+            - generic [ref=e979]: ✓
+            - generic [ref=e980]:
+              - generic [ref=e981]:
+                - generic [ref=e982]: i63
+                - generic [ref=e983]: ·
+                - generic [ref=e984]: in-text
+                - generic [ref=e985]: ● Pass
+              - generic [ref=e986]: (Meredith, 2020)
+              - generic [ref=e987]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e990] [cursor=pointer]:
+            - generic [ref=e991]: ✓
+            - generic [ref=e992]:
+              - generic [ref=e993]:
+                - generic [ref=e994]: i64
+                - generic [ref=e995]: ·
+                - generic [ref=e996]: in-text
+                - generic [ref=e997]: ● Pass
+              - generic [ref=e998]: (Walther, 1992)
+              - generic [ref=e999]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1002] [cursor=pointer]:
+            - generic [ref=e1003]: "!"
+            - generic [ref=e1004]:
+              - generic [ref=e1005]:
+                - generic [ref=e1006]: i65
+                - generic [ref=e1007]: ·
+                - generic [ref=e1008]: in-text
+                - generic [ref=e1009]: ● Warning
+              - generic [ref=e1010]: (Garcia & Jacobs, 1999)
+              - generic [ref=e1011]:
+                - generic [ref=e1013]: Orphan
+                - generic [ref=e1014]: No matching entry found in Reference List
+                - generic [ref=e1015]: In-text cites (Garcia & Jacobs, 1999) but no reference entry matches
+          - generic [ref=e1018] [cursor=pointer]:
+            - generic [ref=e1019]: ✓
+            - generic [ref=e1020]:
+              - generic [ref=e1021]:
+                - generic [ref=e1022]: i66
+                - generic [ref=e1023]: ·
+                - generic [ref=e1024]: in-text
+                - generic [ref=e1025]: ● Pass
+              - generic [ref=e1026]: (Meredith et al., 2021)
+              - generic [ref=e1027]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1030] [cursor=pointer]:
+            - generic [ref=e1031]: ✓
+            - generic [ref=e1032]:
+              - generic [ref=e1033]:
+                - generic [ref=e1034]: i67
+                - generic [ref=e1035]: ·
+                - generic [ref=e1036]: in-text
+                - generic [ref=e1037]: ● Pass
+              - generic [ref=e1038]: (Tudini, 2013)
+              - generic [ref=e1039]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1042] [cursor=pointer]:
+            - generic [ref=e1043]: ✓
+            - generic [ref=e1044]:
+              - generic [ref=e1045]:
+                - generic [ref=e1046]: i68
+                - generic [ref=e1047]: ·
+                - generic [ref=e1048]: in-text
+                - generic [ref=e1049]: ● Pass
+              - generic [ref=e1050]: (Tudini, 2013)
+              - generic [ref=e1051]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1054] [cursor=pointer]:
+            - generic [ref=e1055]: ✓
+            - generic [ref=e1056]:
+              - generic [ref=e1057]:
+                - generic [ref=e1058]: i69
+                - generic [ref=e1059]: ·
+                - generic [ref=e1060]: in-text
+                - generic [ref=e1061]: ● Pass
+              - generic [ref=e1062]: (Schegloff, 2007)
+              - generic [ref=e1063]: ✓ Reference verified · Author, year, title, and journal match · APA format correct
+          - generic [ref=e1066] [cursor=pointer]:
+            - generic [ref=e1067]: "!"
+            - generic [ref=e1068]:
+              - generic [ref=e1069]:
+                - generic [ref=e1070]: i70
+                - generic [ref=e1071]: ·
+                - generic [ref=e1072]: in-text
+                - generic [ref=e1073]: ● Warning
+              - generic [ref=e1074]: (Stivers & Rossano, 2010)
+              - generic [ref=e1075]:
+                - generic [ref=e1077]: Orphan
+                - generic [ref=e1078]: No matching entry found in Reference List
+                - generic [ref=e1079]: In-text cites (Stivers & Rossano, 2010) but no reference entry matches
+          - generic [ref=e1082] [cursor=pointer]:
+            - generic [ref=e1083]: "!"
+            - generic [ref=e1084]:
+              - generic [ref=e1085]:
+                - generic [ref=e1086]: i71
+                - generic [ref=e1087]: ·
+                - generic [ref=e1088]: in-text
+                - generic [ref=e1089]: ● Warning
+              - generic [ref=e1090]: (Brown & Levinson, 1987)
+              - generic [ref=e1091]:
+                - generic [ref=e1093]: Orphan
+                - generic [ref=e1094]: No matching entry found in Reference List
+                - generic [ref=e1095]: In-text cites (Brown & Levinson, 1987) but no reference entry matches
+        - generic [ref=e1096]:
+          - generic [ref=e1097]: Expires in 23h 59m
+          - button "Copy share link" [ref=e1098] [cursor=pointer]
+  - generic "Built 2026-05-16T08:53:36.625Z · f25bf59": v16/05/2026, 18:53 · f25bf59
