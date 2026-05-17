@@ -6,7 +6,6 @@ ai-citation-checker/CLAUDE.md
 ai-citation-checker/.idea/
 ai-citation-checker/frontend/test-results/
 everything-claude-code/
-vercel.json
 __pycache__/
 *.pyc
 .DS_Store
