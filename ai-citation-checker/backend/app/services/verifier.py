@@ -16,6 +16,8 @@ OPENALEX_BASE = "https://api.openalex.org/works"
 SCORE_EXACT = 100
 SCORE_NEAR_EXACT = 95   # title is essentially identical (small punctuation/spelling diffs)
 SCORE_FUZZY_MIN = 85
+HTTP_TIMEOUT = 25.0     # Railway → external API latency is much higher than localhost
+USER_AGENT = "CitationChecker/1.0 (mailto:jackywangmel96@gmail.com)"
 
 
 @dataclass
@@ -28,6 +30,18 @@ class VerifyResult:
     source: Optional[str] = None
     verified_reference_id: Optional[str] = None
     not_found_reason: Optional[str] = None
+
+
+async def _get_with_retry(client: httpx.AsyncClient, url: str, **kwargs) -> httpx.Response:
+    """GET with exponential backoff on 429 (rate limit). Up to 2 retries."""
+    for attempt in range(3):
+        resp = await client.get(url, **kwargs)
+        if resp.status_code != 429 or attempt == 2:
+            return resp
+        # Crossref/OpenAlex often include Retry-After; fall back to 1s, 2s
+        wait = float(resp.headers.get("Retry-After", str(2 ** attempt)))
+        await asyncio.sleep(min(wait, 5.0))
+    return resp
 
 
 def _is_web_reference(entry: ReferenceEntry) -> bool:
@@ -63,7 +77,7 @@ async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
         )
 
     reasons: list[str] = []
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, headers={"User-Agent": USER_AGENT}) as client:
         # 2. Direct DOI lookup (most reliable — skip fuzzy matching entirely)
         if entry.doi:
             result, reason = await _lookup_by_doi(client, entry, db_path)
@@ -87,7 +101,7 @@ async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
 async def _lookup_by_doi(client: httpx.AsyncClient, entry: ReferenceEntry,
                          db_path: str) -> tuple[Optional[VerifyResult], str]:
     try:
-        resp = await client.get(f"{CROSSREF_BASE}/{entry.doi}")
+        resp = await _get_with_retry(client, f"{CROSSREF_BASE}/{entry.doi}")
         resp.raise_for_status()
         item = resp.json().get("message", {})
     except httpx.TimeoutException:
@@ -117,7 +131,7 @@ async def _search_crossref(client: httpx.AsyncClient, entry: ReferenceEntry,
                             db_path: str) -> tuple[Optional[VerifyResult], str]:
     query = f"{entry.title_normalized} {entry.first_author_normalized} {entry.year}"
     try:
-        resp = await client.get(CROSSREF_BASE, params={
+        resp = await _get_with_retry(client, CROSSREF_BASE, params={
             "query.bibliographic": query,
             "rows": 5,
             "mailto": CROSSREF_MAILTO,
@@ -144,7 +158,7 @@ async def _search_openalex(client: httpx.AsyncClient, entry: ReferenceEntry,
                             db_path: str) -> tuple[Optional[VerifyResult], str]:
     query = f"{entry.title_normalized} {entry.first_author_normalized}"
     try:
-        resp = await client.get(OPENALEX_BASE, params={"search": query, "per-page": 5})
+        resp = await _get_with_retry(client, OPENALEX_BASE, params={"search": query, "per-page": 5})
         resp.raise_for_status()
         raw_items = resp.json().get("results", [])
     except httpx.TimeoutException:
@@ -257,7 +271,9 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
 
 
 async def verify_all(entries: list[ReferenceEntry], db_path: str,
-                     concurrency: int = 10) -> list[VerifyResult]:
+                     concurrency: int = 4) -> list[VerifyResult]:
+    # Lower concurrency reduces Crossref rate-limiting (HTTP 429) on shared
+    # cloud IPs. Was 10, now 4 — still fast enough for typical paper sizes.
     sem = asyncio.Semaphore(concurrency)
 
     async def _one(entry: ReferenceEntry) -> VerifyResult:
