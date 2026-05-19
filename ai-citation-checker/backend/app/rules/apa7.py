@@ -70,11 +70,13 @@ def check_author_separator(para: ReferenceParagraph) -> Optional[CitationIssue]:
     return None
 
 
+# NOTE: R006 (check_hanging_indent) intentionally excluded — many real-world
+# docs mix Normal/Bibliography styles for references, causing too many
+# noisy warnings. Re-add to ALL_RULES if hanging-indent enforcement is wanted.
 ALL_RULES = [
     check_author_format,
     check_year_parens,
     check_journal_italic,
     check_doi_format,
-    check_hanging_indent,
     check_author_separator,
 ]
