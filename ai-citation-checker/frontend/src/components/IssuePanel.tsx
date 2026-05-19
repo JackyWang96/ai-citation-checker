@@ -108,14 +108,8 @@ export default function IssuePanel({
       </div>
 
       {/* Footer */}
-      <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', fontSize: 11, color: 'var(--text-3)', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', fontSize: 11, color: 'var(--text-3)', flexShrink: 0 }}>
         <span>{formatExpiry(expiresAt, t.expiresIn, t.expired)}</span>
-        <button
-          style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}
-          onClick={() => navigator.clipboard.writeText(window.location.href)}
-        >
-          {t.copyLink}
-        </button>
       </div>
     </div>
   )

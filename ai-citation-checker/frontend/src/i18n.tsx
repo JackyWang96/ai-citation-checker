@@ -42,6 +42,7 @@ const zh = {
   expired: '已过期',
   expiresIn: (h: number, m: number) => `${h}h ${m}m 后过期`,
   copyLink: '复制分享链接',
+  copied: '已复制!',
   // issue card
   kindIntext: '正文引用',
   kindReference: '参考文献',
@@ -93,6 +94,7 @@ const en: typeof zh = {
   expired: 'Expired',
   expiresIn: (h: number, m: number) => `Expires in ${h}h ${m}m`,
   copyLink: 'Copy share link',
+  copied: 'Copied!',
   kindIntext: 'in-text',
   kindReference: 'reference',
   verifiedMsg: 'Reference verified · Author, year, title, and journal match · APA format correct',

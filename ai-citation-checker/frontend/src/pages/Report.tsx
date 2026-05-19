@@ -4,6 +4,7 @@ import { fetchReport } from '../lib/api'
 import { useT } from '../i18n'
 import AnnotatedText from '../components/AnnotatedText'
 import IssuePanel from '../components/IssuePanel'
+import CopyLinkButton from '../components/CopyLinkButton'
 import { LogoIcon, LangToggle } from './Upload'
 
 type CitationStatus = 'pass' | 'warning' | 'error'
@@ -179,6 +180,7 @@ export default function Report() {
           )}
 
           <Divider />
+          <CopyLinkButton />
           <LangToggle />
         </div>
       </header>
