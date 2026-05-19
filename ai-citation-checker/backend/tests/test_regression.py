@@ -230,6 +230,65 @@ def test_not_found_includes_detailed_reason():
 # ── verifier ─────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
+@respx.mock
+async def test_year_mismatched_preprint_not_flagged_as_ambiguous(tmp_path):
+    """Bug: Crossref returns both the canonical 2013 book chapter AND an
+    OSF preprint posted in 2017 with the same title for Markman (2013).
+    Our 'near-exact title bypasses year' rule (for republication cases)
+    let the 2017 preprint pollute the ambiguity check, so a clean match
+    was getting flagged as 'Multiple papers found'. Fix: ambiguity now
+    requires firm author+year+title match — preprints with different years
+    don't count."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Markman, K. M. (2013). Conversational coherence...",
+        first_author_normalized="markman",
+        year=2013,
+        title_normalized="conversational coherence in small group chat",
+    )
+
+    crossref_response = {
+        "status": "ok",
+        "message": {
+            "items": [
+                {  # canonical 2013 book chapter — the real match
+                    "title": ["Conversational coherence in small group chat"],
+                    "author": [{"family": "Markman"}],
+                    "published": {"date-parts": [[2013]]},
+                    "DOI": "10.1515/9783110214468.539",
+                    "type": "book-chapter",
+                },
+                {  # 2017 OSF preprint with the same title — different year
+                    "title": ["Conversational coherence in small group chat"],
+                    "author": [{"family": "Markman"}],
+                    "published": {"date-parts": [[2017]]},
+                    "DOI": "10.31235/osf.io/g6vjf",
+                    "type": "posted-content",
+                },
+                {  # unrelated chapter — title much lower, but author+year_missing
+                    "title": ["A Close Look at Online Collaboration"],
+                    "author": [{"family": "Markman"}],
+                    "published": {"date-parts": [[0]]},
+                    "DOI": "10.4018/abc",
+                    "type": "book-chapter",
+                },
+            ]
+        }
+    }
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=crossref_response)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is not None
+    assert result.found is True
+    assert result.ambiguous is False, "preprint with different year and unrelated chapter shouldn't trigger ambiguity"
+
+
+@pytest.mark.asyncio
 async def test_web_reference_marked_yellow_not_red(tmp_path):
     """Web/organisation citations ('Retrieved from https://...') aren't in
     Crossref/OpenAlex. Don't flag them as red 'not found' — they need manual

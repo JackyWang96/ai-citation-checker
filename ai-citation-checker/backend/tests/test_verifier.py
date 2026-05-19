@@ -69,6 +69,8 @@ async def test_ambiguous_flagged(tmp_path):
     from app.storage.db import init_db
     await init_db(db_path)
 
+    # Both candidates have author=Smith, year=2020, and near-identical titles
+    # — this is a genuinely ambiguous match.
     two_hits = {
         "status": "ok",
         "message": {
@@ -76,7 +78,7 @@ async def test_ambiguous_flagged(tmp_path):
                 {"title":["AI in education"],"author":[{"family":"Smith","given":"J"}],
                  "published":{"date-parts":[[2020]]},"container-title":["J Ed"],
                  "DOI":"10.1/a","score":99},
-                {"title":["AI in learning"],"author":[{"family":"Smith","given":"J"}],
+                {"title":["AI in education: Part 2"],"author":[{"family":"Smith","given":"J"}],
                  "published":{"date-parts":[[2020]]},"container-title":["J Ed"],
                  "DOI":"10.1/b","score":85},
             ]

@@ -221,12 +221,13 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
         )
         year_match = cand_year == 0 or abs(cand_year - entry.year) <= 1
 
-        scored.append((title_score, author_match, year_match, item, cand_title))
+        scored.append((title_score, author_match, year_match, cand_year, item, cand_title))
 
-    # Filter candidates where author+year match (no title threshold for ambiguity detection)
+    # Filter candidates where author+year match (lenient — used for the primary
+    # match, accepts year-missing and near-exact-title cases).
     author_year_matching = [
         (score, item, cand_title)
-        for score, author_ok, year_ok, item, cand_title in scored
+        for score, author_ok, year_ok, _cand_year, item, cand_title in scored
         # Accept near-exact title + author match even when year disagrees —
         # handles republications (Crossref often has reprint year, not original).
         if author_ok and (year_ok or score >= SCORE_NEAR_EXACT)
@@ -242,9 +243,20 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
     if not matching:
         return None
 
-    # Check ambiguity: multiple candidates with same author+year
-    ambiguous = len(author_year_matching) > 1
-    other_titles = [t for _, _, t in author_year_matching[1:]]
+    # Ambiguity is a stricter check than primary matching: only count candidates
+    # whose author, year AND title all firmly match. Year-missing (=0) and
+    # year-mismatch-but-near-exact-title cases (preprints/reprints) shouldn't
+    # be treated as ambiguous — they're the same work or known different works.
+    strict_matches = [
+        (score, item, cand_title)
+        for score, author_ok, year_ok, cand_year, item, cand_title in scored
+        if author_ok
+        and cand_year != 0
+        and abs(cand_year - entry.year) <= 1
+        and score >= SCORE_FUZZY_MIN
+    ]
+    ambiguous = len(strict_matches) > 1
+    other_titles = [t for _, _, t in strict_matches[1:]]
 
     best_score, best_item, _ = matching[0]
     exact = best_score == SCORE_EXACT
