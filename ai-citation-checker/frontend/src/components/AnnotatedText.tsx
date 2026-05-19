@@ -44,9 +44,12 @@ export default function AnnotatedText({ fullText, citations, activeCitId, hovere
   const refCitations = citations.filter((c) => c.kind === 'reference')
   const intextCitations = citations.filter((c) => c.kind === 'intext')
 
+  // Filter out references that couldn't be located in full_text (char_start=0
+  // means "not found" — using them would truncate the body to empty).
+  const locatableRefs = refCitations.filter((c) => c.char_start > 0)
   const firstRefChar =
-    refCitations.length > 0
-      ? Math.min(...refCitations.map((c) => c.char_start))
+    locatableRefs.length > 0
+      ? Math.min(...locatableRefs.map((c) => c.char_start))
       : fullText.length
 
   const bodyText = fullText.slice(0, firstRefChar).trimEnd()

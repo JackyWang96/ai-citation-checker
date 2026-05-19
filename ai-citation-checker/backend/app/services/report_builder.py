@@ -56,16 +56,24 @@ def build_report(
                 ))
 
         status = _status(issues)
-        # Find char position of this reference in full_text
+        # Find char position of this reference in full_text. If raw_text was
+        # merged from multiple paragraphs, full_text may still contain newlines
+        # and the find() will fail — fall back to the end of full_text so the
+        # reference still renders in the References panel but doesn't truncate
+        # the body text (which uses min(char_start) as the body/refs boundary).
         start = full_text.find(entry.raw_text)
-        end = start + len(entry.raw_text) if start >= 0 else 0
+        if start < 0:
+            start = len(full_text)
+            end = start
+        else:
+            end = start + len(entry.raw_text)
 
         citations.append(Citation(
             id=f"r{counter}",
             kind="reference",
             raw_text=entry.raw_text,
-            char_start=max(start, 0),
-            char_end=max(end, 0),
+            char_start=start,
+            char_end=end,
             status=status,
             issues=issues,
             verified_reference_id=vr.verified_reference_id,
