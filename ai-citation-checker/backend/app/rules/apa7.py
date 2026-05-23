@@ -11,6 +11,17 @@ _DOI_BARE_RE = re.compile(r'\bdoi:\s*10\.')
 _AND_RE = re.compile(r'\band\b', re.IGNORECASE)
 _AMPERSAND_MULTI_RE = re.compile(r'[A-Z][a-zA-Z]+,\s+[A-Z]\.\s*,')
 
+# R008 — "Lastname, I. & Other" should be "Lastname, I., & Other"
+# Matches initial-period-space-ampersand without comma in between.
+_MISSING_COMMA_BEFORE_AMP_RE = re.compile(r'[A-Z]\.\s+&')
+
+# R009 — "(YYYY) Title" should be "(YYYY). Title" (period after year parens)
+_MISSING_PERIOD_AFTER_YEAR_RE = re.compile(r'\(\d{4}[a-z]?\)\s+[A-Z]')
+
+# R010 — "Journal Name 12(3)" should be "Journal Name, 12(3)"
+# Matches a letter followed by space, digit, "(", digit — no comma between.
+_MISSING_COMMA_BEFORE_VOLUME_RE = re.compile(r'[A-Za-z]\s+\d+\(\d+\)')
+
 
 def _issue(rule_id: str, reason: str, detail: str | None = None) -> CitationIssue:
     return CitationIssue(
@@ -70,6 +81,47 @@ def check_author_separator(para: ReferenceParagraph) -> Optional[CitationIssue]:
     return None
 
 
+def check_comma_before_ampersand(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R008: Multi-author lists need a comma before '&' — 'Smith, J., & Jones'
+    not 'Smith, J. & Jones'. Only inspects the author section."""
+    year_match = _YEAR_PARENS_RE.search(para.raw_text)
+    author_section = para.raw_text[:year_match.start()] if year_match else para.raw_text
+    if _MISSING_COMMA_BEFORE_AMP_RE.search(author_section):
+        return _issue(
+            "R008",
+            "Multi-author list needs a comma before '&' (APA 7th R008)",
+            detail="Use 'Lastname, I., & Other' not 'Lastname, I. & Other'",
+        )
+    return None
+
+
+def check_period_after_year(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R009: Year parenthesis must be followed by a period — '(2020). Title'
+    not '(2020) Title'."""
+    if _MISSING_PERIOD_AFTER_YEAR_RE.search(para.raw_text):
+        return _issue(
+            "R009",
+            "Missing period after year (APA 7th R009)",
+            detail="Use '(2020). Title' not '(2020) Title'",
+        )
+    return None
+
+
+def check_comma_before_volume(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R010: Journal title and volume number must be separated by a comma —
+    'Journal Name, 12(3)' not 'Journal Name 12(3)'. Only checked after the
+    year-parens so we don't false-trigger on text inside the title."""
+    year_match = _YEAR_PARENS_RE.search(para.raw_text)
+    after_year = para.raw_text[year_match.end():] if year_match else para.raw_text
+    if _MISSING_COMMA_BEFORE_VOLUME_RE.search(after_year):
+        return _issue(
+            "R010",
+            "Missing comma between journal name and volume (APA 7th R010)",
+            detail="Use 'Journal Name, 12(3)' not 'Journal Name 12(3)'",
+        )
+    return None
+
+
 # NOTE: R006 (check_hanging_indent) intentionally excluded — many real-world
 # docs mix Normal/Bibliography styles for references, causing too many
 # noisy warnings. Re-add to ALL_RULES if hanging-indent enforcement is wanted.
@@ -79,4 +131,7 @@ ALL_RULES = [
     check_journal_italic,
     check_doi_format,
     check_author_separator,
+    check_comma_before_ampersand,
+    check_period_after_year,
+    check_comma_before_volume,
 ]

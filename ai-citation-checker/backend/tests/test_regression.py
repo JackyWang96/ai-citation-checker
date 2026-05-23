@@ -39,6 +39,61 @@ def test_organisation_name_no_initials():
     assert entries[0].first_author_normalized == "ielts partners"
 
 
+def test_title_extracted_when_period_after_year_missing():
+    """Bug: _extract_title required a period after '(YYYY)'. Users who wrote
+    '(2010) Title' (forgetting the period — common APA mistake) had their
+    title parsed as empty, causing 'actual: (empty)' in the UI title mismatch
+    warning."""
+    from app.services.citation_extractor import _extract_title
+    raw = "Arnon, I. & Snider, N. (2010) More than words. Journal, 62(1), 67–82."
+    assert _extract_title(raw) == "More than words"
+
+
+def test_r008_missing_comma_before_ampersand():
+    """R008: 'Smith, J. & Jones' should be 'Smith, J., & Jones'."""
+    from app.rules.apa7 import check_comma_before_ampersand
+    bad = ReferenceParagraph(
+        raw_text="Smith, J. & Jones, A. (2020). Title. Journal, 1(1), 1–10.",
+        runs=[], has_hanging_indent=True,
+    )
+    good = ReferenceParagraph(
+        raw_text="Smith, J., & Jones, A. (2020). Title. Journal, 1(1), 1–10.",
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_comma_before_ampersand(bad) is not None
+    assert check_comma_before_ampersand(good) is None
+
+
+def test_r009_missing_period_after_year():
+    """R009: '(2020) Title' should be '(2020). Title'."""
+    from app.rules.apa7 import check_period_after_year
+    bad = ReferenceParagraph(
+        raw_text="Smith, J. (2020) Title here. Journal, 1(1).",
+        runs=[], has_hanging_indent=True,
+    )
+    good = ReferenceParagraph(
+        raw_text="Smith, J. (2020). Title here. Journal, 1(1).",
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_period_after_year(bad) is not None
+    assert check_period_after_year(good) is None
+
+
+def test_r010_missing_comma_before_volume():
+    """R010: 'Journal Name 12(3)' should be 'Journal Name, 12(3)'."""
+    from app.rules.apa7 import check_comma_before_volume
+    bad = ReferenceParagraph(
+        raw_text="Smith, J. (2020). Title. Journal of Memory 62(1), 67–82.",
+        runs=[], has_hanging_indent=True,
+    )
+    good = ReferenceParagraph(
+        raw_text="Smith, J. (2020). Title. Journal of Memory, 62(1), 67–82.",
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_comma_before_volume(bad) is not None
+    assert check_comma_before_volume(good) is None
+
+
 def test_doi_extracted_without_url_prefix():
     """Bug: _extract_doi returned full URL 'https://doi.org/10.x', causing
     DOI lookup URL to become '...works/https://doi.org/10.x' (invalid)."""

@@ -92,7 +92,9 @@ def _extract_first_author(text: str) -> str:
 
 
 def _extract_title(text: str) -> str:
-    m = re.search(r'\(\d{4}[a-z]?\)\.\s+(.+?)[\.\!\?]', text)
+    # Period after year-parens is optional — APA requires it but many users
+    # omit it (e.g. "(2010) More than words"). We still extract the title.
+    m = re.search(r'\(\d{4}[a-z]?\)\.?\s+(.+?)[\.\!\?]', text)
     return m.group(1).strip() if m else ""
 
 
