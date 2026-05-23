@@ -11,3 +11,4 @@ __pycache__/
 .DS_Store
 docs/superpowers/.DS_Store
 report*.yml
+.claude/worktrees/
