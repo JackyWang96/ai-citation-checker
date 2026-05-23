@@ -8,9 +8,10 @@ from app.services.docx_parser import ReferenceParagraph
 from app.services.apa_validator import validate_reference_paragraph
 from rapidfuzz import fuzz
 
+# Unicode-aware: supports accented surnames (Lemhöfer, Ferré, Łukasiewicz).
 _INTEXT_FORMAT_RE = re.compile(
-    r'^\([A-Z][a-zA-Z\-]+(?:\s+et\s+al\.)?'
-    r'(?:\s*[,&]\s*[A-Z][a-zA-Z\-]+)*'
+    r'^\([A-ZÀ-Ɏ][a-zA-ZÀ-ɏ\-]+(?:\s+et\s+al\.)?'
+    r'(?:\s*[,&]\s*[A-ZÀ-Ɏ][a-zA-ZÀ-ɏ\-]+)*'
     r',\s*\d{4}[a-z]?(?:,\s*pp?\.\s*[\d\-]+)?\)$'
 )
 

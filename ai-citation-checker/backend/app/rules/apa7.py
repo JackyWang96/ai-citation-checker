@@ -16,10 +16,10 @@ _AMPERSAND_MULTI_RE = re.compile(r'[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-Z]\.\s*,')
 
 # R008 — "Lastname, I. & Other" should be "Lastname, I., & Other"
 # Matches initial-period-space-ampersand without comma in between.
-_MISSING_COMMA_BEFORE_AMP_RE = re.compile(r'[A-Z]\.\s+&')
+_MISSING_COMMA_BEFORE_AMP_RE = re.compile(r'[A-ZÀ-Ɏ]\.\s+&')
 
 # R009 — "(YYYY) Title" should be "(YYYY). Title" (period after year parens)
-_MISSING_PERIOD_AFTER_YEAR_RE = re.compile(r'\(\d{4}[a-z]?\)\s+[A-Z]')
+_MISSING_PERIOD_AFTER_YEAR_RE = re.compile(r'\(\d{4}[a-z]?\)\s+[A-ZÀ-Ɏ]')
 
 # R010 — "Journal Name 12(3)" should be "Journal Name, 12(3)"
 # Matches a letter followed by space, digit, "(", digit — no comma between.
