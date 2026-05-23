@@ -151,10 +151,12 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
     cand_title = (c.get("title") or [""])[0]
     score = fuzz.token_set_ratio(_norm(cand_title), entry.title_normalized)
     if score < 95:
+        # Show user's original title (with case + punctuation) so they can
+        # spot the actual difference — not the lowercased match-key.
         issues.append(CitationIssue(
             type="field_mismatch", severity="yellow", category="content",
             field="title", reason="Title does not match authoritative record",
-            expected=cand_title, actual=entry.title_normalized,
+            expected=cand_title, actual=entry.title_raw or entry.title_normalized,
         ))
 
     # Journal — only flag if a journal-like token is present but doesn't match
@@ -185,12 +187,57 @@ def _check_intext(intext: IntextCitation,
             actual=intext.raw_text,
         ))
 
-    # Orphan check
-    matched = any(
-        e.first_author_normalized == intext.author.lower() and e.year == intext.year
-        for e in reference_entries
-    )
-    if not matched:
+    # R012: APA 7th requires 'et al.' for 3+ authors in in-text citations.
+    if intext.n_authors >= 3 and not intext.has_etal:
+        issues.append(CitationIssue(
+            type="format_violation", severity="yellow", category="format",
+            rule_id="R012",
+            reason="In-text citation with 3+ authors should use 'et al.' (APA 7th R012)",
+            expected=f"({intext.author} et al., {intext.year})",
+            actual=intext.raw_text,
+        ))
+
+    # Match against reference list. Distinguish three cases for better UX:
+    #   1. Exact match (first author + year + optional second author) → no issue
+    #   2. Same first author but different year → R013 year mismatch
+    #   3. No reference by this first author → orphan
+    intext_first = intext.author.lower()
+    intext_second = intext.second_author.lower()
+
+    same_author_refs = [
+        e for e in reference_entries
+        if e.first_author_normalized == intext_first
+    ]
+    same_year_refs = [e for e in same_author_refs if e.year == intext.year]
+
+    def _second_author_ok(e: ReferenceEntry) -> bool:
+        return (
+            not intext_second
+            or intext.has_etal
+            or not e.second_author_normalized
+            or e.second_author_normalized == intext_second
+        )
+
+    if any(_second_author_ok(e) for e in same_year_refs):
+        return issues  # exact match, no warning needed
+
+    if same_author_refs and not same_year_refs:
+        # Same first author exists in references but the year differs — most
+        # likely a typo in the in-text citation (e.g. cited 2025 but ref is 2024).
+        years = sorted({e.year for e in same_author_refs if e.year > 0})
+        years_str = (
+            str(years[0]) if len(years) == 1
+            else " or ".join(str(y) for y in years)
+        )
+        suffix = " et al." if intext.has_etal else ""
+        issues.append(CitationIssue(
+            type="field_mismatch", severity="yellow", category="content",
+            rule_id="R013", field="year",
+            reason="In-text year doesn't match reference list (APA 7th R013)",
+            expected=f"({intext.author}{suffix}, {years_str})",
+            actual=intext.raw_text,
+        ))
+    else:
         issues.append(CitationIssue(
             type="orphan", severity="yellow", category="orphan",
             reason="No matching entry found in Reference List",

@@ -49,6 +49,32 @@ def test_title_extracted_when_period_after_year_missing():
     assert _extract_title(raw) == "More than words"
 
 
+def test_r001_unicode_author_names_not_flagged():
+    """Bug: R001 author-format regex was ASCII-only ([A-Z][a-zA-Z]+), so any
+    surname or initial with a non-ASCII letter (Ferré, Lindström, Çelik, Ö.)
+    triggered a false positive 'Author format should be Last, F. M.' warning.
+    Fix: include extended Latin range [À-Ɏ] in both surname and initial."""
+    from app.rules.apa7 import check_author_format
+
+    correctly_formatted = [
+        "Ferré, P., & Brysbaert, M. (2017). Test.",         # French é
+        "Lindström, A. (2005). Test.",                       # Swedish ö
+        "Çelik, Ö. (2020). Test.",                           # Turkish Ç and Ö (initial)
+        "Łukasiewicz, J. (1999). Test.",                     # Polish Ł
+        "O'Brien, M. (2018). Test.",                         # Apostrophe in surname
+    ]
+    for raw in correctly_formatted:
+        para = ReferenceParagraph(raw_text=raw, runs=[], has_hanging_indent=True)
+        assert check_author_format(para) is None, f"false positive on: {raw}"
+
+    # Negative — genuine format errors should still fire R001
+    bad = ReferenceParagraph(
+        raw_text="Smith J. (2020). Test.",                   # missing comma
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_author_format(bad) is not None
+
+
 def test_r008_missing_comma_before_ampersand():
     """R008: 'Smith, J. & Jones' should be 'Smith, J., & Jones'."""
     from app.rules.apa7 import check_comma_before_ampersand
@@ -77,6 +103,165 @@ def test_r009_missing_period_after_year():
     )
     assert check_period_after_year(bad) is not None
     assert check_period_after_year(good) is None
+
+
+def test_title_raw_preserves_original_case_and_punctuation():
+    """Bug A: 'actual' in title-mismatch UI showed the lowercased, punctuation-
+    stripped match-key instead of the user's original title. ReferenceEntry now
+    keeps title_raw with original case and punctuation for UI display."""
+    from app.services.citation_extractor import parse_reference_entries
+    raw = "Yi, W., & Zhong, Y. (2024). The processing advantage of multiword sequences: A meta- analysis. Studies, 46(2), 427–452."
+    entries = parse_reference_entries([raw])
+    e = entries[0]
+    # Preserved original
+    assert e.title_raw == "The processing advantage of multiword sequences: A meta- analysis"
+    # Normalized still works for fuzzy matching
+    assert e.title_normalized == "the processing advantage of multiword sequences a meta analysis"
+
+
+def test_intext_two_authors_with_ampersand_extracts_first_author():
+    """Bug: in-text citation '(Christiansen & Chater, 2016)' was extracted as
+    author='Christiansen & Chater', which never matched any reference entry's
+    first_author_normalized='christiansen', causing false orphan warnings."""
+    from app.services.citation_extractor import extract_intext_citations
+    intexts = extract_intext_citations("As shown by (Christiansen & Chater, 2016)…")
+    assert len(intexts) == 1
+    i = intexts[0]
+    assert i.author == "Christiansen"
+    assert i.second_author == "Chater"
+    assert i.n_authors == 2
+    assert i.has_etal is False
+
+
+def test_reference_entry_extracts_second_author():
+    """ReferenceEntry now stores second_author_normalized to disambiguate
+    two references with the same first author and year."""
+    from app.services.citation_extractor import parse_reference_entries
+    refs = parse_reference_entries([
+        "Christiansen, M. H., & Chater, N. (2016). The now-or-never bottleneck. BBS, 39, e62.",
+        "Smith, J. (2020). Solo paper. Journal, 1(1), 1–10.",
+        "Smith, J., Jones, A., & Brown, B. (2020). Three-author paper. Journal, 1(1), 1–10.",
+    ])
+    assert refs[0].second_author_normalized == "chater"
+    assert refs[1].second_author_normalized == ""   # single author
+    assert refs[2].second_author_normalized == "jones"
+
+
+def test_intext_matches_correct_reference_when_two_share_first_author():
+    """Verify (Smith & Jones, 2020) matches the Smith+Jones reference, NOT
+    the Smith+Wilson reference even though both have first author Smith + 2020."""
+    from app.services.citation_extractor import extract_intext_citations, parse_reference_entries
+    from app.services.report_builder import _check_intext
+    refs = parse_reference_entries([
+        "Smith, A., & Wilson, B. (2020). Paper A. Journal, 1(1), 1–10.",
+        "Smith, A., & Jones, C. (2020). Paper B. Journal, 1(1), 1–10.",
+    ])
+    intexts = extract_intext_citations("Found by (Smith & Jones, 2020) recently.")
+    issues = _check_intext(intexts[0], refs)
+    orphan_issues = [i for i in issues if i.category == "orphan"]
+    assert len(orphan_issues) == 0, "Should match Smith+Jones reference, not orphan"
+
+
+def test_r013_year_mismatch_flagged_more_specifically_than_orphan():
+    """R013: when in-text first author IS in the reference list but the year
+    doesn't match, report a specific 'year mismatch' instead of a generic
+    'orphan'. This is the common case where the user typo'd the year."""
+    from app.services.citation_extractor import extract_intext_citations, parse_reference_entries
+    from app.services.report_builder import _check_intext
+
+    # The Dempsey 2025 / 2024 case from production
+    refs = parse_reference_entries([
+        "Dempsey, J., Christianson, K., & Van Dyke, J. A. (2024). Title. Reading and Writing, 1–22.",
+    ])
+    intexts = extract_intext_citations("see (Dempsey et al., 2025) for the algorithm")
+    issues = _check_intext(intexts[0], refs)
+
+    r013 = [i for i in issues if i.rule_id == "R013"]
+    orphans = [i for i in issues if i.type == "orphan"]
+    assert len(r013) == 1, "year mismatch should fire as R013"
+    assert len(orphans) == 0, "should NOT also fire generic orphan"
+    assert r013[0].expected == "(Dempsey et al., 2024)"
+    assert r013[0].actual == "(Dempsey et al., 2025)"
+
+
+def test_orphan_still_fires_when_author_not_in_references():
+    """Genuine orphan (no reference with this author) should still report
+    orphan, not R013."""
+    from app.services.citation_extractor import extract_intext_citations, parse_reference_entries
+    from app.services.report_builder import _check_intext
+
+    refs = parse_reference_entries(["Smith, J. (2020). Paper. Journal, 1(1)."])
+    intexts = extract_intext_citations("As (Ghost, 2099) noted")
+    issues = _check_intext(intexts[0], refs)
+
+    orphans = [i for i in issues if i.type == "orphan"]
+    r013 = [i for i in issues if i.rule_id == "R013"]
+    assert len(orphans) == 1
+    assert len(r013) == 0
+
+
+def test_r013_offers_multiple_years_when_author_has_multiple_works():
+    """When the author has multiple works in the reference list, R013 should
+    suggest all available years."""
+    from app.services.citation_extractor import extract_intext_citations, parse_reference_entries
+    from app.services.report_builder import _check_intext
+
+    refs = parse_reference_entries([
+        "Smith, J. (2020). Paper A. Journal, 1(1).",
+        "Smith, J. (2022). Paper B. Journal, 1(1).",
+    ])
+    intexts = extract_intext_citations("As (Smith, 2021) noted")
+    issues = _check_intext(intexts[0], refs)
+
+    r013 = [i for i in issues if i.rule_id == "R013"]
+    assert len(r013) == 1
+    assert "2020" in r013[0].expected and "2022" in r013[0].expected
+
+
+def test_r012_three_authors_without_et_al_flagged():
+    """R012: APA 7th requires 'et al.' for 3+ authors in in-text citations."""
+    from app.services.citation_extractor import extract_intext_citations, parse_reference_entries
+    from app.services.report_builder import _check_intext
+    refs = parse_reference_entries([
+        "Smith, J., Jones, A., & Brown, B. (2020). Title. Journal, 1(1), 1–10.",
+    ])
+
+    # Bad: lists all 3 authors instead of using et al.
+    intexts = extract_intext_citations("As shown by (Smith, Jones, & Brown, 2020)…")
+    issues = _check_intext(intexts[0], refs)
+    r012_issues = [i for i in issues if i.rule_id == "R012"]
+    assert len(r012_issues) == 1
+
+    # Good: uses et al.
+    intexts = extract_intext_citations("As shown by (Smith et al., 2020)…")
+    issues = _check_intext(intexts[0], refs)
+    r012_issues = [i for i in issues if i.rule_id == "R012"]
+    assert len(r012_issues) == 0
+
+
+def test_r011_hyphen_with_adjacent_space_flagged():
+    """R011: 'meta- analysis' or 'meta -analysis' (compound word with rogue
+    space around the hyphen) should be flagged. Page ranges and clean usage
+    should not."""
+    from app.rules.apa7 import check_hyphen_spacing
+
+    bad_cases = [
+        "Smith, J. (2020). A meta- analysis of L2 acquisition. Journal, 1(1).",  # hyphen-space
+        "Smith, J. (2020). A meta -analysis of L2 acquisition. Journal, 1(1).",  # space-hyphen
+        "Smith, J. (2020). Studies in mixed- effects models. Journal, 1(1).",
+    ]
+    for raw in bad_cases:
+        para = ReferenceParagraph(raw_text=raw, runs=[], has_hanging_indent=True)
+        assert check_hyphen_spacing(para) is not None, f"R011 should fire on: {raw}"
+
+    good_cases = [
+        "Smith, J. (2020). A meta-analysis of L2 acquisition. Journal, 1(1), 1–10.",  # clean
+        "Smith, J. (2020). Wiley-Blackwell handbook. Wiley.",                           # no space
+        "Smith, J. (2020). Page range test. Journal, 1(1), 1- 10.",                     # page range (digits)
+    ]
+    for raw in good_cases:
+        para = ReferenceParagraph(raw_text=raw, runs=[], has_hanging_indent=True)
+        assert check_hyphen_spacing(para) is None, f"R011 false positive on: {raw}"
 
 
 def test_r010_missing_comma_before_volume():

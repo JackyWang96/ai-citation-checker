@@ -4,12 +4,15 @@ from typing import Optional
 from app.models.schemas import CitationIssue
 from app.services.docx_parser import ReferenceParagraph
 
-_AUTHOR_FORMAT_RE = re.compile(r'^[A-Z][a-zA-Z\-]+,\s+[A-Z]\.')
+# Surname character class — uppercase Latin/extended Latin (À-Ɏ covers French,
+# German, Spanish, Polish, Czech, Nordic, etc.) followed by any word char,
+# hyphen, en/em dash, or apostrophe (for names like O'Brien, Pekarek-Doehler).
+_AUTHOR_FORMAT_RE = re.compile(r'^[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-ZÀ-Ɏ]\.')
 _YEAR_PARENS_RE = re.compile(r'\(\d{4}[a-z]?\)')
 _DOI_URL_RE = re.compile(r'https?://doi\.org/')
 _DOI_BARE_RE = re.compile(r'\bdoi:\s*10\.')
 _AND_RE = re.compile(r'\band\b', re.IGNORECASE)
-_AMPERSAND_MULTI_RE = re.compile(r'[A-Z][a-zA-Z]+,\s+[A-Z]\.\s*,')
+_AMPERSAND_MULTI_RE = re.compile(r'[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-Z]\.\s*,')
 
 # R008 — "Lastname, I. & Other" should be "Lastname, I., & Other"
 # Matches initial-period-space-ampersand without comma in between.
@@ -22,14 +25,27 @@ _MISSING_PERIOD_AFTER_YEAR_RE = re.compile(r'\(\d{4}[a-z]?\)\s+[A-Z]')
 # Matches a letter followed by space, digit, "(", digit — no comma between.
 _MISSING_COMMA_BEFORE_VOLUME_RE = re.compile(r'[A-Za-z]\s+\d+\(\d+\)')
 
+# R011 — hyphen with adjacent space in compound words, e.g. "meta- analysis"
+# or "meta -analysis". Restricted to letter-hyphen-space-letter (or mirrored)
+# so page ranges like "1- 10" or "pp. 1 - 10" don't false-trigger.
+_HYPHEN_SPACE_RE = re.compile(r'[A-Za-zÀ-ɏ](?:-\s+|\s+-)[A-Za-zÀ-ɏ]')
 
-def _issue(rule_id: str, reason: str, detail: str | None = None) -> CitationIssue:
+
+def _issue(
+    rule_id: str,
+    reason: str,
+    detail: str | None = None,
+    expected: str | None = None,
+    actual: str | None = None,
+) -> CitationIssue:
     return CitationIssue(
         type="format_violation",
         severity="yellow",
         category="format",
         reason=reason,
         detail=detail,
+        expected=expected,
+        actual=actual,
         rule_id=rule_id,
     )
 
@@ -75,7 +91,7 @@ def check_author_separator(para: ReferenceParagraph) -> Optional[CitationIssue]:
     # Only check the author section (text before the year parenthesis)
     year_match = _YEAR_PARENS_RE.search(para.raw_text)
     author_section = para.raw_text[:year_match.start()] if year_match else para.raw_text
-    has_multiple_authors = bool(re.search(r'[A-Z][a-zA-Z]+,\s+[A-Z]\.', author_section))
+    has_multiple_authors = bool(re.search(r'[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-Z]\.', author_section))
     if has_multiple_authors and _AND_RE.search(author_section):
         return _issue("R007", "Multiple authors should use ', & ' not 'and' (APA 7th R007)")
     return None
@@ -90,7 +106,8 @@ def check_comma_before_ampersand(para: ReferenceParagraph) -> Optional[CitationI
         return _issue(
             "R008",
             "Multi-author list needs a comma before '&' (APA 7th R008)",
-            detail="Use 'Lastname, I., & Other' not 'Lastname, I. & Other'",
+            expected="Lastname, I., & Other",
+            actual="Lastname, I. & Other",
         )
     return None
 
@@ -102,7 +119,8 @@ def check_period_after_year(para: ReferenceParagraph) -> Optional[CitationIssue]
         return _issue(
             "R009",
             "Missing period after year (APA 7th R009)",
-            detail="Use '(2020). Title' not '(2020) Title'",
+            expected="(2020). Title",
+            actual="(2020) Title",
         )
     return None
 
@@ -117,7 +135,21 @@ def check_comma_before_volume(para: ReferenceParagraph) -> Optional[CitationIssu
         return _issue(
             "R010",
             "Missing comma between journal name and volume (APA 7th R010)",
-            detail="Use 'Journal Name, 12(3)' not 'Journal Name 12(3)'",
+            expected="Journal Name, 12(3)",
+            actual="Journal Name 12(3)",
+        )
+    return None
+
+
+def check_hyphen_spacing(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R011: Hyphens between words must not have adjacent spaces —
+    'meta-analysis' not 'meta- analysis' or 'meta -analysis'."""
+    if _HYPHEN_SPACE_RE.search(para.raw_text):
+        return _issue(
+            "R011",
+            "Hyphen should not have adjacent space (APA 7th R011)",
+            expected="meta-analysis",
+            actual="meta- analysis",
         )
     return None
 
@@ -134,4 +166,5 @@ ALL_RULES = [
     check_comma_before_ampersand,
     check_period_after_year,
     check_comma_before_volume,
+    check_hyphen_spacing,
 ]
