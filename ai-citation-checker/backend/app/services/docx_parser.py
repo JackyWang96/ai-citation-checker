@@ -13,7 +13,7 @@ STOP_HEADINGS = {"appendix", "appendices", "notes", "endnotes", "author note", "
 # Anything else is treated as a continuation of the previous entry.
 _REF_START_RE = re.compile(
     r'^[A-ZÀ-Ɏ][\w\-\'‐‑\s]{0,80}?'
-    r'(?:,\s*[A-Z]\.|\(\d{4})'
+    r'(?:,\s*[A-ZÀ-Ɏ]\.|\(\d{4})'
 )
 
 
