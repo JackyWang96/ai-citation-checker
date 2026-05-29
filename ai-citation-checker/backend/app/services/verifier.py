@@ -16,6 +16,12 @@ OPENALEX_BASE = "https://api.openalex.org/works"
 SCORE_EXACT = 100
 SCORE_NEAR_EXACT = 95   # title is essentially identical (small punctuation/spelling diffs)
 SCORE_FUZZY_MIN = 85
+# Cap for the "near-exact title bypasses year check" fallback. Reprints / online-
+# first vs print drift typically sit within a few years. Beyond this, two works
+# by the same author with similar titles are almost always different books
+# (e.g. Jiang 2011 "Introducing Second Language Processing" vs Jiang 2018
+# "Second Language Processing: An Introduction").
+REPRINT_YEAR_GAP_MAX = 5
 HTTP_TIMEOUT = 25.0     # Railway → external API latency is much higher than localhost
 USER_AGENT = "CitationChecker/1.0 (mailto:jackywangmel96@gmail.com)"
 
@@ -262,10 +268,25 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
     # match, accepts year-missing and near-exact-title cases).
     author_year_matching = [
         (score, item, cand_title)
-        for score, author_ok, year_ok, _cand_year, item, cand_title in scored
-        # Accept near-exact title + author match even when year disagrees —
-        # handles republications (Crossref often has reprint year, not original).
-        if author_ok and (year_ok or score >= SCORE_NEAR_EXACT)
+        for score, author_ok, year_ok, cand_year, item, cand_title in scored
+        # Accept title + author match even when year disagrees, with two tiers:
+        #   - Exact title (==100): same author + literally identical title is
+        #     overwhelmingly the same work — accept any year drift (handles
+        #     reprints / re-publications decades later).
+        #   - Near-exact title (95–99): probably the same work but might be a
+        #     different book on the same topic by the same author. Cap at
+        #     REPRINT_YEAR_GAP_MAX years to avoid matching e.g. Jiang's 2018
+        #     "Second Language Processing: An Introduction" against his 2011
+        #     "Introducing Second Language Processing".
+        if author_ok and (
+            year_ok
+            or (cand_year != 0 and score >= SCORE_EXACT)
+            or (
+                cand_year != 0
+                and abs(cand_year - entry.year) < REPRINT_YEAR_GAP_MAX
+                and score >= SCORE_NEAR_EXACT
+            )
+        )
     ]
 
     # Filter to high-confidence matches for the primary result
@@ -277,6 +298,23 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
 
     if not matching:
         return None
+
+    # When the entry isn't formatted as a chapter cite (no '. In <Book>'),
+    # prefer book / journal-article candidates over book-chapter candidates.
+    # Crossref often DOI-registers each chapter of a book individually AND
+    # returns those chapters before the parent-book record — without this
+    # tweak, citing the whole book ('Jiang, N. (2018). Second language
+    # processing: An introduction. Routledge.') matches the first chapter
+    # ('Introducing Second Language Processing') and produces a misleading
+    # title-mismatch warning. Stable sort keeps Crossref's order within each
+    # group.
+    deprioritise_chapters = ". In " not in entry.raw_text
+
+    def _chapter_key(item: dict) -> bool:
+        return (item.get("type") or "").lower() == "book-chapter"
+
+    if deprioritise_chapters:
+        matching.sort(key=lambda m: _chapter_key(m[1]))
 
     # Ambiguity is a stricter check than primary matching: only count candidates
     # whose author, year AND title all firmly match. Year-missing (=0) and
@@ -290,10 +328,15 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
         and abs(cand_year - entry.year) <= 1
         and score >= SCORE_FUZZY_MIN
     ]
-    ambiguous = len(strict_matches) > 1
-    other_titles = [t for _, _, t in strict_matches[1:]]
+    if deprioritise_chapters:
+        strict_matches.sort(key=lambda m: _chapter_key(m[1]))
 
-    best_score, best_item, _ = matching[0]
+    best_score, best_item, best_title = matching[0]
+
+    # Derive other_titles from strict_matches excluding the chosen primary —
+    # never list the primary's own title back to the user as an "other title".
+    other_titles = [t for _, _, t in strict_matches if t != best_title]
+    ambiguous = len(other_titles) > 0
     exact = best_score == SCORE_EXACT
 
     ref_id: Optional[str] = None

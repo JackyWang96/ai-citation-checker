@@ -1288,3 +1288,176 @@ def test_r003_journal_name_handles_nbsp_between_sentences():
     ]
     para = ReferenceParagraph(raw_text=text, runs=runs, has_hanging_indent=True)
     assert check_journal_italic(para) is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_jiang_2018_does_not_match_jiang_2011_with_similar_title(tmp_path):
+    """Bug: 'Jiang, N. (2018). Second language processing: An introduction.'
+    was being matched to Jiang's earlier 2011 book 'Introducing Second
+    Language Processing' — same author, near-exact (but not identical) title,
+    7-year drift. The result was a misleading 'expected = Introducing Second
+    Language Processing' warning. With the tightened bypass (5-yr cap on
+    near-exact titles) the 2011 book is no longer accepted."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Jiang, N. (2018). Second language processing: An introduction. Routledge.",
+        first_author_normalized="jiang",
+        year=2018,
+        title_normalized="second language processing an introduction",
+    )
+    near_match_wrong_year = {
+        "status": "ok",
+        "message": {
+            "items": [{
+                "title": ["Introducing Second Language Processing"],   # near-exact, not 100
+                "author": [{"family": "Jiang"}],
+                "published": {"date-parts": [[2011]]},                # 7-year drift
+                "DOI": "10.1/wrong",
+            }]
+        }
+    }
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=near_match_wrong_year)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_near_exact_title_accepted_within_reprint_window(tmp_path):
+    """Boundary: a near-exact (not 100) title with a small year drift (<5 yrs)
+    is still accepted — covers e.g. online-first / next-year reprints whose
+    Crossref title has minor punctuation differences from the cited form."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Smith, J. (2020). A useful study.",
+        first_author_normalized="smith",
+        year=2020,
+        title_normalized="a useful study",
+    )
+    near_in_window = {
+        "status": "ok",
+        "message": {
+            "items": [{
+                "title": ["A Useful Study!"],          # near-exact (punctuation)
+                "author": [{"family": "Smith"}],
+                "published": {"date-parts": [[2023]]}, # 3-year drift, within window
+                "DOI": "10.1/ok",
+            }]
+        }
+    }
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=near_in_window)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is not None and result.found is True
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_book_cite_prefers_book_record_over_its_chapter_records(tmp_path):
+    """Bug: 'Jiang, N. (2018). Second language processing: An introduction.
+    Routledge.' is a book cite. Crossref DOI-registers each chapter of that
+    book separately and returns the chapters BEFORE the parent-book record.
+    The verifier was picking the first chapter ('Introducing Second Language
+    Processing') as the authoritative record, producing a misleading
+    'expected = Introducing Second Language Processing' title warning.
+    With the chapter-deprioritisation, the parent-book record wins."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Jiang, N. (2018). Second language processing: An introduction. Routledge.",
+        first_author_normalized="jiang",
+        year=2018,
+        title_normalized="second language processing an introduction",
+    )
+    # Mirrors the real Crossref response: chapters first, then the book.
+    crossref_payload = {
+        "status": "ok",
+        "message": {
+            "items": [
+                {
+                    "title": ["Introducing Second Language Processing"],
+                    "author": [{"family": "Jiang"}],
+                    "published": {"date-parts": [[2018]]},
+                    "type": "book-chapter",
+                    "DOI": "10.1/chapter1",
+                },
+                {
+                    "title": ["Second Language Processing"],
+                    "author": [{"family": "Jiang"}],
+                    "published": {"date-parts": [[2018]]},
+                    "type": "book",
+                    "DOI": "10.1/the-book",
+                },
+                {
+                    "title": ["Phonological Processing in L2"],
+                    "author": [{"family": "Jiang"}],
+                    "published": {"date-parts": [[2018]]},
+                    "type": "book-chapter",
+                    "DOI": "10.1/chapter2",
+                },
+            ]
+        }
+    }
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=crossref_payload)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is not None
+    assert result.found is True
+    # The book record (type=book) wins, NOT the first chapter.
+    assert result.canonical["DOI"] == "10.1/the-book"
+    assert result.canonical["title"][0] == "Second Language Processing"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_chapter_cite_still_matches_chapter_record(tmp_path):
+    """Guard: when the entry IS formatted as a chapter cite ('. In <Book>'),
+    we DON'T deprioritise book-chapter candidates — that's the right answer."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text=(
+            "Smith, J. (2020). Chapter title. In Editor, E. (Ed.), Book "
+            "title (pp. 1-20). Publisher."
+        ),
+        first_author_normalized="smith",
+        year=2020,
+        title_normalized="chapter title",
+    )
+    crossref_payload = {
+        "status": "ok",
+        "message": {
+            "items": [{
+                "title": ["Chapter Title"],
+                "author": [{"family": "Smith"}],
+                "published": {"date-parts": [[2020]]},
+                "type": "book-chapter",
+                "DOI": "10.1/chap",
+            }]
+        }
+    }
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=crossref_payload)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is not None and result.found is True
+    assert result.canonical["DOI"] == "10.1/chap"
