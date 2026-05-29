@@ -237,7 +237,7 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
 
     scored = []
     for item in items:
-        cand_title = (item.get("title") or [""])[0]
+        cand_title = _strip_markup((item.get("title") or [""])[0])
         # For edited books, Crossref puts editors in `editor`, not `author`.
         cand_authors = item.get("author") or item.get("editor") or []
         cand_year = ((item.get("published") or {}).get("date-parts") or [[0]])[0][0]
@@ -341,6 +341,17 @@ def _author_surname_match(cand: str, entry: str) -> bool:
     cand_words = cand.split()
     entry_words = entry.split()
     return cand_words[-1] == entry_words[-1]
+
+
+_MARKUP_RE = re.compile(r'<[^>]+>')
+
+
+def _strip_markup(text: str) -> str:
+    """Crossref/JATS metadata can embed HTML-ish markup in titles
+    (e.g. '<b>lmerTest</b> Package', '<i>in vivo</i>', '<scp>...</scp>').
+    Strip the tags before fuzzy-matching or displaying so they don't leak
+    into the UI or pollute the match score."""
+    return _MARKUP_RE.sub('', text)
 
 
 def _norm(text: str) -> str:

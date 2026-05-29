@@ -920,3 +920,224 @@ async def test_openalex_empty_display_name_no_crash(tmp_path):
         httpx.AsyncClient(), entry, db_path
     )
     # Result may or may not match — the point is no crash
+
+
+# ── book chapter handling (R014–R016 + journal-check skip) ────────────────────
+
+_MACWHINNEY_CHAPTER = (
+    "MacWhinney, B. (2008). A unified model. In Handbook of cognitive "
+    "linguistics and second language acquisition (pp. 351-381). Routledge."
+)
+
+
+def test_chapter_journal_check_skipped_for_book_chapter_type():
+    """Bug: a valid book chapter raised 'Journal name does not match'. For
+    Crossref type=book-chapter, container-title is the *book* title (and a
+    generic chapter title often resolves to a different same-named book), so
+    the journal check must be skipped."""
+    entry = ReferenceEntry(
+        raw_text=_MACWHINNEY_CHAPTER,
+        first_author_normalized="macwhinney",
+        year=2008,
+        title_normalized="a unified model",
+    )
+    canonical = {
+        "author": [{"family": "MacWhinney", "given": "B"}],
+        "published": {"date-parts": [[2008]]},
+        "title": ["A unified model"],
+        "container-title": ["Handbook of Bilingualism"],  # different same-named book
+        "type": "book-chapter",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    assert [i for i in issues if i.field == "journal"] == []
+
+
+def test_r014_chapter_missing_editors_flagged():
+    """R014: a chapter without (Eds.) editors is flagged; the MacWhinney
+    example is missing editors and should fire R014 only (not R015/R016)."""
+    from app.services.apa_validator import validate_reference_paragraph
+    para = ReferenceParagraph(raw_text=_MACWHINNEY_CHAPTER, runs=[], has_hanging_indent=True)
+    rule_ids = {i.rule_id for i in validate_reference_paragraph(para)}
+    assert "R014" in rule_ids
+    assert "R015" not in rule_ids  # pages already use "pp."
+    assert "R016" not in rule_ids  # no editor block present
+
+    good = ReferenceParagraph(
+        raw_text=(
+            "MacWhinney, B. (2008). A unified model. In P. Robinson & N. C. "
+            "Ellis (Eds.), Handbook of cognitive linguistics and second "
+            "language acquisition (pp. 351-381). Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    from app.rules.apa7 import check_chapter_editors
+    assert check_chapter_editors(good) is None
+
+
+def test_r014_not_triggered_for_journal_article():
+    """Guard: journal articles (no '. In <Book>' source marker) never trigger
+    the chapter rules."""
+    from app.rules.apa7 import (
+        check_chapter_editors, check_chapter_page_format, check_chapter_editor_order,
+    )
+    para = ReferenceParagraph(
+        raw_text="Smith, J. (2020). A study of things. Journal of Things, 1(1), 1-10.",
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_chapter_editors(para) is None
+    assert check_chapter_page_format(para) is None
+    assert check_chapter_editor_order(para) is None
+
+
+def test_r015_chapter_bare_page_range_flagged():
+    """R015: chapter pages must use 'pp.' — '(351-381)' is flagged,
+    '(pp. 351-381)' is accepted."""
+    from app.rules.apa7 import check_chapter_page_format
+    bad = ReferenceParagraph(
+        raw_text=(
+            "MacWhinney, B. (2008). A unified model. In P. Robinson (Ed.), "
+            "Handbook of cognitive linguistics (351-381). Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    good = ReferenceParagraph(
+        raw_text=(
+            "MacWhinney, B. (2008). A unified model. In P. Robinson (Ed.), "
+            "Handbook of cognitive linguistics (pp. 351-381). Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_chapter_page_format(bad) is not None
+    assert check_chapter_page_format(good) is None
+
+
+def test_r016_chapter_editor_wrong_order_flagged():
+    """R016: editors use 'F. M. Last' order — 'Robinson, P., & Ellis, N. C.'
+    is flagged, 'P. Robinson & N. C. Ellis' is accepted."""
+    from app.rules.apa7 import check_chapter_editor_order
+    bad = ReferenceParagraph(
+        raw_text=(
+            "MacWhinney, B. (2008). A unified model. In Robinson, P., & Ellis, "
+            "N. C. (Eds.), Handbook of cognitive linguistics (pp. 351-381). Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    good = ReferenceParagraph(
+        raw_text=(
+            "MacWhinney, B. (2008). A unified model. In P. Robinson & N. C. "
+            "Ellis (Eds.), Handbook of cognitive linguistics (pp. 351-381). Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_chapter_editor_order(bad) is not None
+    assert check_chapter_editor_order(good) is None
+
+
+def test_r003_chapter_uses_book_title_wording():
+    """R003 wording is chapter-aware: a chapter with no italic runs says
+    'Book title should be in italics', while a journal article keeps the
+    'Journal name' wording."""
+    from app.rules.apa7 import check_journal_italic
+    chapter = ReferenceParagraph(raw_text=_MACWHINNEY_CHAPTER, runs=[], has_hanging_indent=True)
+    article = ReferenceParagraph(
+        raw_text="Smith, J. (2020). A study. Journal of Things, 1(1), 1-10.",
+        runs=[], has_hanging_indent=True,
+    )
+    chapter_issue = check_journal_italic(chapter)
+    article_issue = check_journal_italic(article)
+    assert chapter_issue is not None and "Book title" in chapter_issue.reason
+    assert article_issue is not None and "Journal name" in article_issue.reason
+
+
+def test_crossref_title_html_markup_stripped():
+    """Bug: Crossref/JATS titles embed markup (e.g. '<b>lmerTest</b> Package').
+    Shown raw in 'expected' and, after _norm mangles the tags into 'b...b'
+    tokens, the fuzzy score drops below 95 → false 'Title does not match'.
+    Markup must be stripped before scoring and display."""
+    from app.services.verifier import _strip_markup
+    assert _strip_markup("<b>lmerTest</b> Package: Tests") == "lmerTest Package: Tests"
+
+    entry = ReferenceEntry(
+        raw_text=(
+            "Kuznetsova, A., Brockhoff, P. B., & Christensen, R. H. B. (2017). "
+            "lmerTest Package: Tests in Linear Mixed Effects Models. Journal of "
+            "Statistical Software, 82(13), 1–26. https://doi.org/10.18637/jss.v082.i13"
+        ),
+        first_author_normalized="kuznetsova",
+        year=2017,
+        title_normalized="lmertest package tests in linear mixed effects models",
+        doi="10.18637/jss.v082.i13",
+    )
+    canonical = {
+        "author": [{"family": "Kuznetsova", "given": "A"}],
+        "published": {"date-parts": [[2017]]},
+        "title": ["<b>lmerTest</b> Package: Tests in Linear Mixed Effects Models"],
+        "container-title": ["Journal of Statistical Software"],
+        "type": "journal-article",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    # Title now matches once markup is gone → no false title mismatch.
+    assert [i for i in issues if i.field == "title"] == []
+    # And no raw markup leaks into any displayed expected value.
+    for i in issues:
+        if i.expected:
+            assert "<" not in i.expected and ">" not in i.expected
+
+
+# ── R003 is journal-aware: detect the journal name, then check its italics ────
+
+def test_r003_not_fired_when_reference_has_no_journal():
+    """Bug: R003 fired 'Journal name should be in italics' on a software /
+    R-package citation that has no journal at all. R003 must first detect a
+    journal name (Vol(Issue), pages structure); absent that, it does not fire."""
+    from app.rules.apa7 import check_journal_italic, _journal_name
+    rpkg = (
+        "Kuznetsova, A., Brockhoff, P. B., Christensen, R. H. B., & Jensen, "
+        "S. P. (2017). lmerTest: Tests in linear mixed effects models "
+        "(R package version 3.1-3)."
+    )
+    assert _journal_name(rpkg) is None
+    para = ReferenceParagraph(raw_text=rpkg, runs=[], has_hanging_indent=True)
+    assert check_journal_italic(para) is None
+
+
+def test_r003_fired_when_journal_present_but_not_italic():
+    """The proper JSS form HAS a journal; with no italic run, R003 fires."""
+    from app.rules.apa7 import check_journal_italic, _journal_name
+    jss = (
+        "Kuznetsova, A., Brockhoff, P. B., & Christensen, R. H. B. (2017). "
+        "lmerTest package: Tests in linear mixed effects models. Journal of "
+        "Statistical Software, 82(13), 1–26."
+    )
+    assert _journal_name(jss) == "Journal of Statistical Software"
+    para = ReferenceParagraph(raw_text=jss, runs=[], has_hanging_indent=True)
+    assert check_journal_italic(para) is not None
+
+
+def test_r003_passes_when_journal_name_is_italicised():
+    """When the journal name itself is in an italic run, R003 passes."""
+    from app.rules.apa7 import check_journal_italic
+    runs = [
+        ("Kuznetsova, A. (2017). lmerTest package: Tests. ", False),
+        ("Journal of Statistical Software", True),
+        (", 82(13), 1–26.", False),
+    ]
+    raw = "".join(t for t, _ in runs)
+    para = ReferenceParagraph(raw_text=raw, runs=runs, has_hanging_indent=True)
+    assert check_journal_italic(para) is None
+
+
+def test_r003_fired_when_wrong_element_is_italicised():
+    """Precise check: italicising the article *title* instead of the journal
+    still fails — the journal name is not italic."""
+    from app.rules.apa7 import check_journal_italic
+    runs = [
+        ("Kuznetsova, A. (2017). ", False),
+        ("lmerTest package: Tests", True),  # title italic (wrong)
+        (". Journal of Statistical Software, 82(13), 1–26.", False),
+    ]
+    raw = "".join(t for t, _ in runs)
+    para = ReferenceParagraph(raw_text=raw, runs=runs, has_hanging_indent=True)
+    assert check_journal_italic(para) is not None

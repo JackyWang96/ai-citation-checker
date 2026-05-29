@@ -3,7 +3,7 @@ import re
 from datetime import datetime, timezone, timedelta
 from app.models.schemas import Citation, CitationIssue, Report
 from app.services.citation_extractor import IntextCitation, ReferenceEntry
-from app.services.verifier import VerifyResult, _norm
+from app.services.verifier import VerifyResult, _norm, _strip_markup
 from app.services.docx_parser import ReferenceParagraph
 from app.services.apa_validator import validate_reference_paragraph
 from rapidfuzz import fuzz
@@ -132,6 +132,7 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
         return []
     issues = []
     c = vr.canonical
+    cand_type = (c.get("type") or "").lower()
 
     # Author — normalize Unicode hyphens (U+2010 etc.) to ASCII before comparing
     cand_author = ((c.get("author") or [{}])[0].get("family") or "").lower()
@@ -153,7 +154,6 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
         # Books commonly have multiple editions/reprints — the Crossref record
         # may be a later/different edition. Soften the warning so users don't
         # treat it as a hard error.
-        cand_type = (c.get("type") or "").lower()
         is_book = cand_type in ("book", "monograph", "edited-book", "reference-book")
         if is_book:
             issues.append(CitationIssue(
@@ -171,8 +171,9 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
                 expected=str(cand_year), actual=str(entry.year),
             ))
 
-    # Title
-    cand_title = (c.get("title") or [""])[0]
+    # Title — strip embedded JATS/HTML markup (e.g. "<b>lmerTest</b>") so it
+    # neither pollutes the fuzzy score nor leaks into the displayed expected.
+    cand_title = _strip_markup((c.get("title") or [""])[0])
     score = fuzz.token_set_ratio(_norm(cand_title), entry.title_normalized)
     if score < 95:
         # Show user's original title (with case + punctuation) so they can
@@ -183,9 +184,12 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
             expected=cand_title, actual=entry.title_raw or entry.title_normalized,
         ))
 
-    # Journal — only flag if a journal-like token is present but doesn't match
-    cand_journal = (c.get("container-title") or [""])[0]
-    if cand_journal:
+    # Journal — only flag if a journal-like token is present but doesn't match.
+    # Skip for book chapters: there `container-title` is the *book* title, not a
+    # journal name. Generic chapter titles also frequently resolve to a different
+    # same-named book, which produced false "journal mismatch" warnings.
+    cand_journal = _strip_markup((c.get("container-title") or [""])[0])
+    if cand_journal and cand_type not in ("book-chapter", "reference-entry"):
         j_score = fuzz.token_set_ratio(_norm(cand_journal), _norm(entry.raw_text))
         # Score in [50, 90) means a journal name is present but wrong.
         # Score < 50 means the journal is simply absent (let APA format rules catch that).
