@@ -162,6 +162,32 @@ def test_intext_matches_correct_reference_when_two_share_first_author():
     assert len(orphan_issues) == 0, "Should match Smith+Jones reference, not orphan"
 
 
+def test_intext_format_regex_supports_unicode_surnames():
+    """Bug: _INTEXT_FORMAT_RE used ASCII-only [A-Z][a-zA-Z]+, so any in-text
+    citation with an accented surname (Lemhöfer, Ferré, Łukasiewicz) was
+    flagged as 'does not conform to APA 7th format'. Fixed by extending
+    character class to [A-ZÀ-Ɏ][a-zA-ZÀ-ɏ\\-]+."""
+    from app.services.report_builder import _INTEXT_FORMAT_RE
+
+    valid_unicode = [
+        "(Lemhöfer & Broersma, 2012)",     # German ö
+        "(Ferré, 2017)",                    # French é
+        "(Łukasiewicz, 1999)",              # Polish Ł
+        "(García-Pérez et al., 2020)",     # Spanish accent in compound
+    ]
+    for raw in valid_unicode:
+        assert _INTEXT_FORMAT_RE.match(raw) is not None, f"false positive on: {raw}"
+
+    # Genuine format errors should still fire
+    invalid_format = [
+        "(Smith 2020)",        # missing comma
+        "(Smith, 20)",         # incomplete year
+        "Smith, 2020",         # missing parens
+    ]
+    for raw in invalid_format:
+        assert _INTEXT_FORMAT_RE.match(raw) is None, f"should fail on: {raw}"
+
+
 def test_r013_year_mismatch_flagged_more_specifically_than_orphan():
     """R013: when in-text first author IS in the reference list but the year
     doesn't match, report a specific 'year mismatch' instead of a generic
@@ -418,6 +444,60 @@ def test_unicode_hyphen_author_not_flagged_as_mismatch():
     assert len(author_issues) == 0
 
 
+def test_book_year_mismatch_uses_softer_alternative_edition_message():
+    """Bug: Books commonly have multiple editions (e.g. Tomasello 2003 vs
+    Crossref 2005 reprint). Hard 'Year mismatch' wording misled users into
+    thinking they were wrong. For Crossref type=book*, use a softer
+    'Possible alternative publication year' message that reminds the user
+    to verify the edition."""
+    entry = ReferenceEntry(
+        raw_text="Tomasello, M. (2003). Constructing a language. Harvard University Press.",
+        first_author_normalized="tomasello",
+        year=2003,
+        title_normalized="constructing a language a usagebased theory of language acquisition",
+    )
+    canonical = {
+        "author": [{"family": "Tomasello", "given": "M"}],
+        "published": {"date-parts": [[2005]]},
+        "title": ["Constructing a language: A usage-based theory of language acquisition"],
+        "container-title": ["Harvard University Press"],
+        "type": "book",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    year_issues = [i for i in issues if i.field == "year"]
+    assert len(year_issues) == 1
+    assert year_issues[0].reason == "Possible alternative publication year"
+    assert year_issues[0].detail is not None and "edition" in year_issues[0].detail.lower()
+    # Values still shown so user can see the discrepancy
+    assert year_issues[0].expected == "2005"
+    assert year_issues[0].actual == "2003"
+
+
+def test_journal_year_mismatch_still_uses_hard_year_mismatch_message():
+    """Regression guard: journal articles keep the strict 'Year mismatch'
+    wording — they typically have a single publication year, so year diff
+    likely indicates a real citation error."""
+    entry = ReferenceEntry(
+        raw_text="Smith, J. (2018). Title. Journal, 1(1), 1–10.",
+        first_author_normalized="smith",
+        year=2018,
+        title_normalized="title",
+    )
+    canonical = {
+        "author": [{"family": "Smith", "given": "J"}],
+        "published": {"date-parts": [[2020]]},
+        "title": ["Title"],
+        "container-title": ["Journal"],
+        "type": "journal-article",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    year_issues = [i for i in issues if i.field == "year"]
+    assert len(year_issues) == 1
+    assert year_issues[0].reason == "Year mismatch"
+
+
 def test_online_first_year_not_flagged_as_mismatch():
     """Bug: Crossref 'published' field is online-first date (2011), document
     correctly cites print year (2012) → false year mismatch warning."""
@@ -526,6 +606,84 @@ async def test_year_mismatched_preprint_not_flagged_as_ambiguous(tmp_path):
     assert result is not None
     assert result.found is True
     assert result.ambiguous is False, "preprint with different year and unrelated chapter shouldn't trigger ambiguity"
+
+
+@pytest.mark.asyncio
+async def test_software_citation_skipped_and_marked_yellow(tmp_path):
+    """Software citations with APA [Computer software] tag aren't in academic
+    databases — should be classified pre-flight and surfaced as yellow
+    'Manual verification required', not red 'Reference not found'."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import verify_reference, _classify_reference
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="QSR International Pty Ltd. (2020). NVivo (Version 12) [Computer software]. https://qsrinternational.com",
+        first_author_normalized="qsr international pty ltd",
+        year=2020,
+        title_normalized="nvivo",
+    )
+    assert _classify_reference(entry) == "software"
+    result = await verify_reference(entry, db_path)
+    assert result.found is False
+    assert "software" in (result.not_found_reason or "")
+
+    para = ReferenceParagraph(raw_text=entry.raw_text, runs=[(entry.raw_text, True)], has_hanging_indent=True)
+    report = build_report(
+        report_id="t", filename="t.docx", full_text=entry.raw_text,
+        intext_citations=[],
+        reference_entries=[entry],
+        reference_paragraphs=[para],
+        verify_results=[result],
+    )
+    citation = report.citations[0]
+    assert citation.status == "warning"
+    not_found = next(i for i in citation.issues if i.type == "not_found")
+    assert not_found.severity == "yellow"
+
+
+@pytest.mark.asyncio
+async def test_proceedings_without_doi_skipped_and_marked_yellow(tmp_path):
+    """Conference proceedings without a DOI (e.g. CogSci papers on
+    mindmodeling.org, ACL Anthology PDFs) shouldn't be flagged as red
+    'Reference not found' — they're legitimately not in Crossref/OpenAlex."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import verify_reference, _classify_reference
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text=(
+            "McCauley, S. M., Isbilen, E. S., & Christiansen, M. H. (2017). "
+            "Chunking ability shapes sentence processing at multiple levels of "
+            "abstraction. In G. Gunzelmann (Ed.), Proceedings of the 39th Annual "
+            "Conference of the Cognitive Science Society (pp. 2681–2686). "
+            "Cognitive Science Society. https://cogsci.mindmodeling.org/2017/papers/0507/paper0507.pdf"
+        ),
+        first_author_normalized="mccauley",
+        year=2017,
+        title_normalized="chunking ability shapes sentence processing at multiple levels of abstraction",
+    )
+    assert _classify_reference(entry) == "proceedings"
+    result = await verify_reference(entry, db_path)
+    assert result.found is False
+    assert "proceedings" in (result.not_found_reason or "")
+
+
+def test_proceedings_with_doi_still_goes_through_normal_verification():
+    """Proceedings WITH a DOI (e.g. CHI, NeurIPS proceedings registered on
+    Crossref) should NOT be classified — they can be verified normally."""
+    from app.services.verifier import _classify_reference
+
+    entry = ReferenceEntry(
+        raw_text="Smith, J. (2020). Title. In Proceedings of CHI 2020. ACM. https://doi.org/10.1145/3313831.3376432",
+        first_author_normalized="smith",
+        year=2020,
+        title_normalized="title",
+        doi="10.1145/3313831.3376432",
+    )
+    assert _classify_reference(entry) is None
 
 
 @pytest.mark.asyncio

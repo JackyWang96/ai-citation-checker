@@ -44,23 +44,58 @@ async def _get_with_retry(client: httpx.AsyncClient, url: str, **kwargs) -> http
     return resp
 
 
-def _is_web_reference(entry: ReferenceEntry) -> bool:
-    """Web/organisation citations ('Retrieved from https://...') aren't in
-    academic databases — don't bother querying, just flag as unverifiable."""
-    txt = entry.raw_text.lower()
-    return (
+# Regex helpers for reference classification.
+_SOFTWARE_TAG_RE = re.compile(r'\[\s*(?:computer\s+software|mobile\s+application)\s*\]', re.IGNORECASE)
+_PROCEEDINGS_RE = re.compile(
+    r'\bproceedings\s+of\b|\b(?:workshop|conference|symposium)\s+on\b',
+    re.IGNORECASE,
+)
+
+
+def _classify_reference(entry: ReferenceEntry) -> Optional[str]:
+    """Detect reference categories that don't belong in academic databases.
+
+    Returns:
+        'software'    — has APA [Computer software] / [Mobile application] tag.
+        'web'         — has 'Retrieved from <URL>' and no DOI.
+        'proceedings' — conference proceedings without a DOI.
+        None          — regular journal/book/chapter; proceed with API lookup.
+    """
+    txt = entry.raw_text
+
+    if _SOFTWARE_TAG_RE.search(txt):
+        return "software"
+
+    txt_lower = txt.lower()
+    if (
         not entry.doi
-        and ("retrieved" in txt or "retrieved from" in txt)
-        and "doi.org" not in txt
-    )
+        and "retrieved" in txt_lower
+        and "doi.org" not in txt_lower
+    ):
+        return "web"
+
+    # Proceedings without a DOI — DOI'd proceedings (ACM, IEEE) still go through
+    # normal verification because Crossref usually has them.
+    if not entry.doi and _PROCEEDINGS_RE.search(txt):
+        return "proceedings"
+
+    return None
+
+
+_CLASSIFICATION_REASONS = {
+    "software": "software citation — not in academic databases",
+    "web":      "web/organisation reference — not in academic databases",
+    "proceedings": "conference proceedings — not typically in academic databases",
+}
 
 
 async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
-    # 0. Web/organisation reference — skip verification
-    if _is_web_reference(entry):
+    # 0. References not expected in academic databases — skip verification
+    category = _classify_reference(entry)
+    if category:
         return VerifyResult(
             found=False,
-            not_found_reason="web/organisation reference — not in academic databases",
+            not_found_reason=_CLASSIFICATION_REASONS[category],
         )
 
     # 1. Cache lookup

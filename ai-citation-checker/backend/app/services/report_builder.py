@@ -35,12 +35,20 @@ def build_report(
 
         if not vr.found:
             detail = vr.not_found_reason or "no match in Crossref or OpenAlex"
-            is_web_ref = "web/organisation" in (vr.not_found_reason or "")
+            # Soft-warning categories: references that legitimately aren't in
+            # academic databases (software, web pages, self-hosted conference
+            # proceedings). Downgrade to yellow so users aren't alarmed.
+            soft_markers = (
+                "web/organisation",
+                "software citation",
+                "conference proceedings",
+            )
+            is_soft = any(m in (vr.not_found_reason or "") for m in soft_markers)
             issues.append(CitationIssue(
                 type="not_found",
-                severity="yellow" if is_web_ref else "red",
+                severity="yellow" if is_soft else "red",
                 category="content",
-                reason="Manual verification required" if is_web_ref else "Reference not found",
+                reason="Manual verification required" if is_soft else "Reference not found",
                 detail=detail,
             ))
         else:
@@ -142,11 +150,26 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
     online_parts = (c.get("published") or {}).get("date-parts") or []
     cand_year = (print_parts[0][0] if print_parts else None) or (online_parts[0][0] if online_parts else 0)
     if cand_year and abs(cand_year - entry.year) > 1:
-        issues.append(CitationIssue(
-            type="field_mismatch", severity="yellow", category="content",
-            field="year", reason="Year mismatch",
-            expected=str(cand_year), actual=str(entry.year),
-        ))
+        # Books commonly have multiple editions/reprints — the Crossref record
+        # may be a later/different edition. Soften the warning so users don't
+        # treat it as a hard error.
+        cand_type = (c.get("type") or "").lower()
+        is_book = cand_type in ("book", "monograph", "edited-book", "reference-book")
+        if is_book:
+            issues.append(CitationIssue(
+                type="field_mismatch", severity="yellow", category="content",
+                field="year",
+                reason="Possible alternative publication year",
+                detail="This work appears to have multiple editions or reprints — "
+                       "verify whether your cited year matches the edition you used.",
+                expected=str(cand_year), actual=str(entry.year),
+            ))
+        else:
+            issues.append(CitationIssue(
+                type="field_mismatch", severity="yellow", category="content",
+                field="year", reason="Year mismatch",
+                expected=str(cand_year), actual=str(entry.year),
+            ))
 
     # Title
     cand_title = (c.get("title") or [""])[0]
