@@ -1141,3 +1141,150 @@ def test_r003_fired_when_wrong_element_is_italicised():
     raw = "".join(t for t, _ in runs)
     para = ReferenceParagraph(raw_text=raw, runs=runs, has_hanging_indent=True)
     assert check_journal_italic(para) is not None
+
+
+# ── docx italic via style inheritance (not just direct toggle) ────────────────
+
+class _FakeFont:
+    def __init__(self, italic): self.italic = italic
+class _FakeStyle:
+    def __init__(self, italic=None): self.font = _FakeFont(italic)
+class _FakeRun:
+    def __init__(self, text, italic=None, style_italic=None):
+        self.text = text
+        self.italic = italic
+        self.style = _FakeStyle(style_italic)
+class _FakePara:
+    def __init__(self, style_italic=None): self.style = _FakeStyle(style_italic)
+
+
+def test_effective_italic_direct_toggle():
+    """Direct Cmd+I on the run — same as old behaviour, still works."""
+    from app.services.docx_parser import _effective_italic
+    assert _effective_italic(_FakeRun("x", italic=True), _FakePara()) is True
+    assert _effective_italic(_FakeRun("x", italic=False), _FakePara()) is False
+
+
+def test_effective_italic_from_character_style():
+    """Bug: italic via a character style (e.g. 'Emphasis') was lost — run.italic
+    is None, so the old `r.italic is True` check returned False, R003 then
+    falsely reported the journal name was not italic."""
+    from app.services.docx_parser import _effective_italic
+    run = _FakeRun("Behavior Research Methods", italic=None, style_italic=True)
+    assert _effective_italic(run, _FakePara()) is True
+
+
+def test_effective_italic_from_paragraph_style():
+    """Italic inherited from the paragraph style also counts."""
+    from app.services.docx_parser import _effective_italic
+    run = _FakeRun("x", italic=None, style_italic=None)
+    assert _effective_italic(run, _FakePara(style_italic=True)) is True
+
+
+def test_effective_italic_direct_off_overrides_inherited():
+    """Explicit italic=False on the run wins over any inherited italic."""
+    from app.services.docx_parser import _effective_italic
+    run = _FakeRun("x", italic=False, style_italic=True)
+    assert _effective_italic(run, _FakePara(style_italic=True)) is False
+
+
+def test_effective_italic_defaults_to_false():
+    """No italic anywhere → False."""
+    from app.services.docx_parser import _effective_italic
+    assert _effective_italic(_FakeRun("x"), _FakePara()) is False
+
+
+def test_r003_passes_when_italic_comes_from_character_style():
+    """End-to-end: a journal-name run that gets italic from a character style
+    is now recorded as italic by _effective_italic → R003 passes (no false
+    'Journal name should be in italics' warning on the Alzahrani case)."""
+    from app.rules.apa7 import check_journal_italic
+    runs = [
+        ("Alzahrani, A. (2024). LexArabic: A receptive vocabulary size test "
+         "to estimate Arabic proficiency. ", False),
+        ("Behavior Research Methods", True),       # style-inherited italic
+        (", 56(6), 5529-5556. https://doi.org/10.3758/s13428-023-02286-z", False),
+    ]
+    raw = "".join(t for t, _ in runs)
+    para = ReferenceParagraph(raw_text=raw, runs=runs, has_hanging_indent=True)
+    assert check_journal_italic(para) is None
+
+
+def test_effective_italic_walks_base_style_chain():
+    """Bug: a character style (e.g. Emphasis) may itself have italic=None and
+    inherit italic from its base_style. The original one-level lookup missed
+    that case → R003 still falsely reported missing italic on legitimate docs.
+    _style_chain_italic now walks the base_style ancestors."""
+    from app.services.docx_parser import _effective_italic
+    # Build a 2-level style chain: child has italic=None, base has italic=True.
+    base = _FakeStyle(italic=True)
+    child = _FakeStyle(italic=None)
+    child.base_style = base
+    run = _FakeRun("Behavior Research Methods", italic=None)
+    run.style = child
+    assert _effective_italic(run, _FakePara()) is True
+
+
+def test_reference_citation_carries_runs_with_italic():
+    """Citation.runs is populated for reference citations so the UI can
+    re-render italics that exist in the source Word document."""
+    from app.models.schemas import TextRun
+
+    # Minimal Citation construction via build_report would need full fixtures;
+    # exercise the field directly to lock in the schema + serialisation shape.
+    runs = [TextRun(text="Plain ", italic=False), TextRun(text="Journal", italic=True)]
+    payload = [r.model_dump() for r in runs]
+    assert payload == [
+        {"text": "Plain ", "italic": False},
+        {"text": "Journal", "italic": True},
+    ]
+
+
+def test_r003_passes_when_italic_runs_are_split_at_whitespace():
+    """Bug: Word frequently splits an italic span at whitespace — the words
+    are italic, the spaces between them are not. _italic_text used to join
+    with "" so "Behavior Research Methods" became "BehaviorResearchMethods"
+    and the journal-name substring check failed, even though the user saw a
+    fully italicised journal name in Word and in our UI."""
+    from app.rules.apa7 import check_journal_italic
+    runs = [
+        ("Alzahrani, A. (2024). LexArabic: A receptive vocabulary size test "
+         "to estimate Arabic proficiency. ", False),
+        ("Behavior", True),         # ← Word split the italic span
+        (" ", False),
+        ("Research", True),
+        (" ", False),
+        ("Methods", True),
+        (", 56(6), 5529-5556. https://doi.org/10.3758/s13428-023-02286-z", False),
+    ]
+    raw = "".join(t for t, _ in runs)
+    para = ReferenceParagraph(raw_text=raw, runs=runs, has_hanging_indent=True)
+    assert check_journal_italic(para) is None
+
+
+def test_r003_journal_name_handles_nbsp_between_sentences():
+    """Bug: Word inserts NBSP (\\xa0) between sentences. _journal_name's
+    `before.rfind('. ')` is ASCII-only and misses '. \\xa0', so it falls
+    back to the previous '. ' (after the year) and swallows the article
+    title into the extracted journal name. That huge string then never
+    matches the italic text, and R003 falsely fires on legitimate refs."""
+    from app.rules.apa7 import _journal_name, check_journal_italic
+    text = (
+        "Alzahrani, A. (2024). LexArabic: A receptive vocabulary size test "
+        "to estimate Arabic proficiency.\xa0Behavior Research Methods,"
+        "\xa056(6), 5529-5556. https://doi.org/10.3758/s13428-023-02286-z"
+    )
+    assert _journal_name(text) == "Behavior Research Methods"
+
+    # End-to-end: with the correct journal name extracted, the journal-name
+    # italic check passes when the italic run carries that exact phrase.
+    runs = [
+        ("Alzahrani, A. (2024). LexArabic: A receptive vocabulary size test "
+         "to estimate Arabic proficiency.\xa0", False),
+        ("Behavior Research Methods", True),
+        (",\xa0", False),
+        ("56", True),
+        ("(6), 5529-5556. https://doi.org/10.3758/s13428-023-02286-z", False),
+    ]
+    para = ReferenceParagraph(raw_text=text, runs=runs, has_hanging_indent=True)
+    assert check_journal_italic(para) is None

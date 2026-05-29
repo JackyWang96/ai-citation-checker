@@ -16,6 +16,14 @@ class CitationIssue(BaseModel):
     rule_id: Optional[str] = None
 
 
+class TextRun(BaseModel):
+    """A slice of citation text with its italic flag — sent so the UI can
+    re-render italics that exist in the source document (journal/book titles
+    etc.). Only populated for reference citations."""
+    text: str
+    italic: bool
+
+
 class Citation(BaseModel):
     id: str
     kind: Literal["intext", "reference"]
@@ -25,6 +33,7 @@ class Citation(BaseModel):
     status: Literal["pass", "warning", "error"]
     issues: list[CitationIssue]
     verified_reference_id: Optional[str] = None
+    runs: Optional[list[TextRun]] = None
 
 
 class Report(BaseModel):

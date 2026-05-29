@@ -51,7 +51,7 @@ def parse_docx(data: bytes) -> ParsedDocument:
                 continue
             if txt.lower() in STOP_HEADINGS or txt.lower().startswith("appendix"):
                 break
-            runs = [(r.text, r.italic is True) for r in para.runs if r.text]
+            runs = [(r.text, _effective_italic(r, para)) for r in para.runs if r.text]
             fmt = para.paragraph_format
             style_fmt = para.style.paragraph_format if para.style else None
             direct_indent = fmt.first_line_indent
@@ -92,3 +92,41 @@ def _find_references_heading(paragraphs) -> int | None:
         if para.text.strip().lower() in REFERENCE_HEADINGS:
             return i
     return None
+
+
+def _style_chain_italic(style) -> bool | None:
+    """Walk a style and its ``base_style`` ancestors looking for an explicit
+    italic setting. Returns True / False / None (not set anywhere in chain)."""
+    seen: set[int] = set()
+    cur = style
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        font = getattr(cur, "font", None)
+        italic = getattr(font, "italic", None) if font is not None else None
+        if italic is not None:
+            return bool(italic)
+        cur = getattr(cur, "base_style", None)
+    return None
+
+
+def _effective_italic(run, paragraph) -> bool:
+    """Resolve a run's italic state through style inheritance.
+
+    python-docx's ``run.italic`` returns:
+      - True / False : italic was toggled directly on the run.
+      - None         : not set on the run — inherit from character / paragraph style.
+
+    Reading ``run.italic`` naively (== True) misses italics applied via a
+    character style (e.g. ``Emphasis``) or via the paragraph style — including
+    when those styles themselves inherit italic from a ``base_style``. We walk
+    the cascade so all of these still count as italic.
+    """
+    if run.italic is not None:
+        return bool(run.italic)
+    val = _style_chain_italic(getattr(run, "style", None))
+    if val is not None:
+        return val
+    val = _style_chain_italic(getattr(paragraph, "style", None))
+    if val is not None:
+        return val
+    return False

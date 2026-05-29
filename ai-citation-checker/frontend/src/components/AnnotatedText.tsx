@@ -1,5 +1,6 @@
 import { useT } from '../i18n'
 import Citation from './Citation'
+import RichText, { type TextRun } from './RichText'
 
 interface Issue {
   reason: string
@@ -20,6 +21,7 @@ interface CitationData {
   char_end: number
   status: 'pass' | 'warning' | 'error'
   issues: Issue[]
+  runs?: TextRun[] | null
 }
 
 interface Props {
@@ -115,7 +117,7 @@ export default function AnnotatedText({ fullText, citations, activeCitId, hovere
                     outline: isActive ? `1.5px solid ${BORDER_COLOR[cit.status]}` : 'none',
                   }}
                 >
-                  {cit.raw_text}
+                  <RichText text={cit.raw_text} runs={cit.runs} />
                 </div>
               )
             })}

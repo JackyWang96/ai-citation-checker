@@ -71,7 +71,13 @@ def _norm_text(s: str) -> str:
 def _journal_name(text: str) -> Optional[str]:
     """Return the journal name if the reference has journal-article structure,
     else None. The name is the segment between the end of the article title
-    ('. ') and the volume/issue marker."""
+    ('. ') and the volume/issue marker.
+
+    NBSP (U+00A0) is normalised to a regular space first: Word often inserts
+    non-breaking spaces between sentences ("proficiency.\\xa0Behavior") and
+    the literal '. ' lookup below would miss them, swallowing the article
+    title into the extracted journal name."""
+    text = text.replace("\xa0", " ")
     m = _JOURNAL_STRUCT_RE.search(text)
     if not m:
         return None
@@ -82,7 +88,13 @@ def _journal_name(text: str) -> Optional[str]:
 
 
 def _italic_text(runs: list[tuple[str, bool]]) -> str:
-    return "".join(t for t, is_italic in runs if is_italic)
+    # Join with a space, not "": Word often splits italic spans at whitespace
+    # (only the words are flagged italic, intervening spaces are not). Without
+    # a separator the words glue together — "Behavior Research Methods" becomes
+    # "BehaviorResearchMethods" and the journal-name substring check fails.
+    # _norm_text collapses any extra whitespace afterwards, so this is safe
+    # when italic runs already include their own spaces.
+    return " ".join(t for t, is_italic in runs if is_italic)
 
 
 def _issue(

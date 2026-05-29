@@ -1,6 +1,7 @@
 import { useT } from '../i18n'
 import StatusBadge from './StatusBadge'
 import CategoryTag from './CategoryTag'
+import RichText, { type TextRun } from './RichText'
 
 interface Issue {
   type?: string
@@ -20,6 +21,7 @@ interface CitationData {
   raw_text: string
   status: 'pass' | 'warning' | 'error'
   issues: Issue[]
+  runs?: TextRun[] | null
 }
 
 interface Props {
@@ -97,7 +99,7 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
               marginBottom: cit.issues.length > 0 ? 10 : 0,
             }}
           >
-            {cit.raw_text}
+            <RichText text={cit.raw_text} runs={cit.runs} />
           </div>
 
           {/* Pass state */}

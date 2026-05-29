@@ -1,7 +1,7 @@
 from __future__ import annotations
 import re
 from datetime import datetime, timezone, timedelta
-from app.models.schemas import Citation, CitationIssue, Report
+from app.models.schemas import Citation, CitationIssue, Report, TextRun
 from app.services.citation_extractor import IntextCitation, ReferenceEntry
 from app.services.verifier import VerifyResult, _norm, _strip_markup
 from app.services.docx_parser import ReferenceParagraph
@@ -86,6 +86,7 @@ def build_report(
             status=status,
             issues=issues,
             verified_reference_id=vr.verified_reference_id,
+            runs=[TextRun(text=t, italic=ital) for t, ital in para.runs] or None,
         ))
 
     # Build in-text citations
