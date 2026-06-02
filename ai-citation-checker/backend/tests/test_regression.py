@@ -1461,3 +1461,111 @@ async def test_chapter_cite_still_matches_chapter_record(tmp_path):
     result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
     assert result is not None and result.found is True
     assert result.canonical["DOI"] == "10.1/chap"
+
+
+# ── R017: editors marker must include period ─────────────────────────────────
+
+def test_r017_eds_without_period_flagged():
+    """Bug: a chapter cite with '(Eds)' instead of '(Eds.)' was triggering
+    R014 'missing editors' — misleading, because editors ARE named, just
+    with the wrong punctuation. R017 flags the punctuation specifically;
+    R014 stays for the genuinely-missing case."""
+    from app.rules.apa7 import (
+        check_chapter_editors,
+        check_chapter_editors_period,
+    )
+    bad = ReferenceParagraph(
+        raw_text=(
+            "Ellis, N. C. (2008). Usage-based and form-focused language "
+            "acquisition. In P. Robinson & N. Ellis (Eds), Handbook of "
+            "cognitive linguistics and second language acquisition "
+            "(pp. 372-405). New York: Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    # R014 should NOT fire (editors are present, just punctuation-flawed)
+    assert check_chapter_editors(bad) is None
+    # R017 should fire (period missing)
+    r017 = check_chapter_editors_period(bad)
+    assert r017 is not None
+    assert r017.rule_id == "R017"
+
+    good = ReferenceParagraph(
+        raw_text=(
+            "Ellis, N. C. (2008). Usage-based and form-focused language "
+            "acquisition. In P. Robinson & N. Ellis (Eds.), Handbook of "
+            "cognitive linguistics and second language acquisition "
+            "(pp. 372-405). New York: Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_chapter_editors_period(good) is None
+
+
+def test_r017_skipped_when_no_editors_marker_at_all():
+    """R014 owns 'no editors' — R017 only fires when the marker is present
+    but malformed, so we don't double-warn."""
+    from app.rules.apa7 import check_chapter_editors_period
+    para = ReferenceParagraph(
+        raw_text=(
+            "MacWhinney, B. (2008). A unified model. In Handbook of "
+            "cognitive linguistics (pp. 351-381). Routledge."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_chapter_editors_period(para) is None
+
+
+# ── chapter cite matched to parent book: skip title mismatch ─────────────────
+
+def test_chapter_cite_skipped_title_check_when_doi_returns_parent_book():
+    """Bug: Ellis 2008 chapter cited a parent-book DOI (Routledge often only
+    DOIs the whole book, not individual chapters). _compare_fields was
+    comparing the entry's chapter title against the book's title and
+    flagging 'Title does not match' — misleading, since the DOI is correct.
+    The check is now skipped when entry is a chapter cite and the matched
+    record is type=book."""
+    entry = ReferenceEntry(
+        raw_text=(
+            "Ellis, N. C. (2008). Usage-based and form-focused language "
+            "acquisition. In P. Robinson & N. Ellis (Eds.), Handbook of "
+            "cognitive linguistics and second language acquisition "
+            "(pp. 372-405). New York: Routledge."
+        ),
+        first_author_normalized="ellis",
+        year=2008,
+        title_normalized="usage based and form focused language acquisition",
+        doi="10.4324/9780203938560",
+    )
+    canonical = {
+        "title": ["Handbook of Cognitive Linguistics and Second Language Acquisition"],
+        "author": [],
+        "editor": [{"family": "Robinson"}, {"family": "Ellis"}],
+        "published": {"date-parts": [[2008]]},
+        "type": "book",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    assert [i for i in issues if i.field == "title"] == []
+
+
+def test_non_chapter_cite_still_flags_title_mismatch_against_book():
+    """Regression guard: when the entry is NOT a chapter cite, we still
+    compare titles even if the matched record is type=book — otherwise we'd
+    silently miss real title mismatches on book references."""
+    entry = ReferenceEntry(
+        raw_text="Smith, J. (2020). The wrong title. Publisher.",
+        first_author_normalized="smith",
+        year=2020,
+        title_normalized="the wrong title",
+    )
+    canonical = {
+        "title": ["A Completely Different Book"],
+        "author": [{"family": "Smith"}],
+        "published": {"date-parts": [[2020]]},
+        "type": "book",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    title_issues = [i for i in issues if i.field == "title"]
+    assert len(title_issues) == 1

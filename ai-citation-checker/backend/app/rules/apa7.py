@@ -37,7 +37,12 @@ _HYPHEN_SPACE_RE = re.compile(r'[A-Za-zÀ-ɏ](?:-\s+|\s+-)[A-Za-zÀ-ɏ]')
 # We detect the ". In <Capital>" source marker, then require either a page
 # group or an editors group so journal titles containing "In" don't trigger.
 _CHAPTER_IN_RE = re.compile(r'\.\s+In\s+[A-Z0-9À-Ɏ]')
-_EDITORS_RE = re.compile(r'\(\s*[Ee]ds?\.\s*\)')
+# Lenient — period is optional. Used for "are editors named at all?" detection
+# in _is_chapter and R014. R017 separately enforces the period.
+_EDITORS_RE = re.compile(r'\(\s*[Ee]ds?\.?\s*\)')
+# Strict — period required. Used by R017 to flag '(Eds)' / '(Ed)' as the
+# missing-period typo (APA 7 requires '(Eds.)' / '(Ed.)').
+_EDITORS_STRICT_RE = re.compile(r'\(\s*[Ee]ds?\.\s*\)')
 _PAGE_GROUP_RE = re.compile(r'\(\s*pp?\.\s*\d|\(\s*\d+\s*[-–—]\s*\d+\s*\)')
 # Correct chapter page format: "(pp. 351" or "(p. 5".
 _PP_OK_RE = re.compile(r'\(\s*pp?\.\s*\d')
@@ -277,6 +282,25 @@ def check_chapter_editor_order(para: ReferenceParagraph) -> Optional[CitationIss
     return None
 
 
+def check_chapter_editors_period(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R017: APA 7 requires a period inside the editors marker — '(Eds.)' /
+    '(Ed.)', not '(Eds)' / '(Ed)'. Fires only when an editors marker is
+    present but missing its period; if there's no marker at all, R014 covers
+    that case with a clearer 'editors missing' message."""
+    if not _is_chapter(para.raw_text):
+        return None
+    if not _EDITORS_RE.search(para.raw_text):
+        return None  # no editors marker — R014 handles it
+    if _EDITORS_STRICT_RE.search(para.raw_text):
+        return None  # properly punctuated
+    return _issue(
+        "R017",
+        "Editors marker should include a period: '(Eds.)' / '(Ed.)' (APA 7th R017)",
+        expected="(Eds.)",
+        actual="(Eds)",
+    )
+
+
 # NOTE: R006 (check_hanging_indent) intentionally excluded — many real-world
 # docs mix Normal/Bibliography styles for references, causing too many
 # noisy warnings. Re-add to ALL_RULES if hanging-indent enforcement is wanted.
@@ -293,4 +317,5 @@ ALL_RULES = [
     check_chapter_editors,
     check_chapter_page_format,
     check_chapter_editor_order,
+    check_chapter_editors_period,
 ]

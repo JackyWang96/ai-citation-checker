@@ -175,15 +175,22 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
     # Title — strip embedded JATS/HTML markup (e.g. "<b>lmerTest</b>") so it
     # neither pollutes the fuzzy score nor leaks into the displayed expected.
     cand_title = _strip_markup((c.get("title") or [""])[0])
-    score = fuzz.token_set_ratio(_norm(cand_title), entry.title_normalized)
-    if score < 95:
-        # Show user's original title (with case + punctuation) so they can
-        # spot the actual difference — not the lowercased match-key.
-        issues.append(CitationIssue(
-            type="field_mismatch", severity="yellow", category="content",
-            field="title", reason="Title does not match authoritative record",
-            expected=cand_title, actual=entry.title_raw or entry.title_normalized,
-        ))
+    # Skip the title check when the entry is a chapter cite but the matched
+    # record is the parent book (chapters often lack their own DOI, so DOI
+    # lookup returns the book). The titles live at different levels —
+    # entry.title = chapter title, cand title = book title — and reporting a
+    # mismatch is misleading (the DOI itself is correct).
+    entry_is_chapter = ". In " in entry.raw_text
+    if not (entry_is_chapter and cand_type == "book"):
+        score = fuzz.token_set_ratio(_norm(cand_title), entry.title_normalized)
+        if score < 95:
+            # Show user's original title (with case + punctuation) so they can
+            # spot the actual difference — not the lowercased match-key.
+            issues.append(CitationIssue(
+                type="field_mismatch", severity="yellow", category="content",
+                field="title", reason="Title does not match authoritative record",
+                expected=cand_title, actual=entry.title_raw or entry.title_normalized,
+            ))
 
     # Journal — only flag if a journal-like token is present but doesn't match.
     # Skip for book chapters: there `container-title` is the *book* title, not a
