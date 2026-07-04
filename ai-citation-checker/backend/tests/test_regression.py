@@ -1762,3 +1762,116 @@ def test_r001_multiword_surname_not_flagged():
         runs=[], has_hanging_indent=True,
     )
     assert check_author_format(bad) is not None
+
+
+def test_r011_reports_actual_offending_snippet_not_canned_example():
+    """Bug (Granger & Bestgen): R011's expected/actual were hard-coded to
+    'meta-analysis' / 'meta- analysis'. A user whose reference contained
+    'bigram- based' (line-break artifact) saw 'meta- analysis' in the UI and
+    couldn't tell what actually triggered the warning. The issue now carries
+    the real matched snippet."""
+    from app.rules.apa7 import check_hyphen_spacing
+    para = ReferenceParagraph(
+        raw_text=(
+            "Granger, S., & Bestgen, Y. (2014). The use of collocations by "
+            "intermediate vs. advanced non-native writers: A bigram- based "
+            "study. International Review of Applied Linguistics in Language "
+            "Teaching, 52(3), 229-252. https://doi.org/10.1515/iral-2014-0011"
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    issue = check_hyphen_spacing(para)
+    assert issue is not None
+    assert issue.actual == "bigram- based"
+    assert issue.expected == "bigram-based"
+
+    # Clean hyphens elsewhere in the same text must not trigger at all.
+    clean = ReferenceParagraph(
+        raw_text=(
+            "Granger, S., & Bestgen, Y. (2014). The use of collocations by "
+            "intermediate vs. advanced non-native writers: A bigram-based "
+            "study. International Review of Applied Linguistics in Language "
+            "Teaching, 52(3), 229-252. https://doi.org/10.1515/iral-2014-0011"
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_hyphen_spacing(clean) is None
+
+
+# ── merged references + encyclopedia chapter (Schmitt+Wolter chimera) ─────────
+
+_SCHMITT_WOLTER_MERGED = (
+    "Schmitt, N., Sonbul, S., Vilkaitė-Lozdienė, L., & Macis, M. (2019). "
+    "Formulaic language and collocation. In C. A. Chapelle (Ed.), The "
+    "encyclopedia of applied linguistics. John Wiley & Sons. "
+    "https://doi.org/10.1002/9781405198431.wbeal0433.pub2 "
+    "Wolter, B., & Gyllstad, H. (2013). Frequency of input and L2 "
+    "collocational processing: A comparison of congruent and incongruent "
+    "collocations. Studies in Second Language Acquisition, 35(3), 451-482. "
+    "https://doi.org/10.1017/S0272263113000107"
+)
+
+_SCHMITT_CANONICAL = {
+    "author": [{"family": "Schmitt", "given": "Norbert"}],
+    "published": {"date-parts": [[2019]]},
+    "title": ["Formulaic Language and Collocation"],
+    "container-title": ["The Encyclopedia of Applied Linguistics"],
+    "type": "other",   # Crossref types encyclopedia entries as 'other'
+}
+
+
+def test_merged_references_flagged_and_field_comparison_skipped():
+    """Bug (Schmitt+Wolter): two references glued into one entry (lost
+    paragraph break in Word). Verification matched ref #1 (encyclopedia)
+    while the journal check extracted the journal from ref #2 (SSLA) —
+    producing a chimera warning whose expected/actual came from two
+    different, individually-correct references. Merged entries now get a
+    dedicated warning and field comparison is skipped."""
+    entry = ReferenceEntry(
+        raw_text=_SCHMITT_WOLTER_MERGED,
+        first_author_normalized="schmitt",
+        year=2019,
+        title_normalized="formulaic language and collocation",
+        doi="10.1002/9781405198431.wbeal0433.pub2",
+    )
+    para = ReferenceParagraph(raw_text=_SCHMITT_WOLTER_MERGED, runs=[(_SCHMITT_WOLTER_MERGED, True)], has_hanging_indent=True)
+    vr = VerifyResult(found=True, exact_match=True, canonical=_SCHMITT_CANONICAL)
+    report = build_report("t", "t.docx", _SCHMITT_WOLTER_MERGED, [], [entry], [para], [vr])
+    ref = report.citations[0]
+    reasons = [i.reason for i in ref.issues]
+    assert "Two references appear to be merged into one entry" in reasons
+    # No chimera journal mismatch
+    assert [i for i in ref.issues if i.field == "journal"] == []
+
+
+def test_single_reference_not_flagged_as_merged():
+    """Guard: a normal single reference (one year, one DOI) must not trigger
+    the merged-references warning."""
+    from app.services.report_builder import _looks_like_merged_references
+    assert _looks_like_merged_references(
+        "Smith, J. (2020). A study. Journal, 1(1), 1-10. https://doi.org/10.1/abc"
+    ) is False
+    assert _looks_like_merged_references(_SCHMITT_WOLTER_MERGED) is True
+
+
+def test_chapter_formatted_cite_skips_journal_check_even_when_type_other():
+    """Bug (Schmitt encyclopedia): Crossref types encyclopedia entries as
+    'other', so the book-chapter type skip missed them and the journal check
+    compared the encyclopedia title against an extracted journal name. The
+    skip now also honours the cite's own chapter format ('. In Editor (Ed.),')."""
+    raw = (
+        "Schmitt, N., Sonbul, S., Vilkaitė-Lozdienė, L., & Macis, M. (2019). "
+        "Formulaic language and collocation. In C. A. Chapelle (Ed.), The "
+        "encyclopedia of applied linguistics. John Wiley & Sons. "
+        "https://doi.org/10.1002/9781405198431.wbeal0433.pub2"
+    )
+    entry = ReferenceEntry(
+        raw_text=raw,
+        first_author_normalized="schmitt",
+        year=2019,
+        title_normalized="formulaic language and collocation",
+        doi="10.1002/9781405198431.wbeal0433.pub2",
+    )
+    vr = VerifyResult(found=True, exact_match=True, canonical=_SCHMITT_CANONICAL)
+    issues = _compare_fields(entry, vr)
+    assert [i for i in issues if i.field == "journal"] == []
