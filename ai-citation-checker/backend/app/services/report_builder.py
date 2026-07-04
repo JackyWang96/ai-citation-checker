@@ -3,7 +3,8 @@ import re
 from datetime import datetime, timezone, timedelta
 from app.models.schemas import Citation, CitationIssue, Report, TextRun
 from app.services.citation_extractor import IntextCitation, ReferenceEntry
-from app.services.verifier import VerifyResult, _norm, _strip_markup
+from app.services.verifier import VerifyResult, _norm, _strip_markup, _author_surname_match
+from app.rules.apa7 import _journal_name
 from app.services.docx_parser import ReferenceParagraph
 from app.services.apa_validator import validate_reference_paragraph
 from rapidfuzz import fuzz
@@ -138,7 +139,10 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
     # Author — normalize Unicode hyphens (U+2010 etc.) to ASCII before comparing
     cand_author = ((c.get("author") or [{}])[0].get("family") or "").lower()
     cand_author = cand_author.replace("‐", "-").replace("‑", "-")
-    if cand_author and cand_author != entry.first_author_normalized:
+    # Use the same lenient surname comparison as the verifier: Crossref often
+    # stores only the last word of a multi-word surname (entry 'Van Vu' →
+    # family 'Vu', given 'Duy Van') — strict equality falsely flagged those.
+    if cand_author and not _author_surname_match(cand_author, entry.first_author_normalized):
         issues.append(CitationIssue(
             type="field_mismatch", severity="yellow", category="content",
             field="author",
@@ -192,23 +196,48 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
                 expected=cand_title, actual=entry.title_raw or entry.title_normalized,
             ))
 
-    # Journal — only flag if a journal-like token is present but doesn't match.
-    # Skip for book chapters: there `container-title` is the *book* title, not a
-    # journal name. Generic chapter titles also frequently resolve to a different
-    # same-named book, which produced false "journal mismatch" warnings.
+    # Journal — compare the *extracted* journal name (not the whole reference
+    # text: full-text comparison diluted the score and flagged legitimate
+    # abbreviations like 'International Review of Applied Linguistics' vs the
+    # official 'IRAL - International Review of Applied Linguistics in Language
+    # Teaching'). Skip for book chapters: there `container-title` is the *book*
+    # title, not a journal name.
     cand_journal = _strip_markup((c.get("container-title") or [""])[0])
     if cand_journal and cand_type not in ("book-chapter", "reference-entry"):
-        j_score = fuzz.token_set_ratio(_norm(cand_journal), _norm(entry.raw_text))
-        # Score in [50, 90) means a journal name is present but wrong.
-        # Score < 50 means the journal is simply absent (let APA format rules catch that).
-        if 50 <= j_score < 90:
-            issues.append(CitationIssue(
-                type="field_mismatch", severity="yellow", category="content",
-                field="journal", reason="Journal name does not match authoritative record",
-                expected=cand_journal,
-            ))
+        user_journal = _journal_name(entry.raw_text)
+        if user_journal:
+            # Normalise dashes to spaces so 'ITL-International Journal…'
+            # matches 'ITL - International Journal…'.
+            j_score = fuzz.token_set_ratio(
+                _norm_dashes(cand_journal), _norm_dashes(user_journal)
+            )
+            if j_score < 90:
+                issues.append(CitationIssue(
+                    type="field_mismatch", severity="yellow", category="content",
+                    field="journal", reason="Journal name does not match authoritative record",
+                    expected=cand_journal,
+                    actual=user_journal,
+                ))
+            elif (
+                user_journal.lower() == cand_journal.lower()
+                and user_journal != cand_journal
+            ):
+                # R018: same name, wrong capitalisation ('Language learning'
+                # vs 'Language Learning') — APA 7 requires major words of a
+                # journal name to be capitalised.
+                issues.append(CitationIssue(
+                    type="format_violation", severity="yellow", category="format",
+                    rule_id="R018", field="journal",
+                    reason="Journal name should be capitalised as in the authoritative record (APA 7th R018)",
+                    expected=cand_journal,
+                    actual=user_journal,
+                ))
 
     return issues
+
+
+def _norm_dashes(s: str) -> str:
+    return _norm(re.sub(r'[-–—]', ' ', s))
 
 
 def _check_intext(intext: IntextCitation,

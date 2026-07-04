@@ -7,7 +7,12 @@ from app.services.docx_parser import ReferenceParagraph
 # Surname character class — uppercase Latin/extended Latin (À-Ɏ covers French,
 # German, Spanish, Polish, Czech, Nordic, etc.) followed by any word char,
 # hyphen, en/em dash, or apostrophe (for names like O'Brien, Pekarek-Doehler).
-_AUTHOR_FORMAT_RE = re.compile(r'^[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-ZÀ-Ɏ]\.')
+_AUTHOR_FORMAT_RE = re.compile(
+    # Allow multi-word surnames ('Van Vu, D.', 'Pekarek Doehler, S.') — each
+    # extra word must itself look like a name part. Keep in sync with the
+    # extractor's _AUTHOR_RE which already accepts multi-word surnames.
+    r'^[A-ZÀ-Ɏ][\w\-‐‑\']+(?:\s+[A-ZÀ-Ɏ][\w\-‐‑\']+)*,\s+[A-ZÀ-Ɏ]\.'
+)
 _YEAR_PARENS_RE = re.compile(r'\(\d{4}[a-z]?\)')
 _DOI_URL_RE = re.compile(r'https?://doi\.org/')
 _DOI_BARE_RE = re.compile(r'\bdoi:\s*10\.')
@@ -76,18 +81,20 @@ def _norm_text(s: str) -> str:
 def _journal_name(text: str) -> Optional[str]:
     """Return the journal name if the reference has journal-article structure,
     else None. The name is the segment between the end of the article title
-    ('. ') and the volume/issue marker.
+    ('. ', '? ' or '! ' — titles can end with a question/exclamation mark,
+    e.g. 'To what extent do ... make use of collocations?') and the
+    volume/issue marker.
 
     NBSP (U+00A0) is normalised to a regular space first: Word often inserts
     non-breaking spaces between sentences ("proficiency.\\xa0Behavior") and
-    the literal '. ' lookup below would miss them, swallowing the article
-    title into the extracted journal name."""
+    the literal terminator lookup below would miss them, swallowing the
+    article title into the extracted journal name."""
     text = text.replace("\xa0", " ")
     m = _JOURNAL_STRUCT_RE.search(text)
     if not m:
         return None
     before = text[:m.start()].rstrip().rstrip(',').rstrip()
-    idx = before.rfind('. ')
+    idx = max(before.rfind('. '), before.rfind('? '), before.rfind('! '))
     name = (before[idx + 2:] if idx != -1 else before).strip()
     return name or None
 
