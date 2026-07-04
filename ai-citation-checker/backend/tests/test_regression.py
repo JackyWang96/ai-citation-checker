@@ -1569,3 +1569,196 @@ def test_non_chapter_cite_still_flags_title_mismatch_against_book():
     issues = _compare_fields(entry, vr)
     title_issues = [i for i in issues if i.field == "title"]
     assert len(title_issues) == 1
+
+
+# ── Issues of AI_ref_Checker.docx batch (2026-07-04) ──────────────────────────
+
+def test_journal_name_extracted_when_title_ends_with_question_mark():
+    """Bug (r3 Durrant): _journal_name only recognised '. ' as the end of the
+    article title. Titles ending with '?' ('…make use of collocations?')
+    made it fall back to the sentence after the year, swallowing the whole
+    title into the extracted journal name — which then broke both the
+    journal-mismatch comparison and the R003 italic containment check."""
+    from app.rules.apa7 import _journal_name
+    raw = (
+        "Durrant, P., & Schmitt, N. (2009). To what extent do native and "
+        "non-native writers make use of collocations? International Review "
+        "of Applied Linguistics, 47(2), 157-177. https://doi.org/10.1515/iral.2009.007"
+    )
+    assert _journal_name(raw) == "International Review of Applied Linguistics"
+
+
+def test_r003_passes_for_italic_journal_after_question_mark_title():
+    """Bug (r3): with the journal name wrongly extracted (title included),
+    R003 reported 'should be in italics' even though the journal WAS italic."""
+    from app.rules.apa7 import check_journal_italic
+    runs = [
+        ("Durrant, P., & Schmitt, N. (2009). To what extent do native and "
+         "non-native writers make use of collocations? ", False),
+        ("International Review of Applied Linguistics", True),
+        (", 47(2), 157-177. https://doi.org/10.1515/iral.2009.007", False),
+    ]
+    raw = "".join(t for t, _ in runs)
+    para = ReferenceParagraph(raw_text=raw, runs=runs, has_hanging_indent=True)
+    assert check_journal_italic(para) is None
+
+
+def test_journal_abbreviated_name_not_flagged_as_mismatch():
+    """Bug (r3/r4): the journal check compared the candidate against the WHOLE
+    reference text, diluting the score to ~77 and flagging legitimate short
+    forms. 'International Review of Applied Linguistics' is a subset of the
+    official 'IRAL - International Review of Applied Linguistics in Language
+    Teaching' → token_set 100 → no warning."""
+    entry = ReferenceEntry(
+        raw_text=(
+            "Farghal, M., & Obiedat, H. (1995). Collocations: A neglected "
+            "variable in EFL. International Review of Applied Linguistics, "
+            "33(4), 315-331. https://doi.org/10.1515/iral.1995.33.4.315"
+        ),
+        first_author_normalized="farghal",
+        year=1995,
+        title_normalized="collocations a neglected variable in efl",
+        doi="10.1515/iral.1995.33.4.315",
+    )
+    canonical = {
+        "author": [{"family": "Farghal", "given": "M"}],
+        "published": {"date-parts": [[1995]]},
+        "title": ["Collocations: a neglected variable in EFL"],
+        "container-title": ["IRAL - International Review of Applied Linguistics in Language Teaching"],
+        "type": "journal-article",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    assert [i for i in issues if i.field == "journal"] == []
+
+
+def test_journal_hyphen_spacing_variant_not_flagged():
+    """Bug (Peters): 'ITL-International Journal…' (no spaces around hyphen)
+    vs official 'ITL - International Journal…' was flagged. Dashes are now
+    normalised to spaces before comparing."""
+    entry = ReferenceEntry(
+        raw_text=(
+            "Peters, E. (2018). The effect of out-of-class exposure to English "
+            "language media on learners' vocabulary knowledge. ITL-International "
+            "Journal of Applied Linguistics, 169(1), 142-168."
+        ),
+        first_author_normalized="peters",
+        year=2018,
+        title_normalized="the effect of outofclass exposure to english language media on learners vocabulary knowledge",
+    )
+    canonical = {
+        "author": [{"family": "Peters", "given": "E"}],
+        "published": {"date-parts": [[2018]]},
+        "title": ["The effect of out-of-class exposure to English language media on learners' vocabulary knowledge"],
+        "container-title": ["ITL - International Journal of Applied Linguistics"],
+        "type": "journal-article",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    assert [i for i in issues if i.field == "journal"] == []
+
+
+def test_journal_mismatch_fills_actual_with_extracted_name():
+    """Bug (r3/r4 UI): the journal-mismatch issue only set `expected`, so the
+    'actual' column rendered empty. It now carries the extracted journal name."""
+    entry = ReferenceEntry(
+        raw_text="Smith, J. (2020). A study. Journal of Wrong Things, 1(1), 1-10.",
+        first_author_normalized="smith",
+        year=2020,
+        title_normalized="a study",
+    )
+    canonical = {
+        "author": [{"family": "Smith", "given": "J"}],
+        "published": {"date-parts": [[2020]]},
+        "title": ["A study"],
+        "container-title": ["Journal of Right Things"],
+        "type": "journal-article",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    j = [i for i in issues if i.field == "journal"]
+    assert len(j) == 1
+    assert j[0].actual == "Journal of Wrong Things"
+    assert j[0].expected == "Journal of Right Things"
+
+
+def test_r018_journal_capitalisation_flagged():
+    """Enhancement (Plonsky): 'Language learning' passed silently although the
+    authoritative journal name is 'Language Learning'. Case-only differences
+    now raise a yellow R018 format hint (never a content mismatch)."""
+    entry = ReferenceEntry(
+        raw_text=(
+            "Plonsky, L., & Oswald, F. L. (2014). How big is “big”? "
+            "Interpreting effect sizes in L2 research. Language learning, "
+            "64(4), 878–912. https://doi.org/10.1111/lang.12079"
+        ),
+        first_author_normalized="plonsky",
+        year=2014,
+        title_normalized="how big is big interpreting effect sizes in l2 research",
+        doi="10.1111/lang.12079",
+    )
+    canonical = {
+        "author": [{"family": "Plonsky", "given": "L"}],
+        "published": {"date-parts": [[2014]]},
+        "title": ["How Big Is “Big”? Interpreting Effect Sizes in L2 Research"],
+        "container-title": ["Language Learning"],
+        "type": "journal-article",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    r018 = [i for i in issues if i.rule_id == "R018"]
+    assert len(r018) == 1
+    assert r018[0].expected == "Language Learning"
+    assert r018[0].actual == "Language learning"
+    assert r018[0].severity == "yellow"
+    # No content-level journal mismatch alongside it
+    assert [i for i in issues if i.field == "journal" and i.type == "field_mismatch"] == []
+
+
+def test_author_multiword_surname_not_flagged_in_compare_fields():
+    """Bug (r14 Van Vu): Crossref stores family='Vu', given='Duy Van' for
+    'Van Vu, D.'. _compare_fields used strict equality → false 'Author name
+    mismatch (expected Vu, actual Van Vu)'. It now reuses the verifier's
+    lenient _author_surname_match (last word equal)."""
+    entry = ReferenceEntry(
+        raw_text=(
+            "Van Vu, D., & Peters, E. (2022). Incidental learning of collocations "
+            "from meaningful input. Studies in Second Language Acquisition, "
+            "44(3), 685-707. https://doi.org/10.1017/S0272263121000462"
+        ),
+        first_author_normalized="van vu",
+        year=2022,
+        title_normalized="incidental learning of collocations from meaningful input",
+        doi="10.1017/S0272263121000462",
+    )
+    canonical = {
+        "author": [{"family": "Vu", "given": "Duy Van"}, {"family": "Peters", "given": "Elke"}],
+        "published": {"date-parts": [[2022]]},
+        "title": ["Incidental learning of collocations from meaningful input"],
+        "container-title": ["Studies in Second Language Acquisition"],
+        "type": "journal-article",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    assert [i for i in issues if i.field == "author"] == []
+
+
+def test_r001_multiword_surname_not_flagged():
+    """Bug (r14 Van Vu): R001's regex required a single-word surname, so
+    'Van Vu, D.' (and 'Pekarek Doehler, S.') were flagged as bad author
+    format. The extractor has accepted multi-word surnames all along —
+    the format rule now agrees."""
+    from app.rules.apa7 import check_author_format
+    for raw in [
+        "Van Vu, D., & Peters, E. (2022). Title. Journal, 44(3), 685-707.",
+        "Pekarek Doehler, S. (2018). Title. Journal, 3(2), 173-207.",
+        "Vu, D. (2022). Title. Journal, 44(3), 685-707.",
+    ]:
+        para = ReferenceParagraph(raw_text=raw, runs=[], has_hanging_indent=True)
+        assert check_author_format(para) is None, raw
+    # Still fires on genuinely bad format
+    bad = ReferenceParagraph(
+        raw_text="van vu, D. (2022). Title. Journal, 44(3), 685-707.",
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_author_format(bad) is not None
