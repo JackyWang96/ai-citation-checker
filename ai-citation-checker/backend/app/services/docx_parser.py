@@ -16,6 +16,13 @@ _REF_START_RE = re.compile(
     r'(?:,\s*[A-ZÀ-Ɏ]\.|\(\d{4})'
 )
 
+# PDF copy artifact: a page/footnote number glued to the start of a reference
+# ('12Wolter, B.') defeats the new-reference test above, so the paragraph is
+# treated as a continuation and two references merge into one chimera entry.
+# Only digits *directly* followed by an uppercase letter are junk — numbered
+# list formats like '12. Wolter' or standalone numbers are not touched.
+_LEADING_DIGIT_JUNK_RE = re.compile(r'^\d{1,4}(?=[A-ZÀ-Ɏ])')
+
 
 @dataclass
 class ReferenceParagraph:
@@ -52,6 +59,19 @@ def parse_docx(data: bytes) -> ParsedDocument:
             if txt.lower() in STOP_HEADINGS or txt.lower().startswith("appendix"):
                 break
             runs = [(r.text, _effective_italic(r, para)) for r in para.runs if r.text]
+            para_text = para.text
+
+            # Strip leading digit junk ('12Wolter, B.' → 'Wolter, B.') when
+            # that's the only thing stopping the paragraph from being
+            # recognised as a new reference.
+            if not _REF_START_RE.match(txt):
+                stripped = _LEADING_DIGIT_JUNK_RE.sub('', txt, count=1)
+                if stripped != txt and _REF_START_RE.match(stripped):
+                    txt = stripped
+                    cleaned = _LEADING_DIGIT_JUNK_RE.sub('', para_text.lstrip(), count=1)
+                    runs = _drop_leading_chars(runs, len(para_text) - len(cleaned))
+                    para_text = cleaned
+
             fmt = para.paragraph_format
             style_fmt = para.style.paragraph_format if para.style else None
             direct_indent = fmt.first_line_indent
@@ -65,7 +85,7 @@ def parse_docx(data: bytes) -> ParsedDocument:
             # previous one, treat it as a continuation (merge into previous).
             if ref_paras and not _REF_START_RE.match(txt):
                 prev = ref_paras[-1]
-                merged_text = prev.raw_text.rstrip() + " " + para.text.lstrip()
+                merged_text = prev.raw_text.rstrip() + " " + para_text.lstrip()
                 ref_paras[-1] = ReferenceParagraph(
                     raw_text=merged_text,
                     runs=prev.runs + runs,
@@ -74,7 +94,7 @@ def parse_docx(data: bytes) -> ParsedDocument:
                 continue
 
             ref_paras.append(ReferenceParagraph(
-                raw_text=para.text,
+                raw_text=para_text,
                 runs=runs,
                 has_hanging_indent=hanging,
             ))
@@ -85,6 +105,21 @@ def parse_docx(data: bytes) -> ParsedDocument:
         body_text=body_text,
         reference_paragraphs=ref_paras,
     )
+
+
+def _drop_leading_chars(runs: list[tuple[str, bool]], n: int) -> list[tuple[str, bool]]:
+    """Drop the first ``n`` characters from a run list, preserving italics —
+    keeps runs aligned with raw_text after leading junk is stripped."""
+    out: list[tuple[str, bool]] = []
+    for text, italic in runs:
+        if n >= len(text):
+            n -= len(text)
+            continue
+        if n:
+            text = text[n:]
+            n = 0
+        out.append((text, italic))
+    return out
 
 
 def _find_references_heading(paragraphs) -> int | None:
