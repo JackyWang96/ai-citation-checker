@@ -1878,10 +1878,11 @@ def test_chapter_formatted_cite_skips_journal_check_even_when_type_other():
 
 
 def test_r019_chapter_missing_pages_flagged_when_record_has_pages():
-    """Enhancement (Schmitt encyclopedia): the cite omits the page range but
-    the Crossref record has page='1-10'. We deliberately have no blanket
-    'chapter needs pp.' rule (online reference works are often unpaginated) —
-    R019 fires only when the authoritative record proves pages exist."""
+    """R019 fires only for genuine edited-book chapters (type=book-chapter)
+    whose Crossref record has pages. Online reference-work entries
+    (encyclopedias — Crossref type 'other') are exempt: APA 7's own examples
+    omit page numbers for those, and their `page` field is per-entry PDF
+    pagination ('1-10'), so a reminder there is noise."""
     raw = (
         "Schmitt, N., Sonbul, S., Vilkaitė-Lozdienė, L., & Macis, M. (2019). "
         "Formulaic language and collocation. In C. A. Chapelle (Ed.), The "
@@ -1895,7 +1896,7 @@ def test_r019_chapter_missing_pages_flagged_when_record_has_pages():
         title_normalized="formulaic language and collocation",
         doi="10.1002/9781405198431.wbeal0433.pub2",
     )
-    canonical = dict(_SCHMITT_CANONICAL, page="1-10")
+    canonical = dict(_SCHMITT_CANONICAL, type="book-chapter", page="1-10")
     vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
     issues = _compare_fields(entry, vr)
     r019 = [i for i in issues if i.rule_id == "R019"]
@@ -1919,6 +1920,15 @@ def test_r019_chapter_missing_pages_flagged_when_record_has_pages():
     # Record without page (unpaginated online entry) → no flag
     vr_no_page = VerifyResult(found=True, exact_match=True, canonical=_SCHMITT_CANONICAL)
     assert [i for i in _compare_fields(entry, vr_no_page) if i.rule_id == "R019"] == []
+
+    # Encyclopedia entry (Crossref type='other') WITH per-entry pagination →
+    # exempt. This is the Schmitt case the user challenged: omitting pages
+    # for an online reference work is valid APA 7.
+    vr_encyc = VerifyResult(
+        found=True, exact_match=True,
+        canonical=dict(_SCHMITT_CANONICAL, page="1-10"),
+    )
+    assert [i for i in _compare_fields(entry, vr_encyc) if i.rule_id == "R019"] == []
 
     # Journal article with pages (non-chapter) → no flag
     article = ReferenceEntry(

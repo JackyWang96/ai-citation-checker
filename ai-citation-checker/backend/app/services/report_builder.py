@@ -269,11 +269,15 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
                 ))
 
     # R019 — chapter cite without a page range, but the authoritative record
-    # HAS one. Data-driven so unpaginated online reference works (no `page`
-    # in Crossref) never false-trigger; only flag when we can show the pages.
+    # HAS one. Restricted to genuine edited-book chapters (type=book-chapter):
+    # APA 7's own examples for online reference-work entries (encyclopedias,
+    # typed 'other'/'reference-entry' in Crossref) omit page numbers, and
+    # their `page` field is per-entry PDF pagination ('1-10'), so reminding
+    # there would be noise.
     cand_page = (c.get("page") or "").strip()
     if (
         cand_page
+        and cand_type == "book-chapter"
         and _is_chapter(entry.raw_text)
         and not _PP_OK_RE.search(entry.raw_text)
     ):
