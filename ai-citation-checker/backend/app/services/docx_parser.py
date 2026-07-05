@@ -8,12 +8,18 @@ REFERENCE_HEADINGS = {"references", "bibliography", "works cited", "reference li
 STOP_HEADINGS = {"appendix", "appendices", "notes", "endnotes", "author note", "author notes"}
 
 # A new reference entry starts with one of:
-#   "Lastname, F." (one or more authors with initials)
-#   "Organisation Name (YYYY)"
+#   "Lastname, F."                (one or more authors with initials)
+#   "Organisation Name (YYYY)"    also "Org. (YYYY)" and "Org. (n.d.)" —
+#                                 APA puts a period after org names, and
+#                                 undated web sources use (n.d.)
+#   "lowercaseBrand. (YYYY|n.d.)" single-word brands like 'theCrag' — the
+#                                 period is mandatory here so wrapped lines
+#                                 ('the study (2019) …') never false-split
 # Anything else is treated as a continuation of the previous entry.
 _REF_START_RE = re.compile(
-    r'^[A-ZÀ-Ɏ][\w\-\'‐‑\s]{0,80}?'
-    r'(?:,\s*[A-ZÀ-Ɏ]\.|\(\d{4})'
+    r'^[A-ZÀ-Ɏ][\w\-\'‐‑\s&.]{0,80}?'
+    r'(?:,\s*[A-ZÀ-Ɏ]\.|\.?\s*\((?:\d{4}|n\.d\.))'
+    r'|^[a-zà-ɏ][\w\-]{0,30}\.\s*\((?:\d{4}|n\.d\.)'
 )
 
 # PDF copy artifact: a page/footnote number glued to the start of a reference
