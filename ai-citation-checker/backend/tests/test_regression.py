@@ -1936,3 +1936,58 @@ def test_r019_chapter_missing_pages_flagged_when_record_has_pages():
         "page": "1-10",
     })
     assert [i for i in _compare_fields(article, vr_article) if i.rule_id == "R019"] == []
+
+
+# ── PDF digit artifact defeats new-reference detection ────────────────────────
+
+def _docx_bytes(*paragraph_texts):
+    """Build a minimal in-memory .docx with the given paragraphs."""
+    import io as _io
+    from docx import Document as _Doc
+    d = _Doc()
+    for t in paragraph_texts:
+        d.add_paragraph(t)
+    buf = _io.BytesIO()
+    d.save(buf)
+    return buf.getvalue()
+
+
+def test_leading_digit_junk_starts_new_reference():
+    """Bug (References check01.docx): the PDF-copied line '12Wolter, B., &
+    Gyllstad…' starts with a stray page number glued to the surname. The
+    new-reference regex requires an uppercase first char, so the paragraph
+    was treated as a continuation and merged into the previous (Schmitt)
+    entry — producing the Encyclopedia/SSLA chimera. The parser now strips
+    a short leading digit run glued to an uppercase letter and re-tests."""
+    from app.services.docx_parser import parse_docx
+    data = _docx_bytes(
+        "References",
+        "Schmitt, N., Sonbul, S., & Macis, M. (2019). Formulaic language and",
+        "collocation. In C. A. Chapelle (Ed.), The encyclopedia of applied linguistics. John Wiley",
+        "& Sons. https://doi.org/10.1002/9781405198431.wbeal0433.pub2",
+        "12Wolter, B., & Gyllstad, H. (2013). Frequency of input and L2 collocational processing: A",
+        "comparison of congruent and incongruent collocations. Studies in Second Language",
+        "Acquisition, 35(3), 451-482. https://doi.org/10.1017/S0272263113000107",
+    )
+    parsed = parse_docx(data)
+    assert len(parsed.reference_paragraphs) == 2
+    schmitt, wolter = parsed.reference_paragraphs
+    assert schmitt.raw_text.startswith("Schmitt, N.")
+    assert "Wolter" not in schmitt.raw_text
+    # junk digits stripped from both raw_text and runs
+    assert wolter.raw_text.startswith("Wolter, B.")
+    assert wolter.runs[0][0].startswith("Wolter")
+
+
+def test_leading_digits_not_glued_to_uppercase_still_merge_as_continuation():
+    """Guard: continuation lines that merely START with digits (page ranges,
+    years, '451-482. https…') are NOT new references and must keep merging."""
+    from app.services.docx_parser import parse_docx
+    data = _docx_bytes(
+        "References",
+        "Smith, J. (2020). A long title that wraps across lines. Journal of Things,",
+        "12(3), 451-482. https://doi.org/10.1017/S0272263113000107",
+    )
+    parsed = parse_docx(data)
+    assert len(parsed.reference_paragraphs) == 1
+    assert "451-482" in parsed.reference_paragraphs[0].raw_text
