@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from app.models.schemas import Citation, CitationIssue, Report, TextRun
 from app.services.citation_extractor import IntextCitation, ReferenceEntry
 from app.services.verifier import VerifyResult, _norm, _strip_markup, _author_surname_match
-from app.rules.apa7 import _journal_name
+from app.rules.apa7 import _journal_name, _is_chapter, _PP_OK_RE
 from app.services.docx_parser import ReferenceParagraph
 from app.services.apa_validator import validate_reference_paragraph
 from rapidfuzz import fuzz
@@ -15,6 +15,21 @@ _INTEXT_FORMAT_RE = re.compile(
     r'(?:\s*[,&]\s*[A-ZÀ-Ɏ][a-zA-ZÀ-ɏ\-]+)*'
     r',\s*\d{4}[a-z]?(?:,\s*pp?\.\s*[\d\-]+)?\)$'
 )
+
+# Merged-entry detection: a healthy reference has exactly one '(YYYY)' and at
+# most one DOI URL. Two of either means two references glued into one entry
+# (a lost paragraph break in Word) — field comparison against such a chimera
+# produces nonsense warnings (e.g. journal name from ref #2 compared against
+# the Crossref record of ref #1).
+_DOI_URL_RE = re.compile(r'https?://doi\.org/')
+_YEAR_PARENS_RE = re.compile(r'\(\d{4}[a-z]?\)')
+
+
+def _looks_like_merged_references(text: str) -> bool:
+    return (
+        len(_DOI_URL_RE.findall(text)) >= 2
+        or len(_YEAR_PARENS_RE.findall(text)) >= 2
+    )
 
 
 def build_report(
@@ -33,6 +48,16 @@ def build_report(
     for entry, para, vr in zip(reference_entries, reference_paragraphs, verify_results):
         counter += 1
         issues: list[CitationIssue] = []
+
+        merged = _looks_like_merged_references(entry.raw_text)
+        if merged:
+            issues.append(CitationIssue(
+                type="format_violation", severity="yellow", category="format",
+                reason="Two references appear to be merged into one entry",
+                detail="This entry contains multiple years/DOIs — most likely a "
+                       "missing paragraph break in Word. Split the references "
+                       "into separate paragraphs and re-upload.",
+            ))
 
         if not vr.found:
             detail = vr.not_found_reason or "no match in Crossref or OpenAlex"
@@ -53,8 +78,10 @@ def build_report(
                 detail=detail,
             ))
         else:
-            # Field-level comparison
-            issues.extend(_compare_fields(entry, vr))
+            # Field-level comparison — skipped for merged entries: the record
+            # matches ref #1 but extracted fields may come from ref #2.
+            if not merged:
+                issues.extend(_compare_fields(entry, vr))
             # APA format check
             issues.extend(validate_reference_paragraph(para))
             # Ambiguity
@@ -201,9 +228,15 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
     # abbreviations like 'International Review of Applied Linguistics' vs the
     # official 'IRAL - International Review of Applied Linguistics in Language
     # Teaching'). Skip for book chapters: there `container-title` is the *book*
-    # title, not a journal name.
+    # title, not a journal name. The chapter check looks at BOTH the Crossref
+    # type and the cite's own format ('. In Editor (Ed.), …') — encyclopedia
+    # entries are typed 'other' in Crossref, so type alone misses them.
     cand_journal = _strip_markup((c.get("container-title") or [""])[0])
-    if cand_journal and cand_type not in ("book-chapter", "reference-entry"):
+    if (
+        cand_journal
+        and cand_type not in ("book-chapter", "reference-entry")
+        and not _is_chapter(entry.raw_text)
+    ):
         user_journal = _journal_name(entry.raw_text)
         if user_journal:
             # Normalise dashes to spaces so 'ITL-International Journal…'
@@ -232,6 +265,24 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
                     expected=cand_journal,
                     actual=user_journal,
                 ))
+
+    # R019 — chapter cite without a page range, but the authoritative record
+    # HAS one. Data-driven so unpaginated online reference works (no `page`
+    # in Crossref) never false-trigger; only flag when we can show the pages.
+    cand_page = (c.get("page") or "").strip()
+    if (
+        cand_page
+        and _is_chapter(entry.raw_text)
+        and not _PP_OK_RE.search(entry.raw_text)
+    ):
+        issues.append(CitationIssue(
+            type="format_violation", severity="yellow", category="format",
+            rule_id="R019",
+            reason="Chapter page range may be missing (APA 7th R019)",
+            detail=f"The authoritative record lists pages {cand_page} — "
+                   f"consider adding (pp. {cand_page}) after the book title.",
+            expected=f"(pp. {cand_page})",
+        ))
 
     return issues
 

@@ -33,7 +33,11 @@ _MISSING_COMMA_BEFORE_VOLUME_RE = re.compile(r'[A-Za-z]\s+\d+\(\d+\)')
 # R011 — hyphen with adjacent space in compound words, e.g. "meta- analysis"
 # or "meta -analysis". Restricted to letter-hyphen-space-letter (or mirrored)
 # so page ranges like "1- 10" or "pp. 1 - 10" don't false-trigger.
-_HYPHEN_SPACE_RE = re.compile(r'[A-Za-zÀ-ɏ](?:-\s+|\s+-)[A-Za-zÀ-ɏ]')
+# The surrounding word characters are captured so the issue can show the
+# user's actual offending snippet, not a canned example.
+_HYPHEN_SPACE_RE = re.compile(
+    r"[\w'‐‑-]*[A-Za-zÀ-ɏ](?:-\s+|\s+-)[A-Za-zÀ-ɏ][\w'‐‑-]*"
+)
 
 # --- Book-chapter detection (R014–R016) ---------------------------------
 # An edited-book chapter looks like:
@@ -235,13 +239,19 @@ def check_comma_before_volume(para: ReferenceParagraph) -> Optional[CitationIssu
 
 def check_hyphen_spacing(para: ReferenceParagraph) -> Optional[CitationIssue]:
     """R011: Hyphens between words must not have adjacent spaces —
-    'meta-analysis' not 'meta- analysis' or 'meta -analysis'."""
-    if _HYPHEN_SPACE_RE.search(para.raw_text):
+    'meta-analysis' not 'meta- analysis' or 'meta -analysis'.
+
+    expected/actual carry the user's actual offending snippet (previously a
+    hard-coded 'meta- analysis' example, which confused users whose text
+    contained no such word)."""
+    m = _HYPHEN_SPACE_RE.search(para.raw_text)
+    if m:
+        snippet = m.group()
         return _issue(
             "R011",
             "Hyphen should not have adjacent space (APA 7th R011)",
-            expected="meta-analysis",
-            actual="meta- analysis",
+            expected=re.sub(r'\s*-\s*', '-', snippet),
+            actual=snippet,
         )
     return None
 
