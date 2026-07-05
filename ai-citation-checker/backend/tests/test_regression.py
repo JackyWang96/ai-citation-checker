@@ -2001,3 +2001,41 @@ def test_leading_digits_not_glued_to_uppercase_still_merge_as_continuation():
     parsed = parse_docx(data)
     assert len(parsed.reference_paragraphs) == 1
     assert "451-482" in parsed.reference_paragraphs[0].raw_text
+
+
+def test_org_with_period_and_nd_and_lowercase_brand_start_new_references():
+    """Bug (References check03.docx): three references merged into one entry.
+    'The jamovi project. (2024)' has a period between the org name and the
+    year parens; 'theCrag. (n.d.)' starts lowercase AND uses (n.d.) instead
+    of a year — both failed _REF_START_RE and merged into the preceding
+    Sánchez-Hernández entry."""
+    from app.services.docx_parser import parse_docx
+    data = _docx_bytes(
+        "References",
+        "Sánchez-Hernández, A. & Alcón-Soler, E. (2019). Pragmatic gains in the "
+        "study abroad context. Journal of Pragmatics 146, 54–71.",
+        "The jamovi project. (2024). jamovi (Version 2.5) [Computer software]. "
+        "https://www.jamovi.org",
+        "theCrag. (n.d.). Glossary. Retrieved May 28, 2026, from "
+        "https://www.thecrag.com/en/article/glossary",
+    )
+    parsed = parse_docx(data)
+    assert len(parsed.reference_paragraphs) == 3
+    assert parsed.reference_paragraphs[0].raw_text.startswith("Sánchez-Hernández")
+    assert parsed.reference_paragraphs[1].raw_text.startswith("The jamovi project.")
+    assert parsed.reference_paragraphs[2].raw_text.startswith("theCrag.")
+
+
+def test_lowercase_multiword_continuation_line_still_merges():
+    """Guard: the lowercase-brand alternation requires a single word followed
+    by a period — wrapped continuation lines starting with lowercase words
+    (even ones containing a parenthesised year) keep merging."""
+    from app.services.docx_parser import parse_docx
+    data = _docx_bytes(
+        "References",
+        "Smith, J. (2020). A review of",
+        "the study (2019) found effects, 12(3), 45-67. https://doi.org/10.1/x",
+    )
+    parsed = parse_docx(data)
+    assert len(parsed.reference_paragraphs) == 1
+    assert "the study (2019)" in parsed.reference_paragraphs[0].raw_text
