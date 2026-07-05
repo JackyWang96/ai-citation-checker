@@ -2192,3 +2192,34 @@ def test_lowercase_multiword_continuation_line_still_merges():
     parsed = parse_docx(data)
     assert len(parsed.reference_paragraphs) == 1
     assert "the study (2019)" in parsed.reference_paragraphs[0].raw_text
+
+
+def test_hard_not_found_detail_leads_with_manual_check_guidance():
+    """UX (Gledhill guidebook): the raw per-database trail ('Crossref: score
+    too low · OpenAlex: no results · …') read like a system error. Hard
+    not-found details now lead with 'Please verify this reference manually'
+    while keeping the technical trail; soft categories (software/web/
+    proceedings) keep their own wording."""
+    entry = ReferenceEntry(
+        raw_text="Gledhill, A., & Gledhill, G. (1972). V.C.C. rock climbing guide to the Northern Grampians. Victorian Climbing Club.",
+        first_author_normalized="gledhill",
+        year=1972,
+        title_normalized="vcc rock climbing guide to the northern grampians",
+    )
+    para = ReferenceParagraph(raw_text=entry.raw_text, runs=[], has_hanging_indent=True)
+    vr = VerifyResult(
+        found=False,
+        not_found_reason="Crossref: score too low or author/year mismatch · OpenAlex: no results · Open Library: no results",
+    )
+    report = build_report("t", "t.docx", entry.raw_text, [], [entry], [para], [vr])
+    issue = [i for i in report.citations[0].issues if i.type == "not_found"][0]
+    assert issue.severity == "red"
+    assert issue.detail.startswith("Please verify this reference manually — ")
+    assert "Open Library: no results" in issue.detail
+
+    # Soft category (software) keeps its own wording, no double guidance
+    vr_soft = VerifyResult(found=False, not_found_reason="software citation — not in academic databases")
+    report2 = build_report("t", "t.docx", entry.raw_text, [], [entry], [para], [vr_soft])
+    issue2 = [i for i in report2.citations[0].issues if i.type == "not_found"][0]
+    assert issue2.severity == "yellow"
+    assert not issue2.detail.startswith("Please verify this reference manually")

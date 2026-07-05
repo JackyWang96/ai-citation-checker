@@ -72,6 +72,13 @@ def build_report(
                 "conference proceedings",
             )
             is_soft = any(m in (vr.not_found_reason or "") for m in soft_markers)
+            if not is_soft:
+                # Lead with actionable guidance — the raw per-database trail
+                # ('Crossref: score too low · …') alone reads like a system
+                # error rather than 'we searched everywhere, please check it
+                # yourself' (grey literature such as club-published guidebooks
+                # legitimately isn't in any catalogue).
+                detail = f"Please verify this reference manually — {detail}"
             issues.append(CitationIssue(
                 type="not_found",
                 severity="yellow" if is_soft else "red",
