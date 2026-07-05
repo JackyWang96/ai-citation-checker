@@ -2003,6 +2003,132 @@ def test_leading_digits_not_glued_to_uppercase_still_merge_as_continuation():
     assert "451-482" in parsed.reference_paragraphs[0].raw_text
 
 
+# ── hyphenated surnames + Open Library book fallback (r8/r16 batch) ───────────
+
+def test_author_surname_match_strips_hyphens():
+    """Bug (r16 Wenger-Trayner): _norm strips hyphens from Crossref names
+    ('Wenger-Trayner' → 'wengertrayner') but the extractor's
+    first_author_normalized keeps them ('wenger-trayner'), so every
+    hyphenated first author without a DOI failed the surname match and the
+    reference went red 'not found' even when Crossref had it."""
+    from app.services.verifier import _author_surname_match, _norm
+    assert _author_surname_match(_norm("Wenger-Trayner"), "wenger-trayner") is True
+    assert _author_surname_match(_norm("Al-Gahtani"), "al-gahtani") is True
+    # unrelated names still rejected
+    assert _author_surname_match(_norm("Smith"), "wenger-trayner") is False
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_r16_hyphenated_editor_book_found_in_crossref(tmp_path):
+    """r16: 'Learning in landscapes of practice' (Eds. Wenger-Trayner et al.)
+    IS in Crossref (type=book, 2014, editors) — it was rejected only by the
+    hyphen mismatch above. With the fix it verifies."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text=(
+            "Wenger-Trayner, E., Fenton-O'Creevy, M., Hutchinson, S., Kubiak, C., "
+            "& Wenger-Trayner, B. (Eds.). (2015). Learning in landscapes of "
+            "practice: Boundaries, identity, and knowledgeability in "
+            "practice-based learning. Routledge."
+        ),
+        first_author_normalized="wenger-trayner",
+        year=2015,
+        title_normalized="learning in landscapes of practice boundaries identity and knowledgeability in practicebased learning",
+    )
+    crossref_payload = {
+        "status": "ok",
+        "message": {
+            "items": [{
+                "title": ["Learning in Landscapes of Practice"],
+                "editor": [{"family": "Wenger-Trayner", "given": "Etienne"}],
+                "published": {"date-parts": [[2014]]},   # 1-yr drift, within tolerance
+                "type": "book",
+                "DOI": "10.4324/9781315777122",
+            }]
+        }
+    }
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=crossref_payload)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is not None and result.found is True
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_openlibrary_fallback_finds_predoi_book(tmp_path):
+    """r8 Labov (1972): pre-DOI books were never registered in Crossref (only
+    1975 book *reviews* titled 'Sociolinguistic patterns. By William Labov'
+    show up, correctly rejected on author). Open Library has the real book —
+    verify_reference now falls through to it for book-shaped references."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import verify_reference
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Labov, W. (1972). Sociolinguistic patterns. Philadelphia: University of Pennsylvania Press.",
+        first_author_normalized="labov",
+        year=1972,
+        title_normalized="sociolinguistic patterns",
+    )
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json={"message": {"items": []}})
+    )
+    respx.get("https://api.openalex.org/works").mock(
+        return_value=httpx.Response(200, json={"results": []})
+    )
+    respx.get("https://openlibrary.org/search.json").mock(
+        return_value=httpx.Response(200, json={"docs": [{
+            "title": "Sociolinguistic Patterns",
+            "author_name": ["William Labov"],
+            "first_publish_year": 1973,
+            "publish_year": [1972, 1973, 1980],
+            "publisher": ["University of Pennsylvania Press"],
+        }]})
+    )
+    result = await verify_reference(entry, db_path)
+    assert result.found is True
+    assert result.source == "openlibrary"
+    # closest edition year picked → no spurious year warning downstream
+    assert result.canonical["published"]["date-parts"] == [[1972]]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_openlibrary_skipped_for_journal_shaped_refs(tmp_path):
+    """Guard: journal-article-shaped references (Vol(Issue), pages) never hit
+    Open Library — it only knows books, and querying it with article titles
+    would produce junk matches."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import verify_reference
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Smith, J. (2020). A study of things. Journal of Things, 12(3), 45-67.",
+        first_author_normalized="smith",
+        year=2020,
+        title_normalized="a study of things",
+    )
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json={"message": {"items": []}})
+    )
+    respx.get("https://api.openalex.org/works").mock(
+        return_value=httpx.Response(200, json={"results": []})
+    )
+    ol_route = respx.get("https://openlibrary.org/search.json").mock(
+        return_value=httpx.Response(200, json={"docs": []})
+    )
+    result = await verify_reference(entry, db_path)
+    assert result.found is False
+    assert ol_route.call_count == 0
+    assert "Open Library" not in (result.not_found_reason or "")
 def test_org_with_period_and_nd_and_lowercase_brand_start_new_references():
     """Bug (References check03.docx): three references merged into one entry.
     'The jamovi project. (2024)' has a period between the org name and the

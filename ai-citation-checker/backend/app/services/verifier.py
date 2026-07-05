@@ -8,11 +8,13 @@ from typing import Optional
 import httpx
 from rapidfuzz import fuzz
 from app.services.citation_extractor import ReferenceEntry
+from app.rules.apa7 import _JOURNAL_STRUCT_RE, _is_chapter
 from app.storage.db import get_cached_reference, save_verified_reference
 from app.config import CROSSREF_MAILTO
 
 CROSSREF_BASE = "https://api.crossref.org/works"
 OPENALEX_BASE = "https://api.openalex.org/works"
+OPENLIBRARY_BASE = "https://openlibrary.org/search.json"
 SCORE_EXACT = 100
 SCORE_NEAR_EXACT = 95   # title is essentially identical (small punctuation/spelling diffs)
 SCORE_FUZZY_MIN = 85
@@ -135,8 +137,27 @@ async def verify_reference(entry: ReferenceEntry, db_path: str) -> VerifyResult:
         if result:
             return result
         reasons.append(f"OpenAlex: {reason}")
+        # 5. Open Library fallback for book-shaped references — pre-DOI books
+        #    (e.g. Labov 1972) were never DOI-registered and are missing from
+        #    Crossref/OpenAlex, but library catalogues have them.
+        if _looks_like_book(entry):
+            result, reason = await _search_openlibrary(client, entry, db_path)
+            if result:
+                return result
+            reasons.append(f"Open Library: {reason}")
 
     return VerifyResult(found=False, not_found_reason=" · ".join(reasons))
+
+
+def _looks_like_book(entry: ReferenceEntry) -> bool:
+    """Book-shaped: no DOI, no journal 'Vol(Issue), pages' structure, and not
+    a chapter cite ('. In Editor (Ed.), …')."""
+    txt = entry.raw_text.replace("\xa0", " ")
+    return (
+        not entry.doi
+        and not _JOURNAL_STRUCT_RE.search(txt)
+        and not _is_chapter(txt)
+    )
 
 
 async def _lookup_by_doi(client: httpx.AsyncClient, entry: ReferenceEntry,
@@ -233,6 +254,87 @@ async def _search_openalex(client: httpx.AsyncClient, entry: ReferenceEntry,
     result = await _score_candidates(items, entry, db_path, source="openalex")
     if result:
         return result, ""
+    return None, "score too low or author/year mismatch"
+
+
+async def _search_openlibrary(client: httpx.AsyncClient, entry: ReferenceEntry,
+                              db_path: str) -> tuple[Optional[VerifyResult], str]:
+    """Look up a book in Open Library (free, keyless, good pre-DOI coverage).
+
+    Stricter than the Crossref/OpenAlex scoring: library catalogues are noisy
+    (many editions, user-contributed records), so require a near-exact title
+    AND an author match AND a plausible edition year before accepting."""
+    params = {
+        "title": entry.title_normalized,
+        "author": entry.first_author_normalized,
+        "limit": 5,
+        "fields": "title,author_name,first_publish_year,publish_year,publisher",
+    }
+    try:
+        resp = await _get_with_retry(client, OPENLIBRARY_BASE, params=params)
+        resp.raise_for_status()
+        docs = resp.json().get("docs", [])
+    except httpx.TimeoutException:
+        return None, "timeout"
+    except httpx.HTTPStatusError as e:
+        return None, f"HTTP {e.response.status_code}"
+    except Exception as e:
+        return None, str(e)
+
+    if not docs:
+        return None, "no results"
+
+    for d in docs:
+        title = d.get("title") or ""
+        authors = d.get("author_name") or []
+        first_author = authors[0] if authors and authors[0] else ""
+        fam = first_author.split()[-1] if first_author else ""
+        years = list(d.get("publish_year") or [])
+        if d.get("first_publish_year"):
+            years.append(d["first_publish_year"])
+
+        score = fuzz.token_set_ratio(entry.title_normalized, _norm(title))
+        author_ok = bool(fam) and _author_surname_match(
+            _norm(fam), entry.first_author_normalized
+        )
+        year_ok = (
+            entry.year == 0
+            or any(abs(y - entry.year) <= 1 for y in years if y)
+        )
+        if score < SCORE_NEAR_EXACT or not author_ok or not year_ok:
+            continue
+
+        # Pick the edition year closest to the cited year so the year
+        # comparison downstream doesn't raise a spurious warning.
+        best_year = (
+            min((y for y in years if y), key=lambda y: abs(y - entry.year))
+            if years and entry.year else (years[0] if years else 0)
+        )
+        canonical = {
+            "title": [title],
+            "author": [{
+                "family": fam,
+                "given": " ".join(first_author.split()[:-1]),
+            }],
+            "published": {"date-parts": [[best_year]]},
+            "container-title": [""],
+            "publisher": (d.get("publisher") or [""])[0],
+            "type": "book",
+        }
+        ref_id = str(uuid.uuid4())
+        await save_verified_reference(
+            db_path, ref_id, None,
+            entry.title_normalized, entry.first_author_normalized, entry.year,
+            json.dumps(canonical), "openlibrary",
+        )
+        return VerifyResult(
+            found=True,
+            exact_match=score == SCORE_EXACT,
+            canonical=canonical,
+            source="openlibrary",
+            verified_reference_id=ref_id,
+        ), ""
+
     return None, "score too low or author/year mismatch"
 
 
@@ -376,9 +478,16 @@ async def verify_all(entries: list[ReferenceEntry], db_path: str,
 def _author_surname_match(cand: str, entry: str) -> bool:
     """Compare normalized surnames, allowing one to drop a leading word.
     Crossref sometimes truncates multi-word surnames like 'Pekarek Doehler' to
-    just 'Doehler' — accept that case, but don't accept unrelated names."""
+    just 'Doehler' — accept that case, but don't accept unrelated names.
+
+    Hyphens are stripped from both sides first: `_norm` deletes them from
+    candidate names ('Wenger-Trayner' → 'wengertrayner') while the extractor's
+    `first_author_normalized` keeps them ('wenger-trayner'), so every
+    hyphenated first author without a DOI failed to match."""
     if not cand or not entry:
         return False
+    cand = re.sub(r'[-‐‑]', '', cand)
+    entry = re.sub(r'[-‐‑]', '', entry)
     if cand == entry:
         return True
     cand_words = cand.split()
