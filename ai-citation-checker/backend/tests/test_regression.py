@@ -1875,3 +1875,64 @@ def test_chapter_formatted_cite_skips_journal_check_even_when_type_other():
     vr = VerifyResult(found=True, exact_match=True, canonical=_SCHMITT_CANONICAL)
     issues = _compare_fields(entry, vr)
     assert [i for i in issues if i.field == "journal"] == []
+
+
+def test_r019_chapter_missing_pages_flagged_when_record_has_pages():
+    """Enhancement (Schmitt encyclopedia): the cite omits the page range but
+    the Crossref record has page='1-10'. We deliberately have no blanket
+    'chapter needs pp.' rule (online reference works are often unpaginated) —
+    R019 fires only when the authoritative record proves pages exist."""
+    raw = (
+        "Schmitt, N., Sonbul, S., Vilkaitė-Lozdienė, L., & Macis, M. (2019). "
+        "Formulaic language and collocation. In C. A. Chapelle (Ed.), The "
+        "encyclopedia of applied linguistics. John Wiley & Sons. "
+        "https://doi.org/10.1002/9781405198431.wbeal0433.pub2"
+    )
+    entry = ReferenceEntry(
+        raw_text=raw,
+        first_author_normalized="schmitt",
+        year=2019,
+        title_normalized="formulaic language and collocation",
+        doi="10.1002/9781405198431.wbeal0433.pub2",
+    )
+    canonical = dict(_SCHMITT_CANONICAL, page="1-10")
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    r019 = [i for i in issues if i.rule_id == "R019"]
+    assert len(r019) == 1
+    assert r019[0].expected == "(pp. 1-10)"
+    assert "1-10" in (r019[0].detail or "")
+
+    # With (pp. …) present → no flag
+    entry_with_pp = ReferenceEntry(
+        raw_text=raw.replace(
+            "applied linguistics. John Wiley",
+            "applied linguistics (pp. 1-10). John Wiley",
+        ),
+        first_author_normalized="schmitt",
+        year=2019,
+        title_normalized="formulaic language and collocation",
+        doi="10.1002/9781405198431.wbeal0433.pub2",
+    )
+    assert [i for i in _compare_fields(entry_with_pp, vr) if i.rule_id == "R019"] == []
+
+    # Record without page (unpaginated online entry) → no flag
+    vr_no_page = VerifyResult(found=True, exact_match=True, canonical=_SCHMITT_CANONICAL)
+    assert [i for i in _compare_fields(entry, vr_no_page) if i.rule_id == "R019"] == []
+
+    # Journal article with pages (non-chapter) → no flag
+    article = ReferenceEntry(
+        raw_text="Smith, J. (2020). A study. Journal, 1(1), 1-10.",
+        first_author_normalized="smith",
+        year=2020,
+        title_normalized="a study",
+    )
+    vr_article = VerifyResult(found=True, exact_match=True, canonical={
+        "author": [{"family": "Smith", "given": "J"}],
+        "published": {"date-parts": [[2020]]},
+        "title": ["A study"],
+        "container-title": ["Journal"],
+        "type": "journal-article",
+        "page": "1-10",
+    })
+    assert [i for i in _compare_fields(article, vr_article) if i.rule_id == "R019"] == []
