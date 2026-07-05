@@ -86,7 +86,7 @@ export default function AnnotatedText({ fullText, citations, activeCitId, hovere
   }
 
   return (
-    <div style={{ padding: '40px 48px', maxWidth: 760, lineHeight: 1.85, fontSize: 15, color: 'var(--text)' }}>
+    <div style={{ padding: '40px 48px', maxWidth: 760, margin: '0 auto', lineHeight: 1.85, fontSize: 15, color: 'var(--text)' }}>
       <h2 style={headingStyle}>{t.essayHeading}</h2>
       <div style={{ textAlign: 'justify' }}>{segments}</div>
 
