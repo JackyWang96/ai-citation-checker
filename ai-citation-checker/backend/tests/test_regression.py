@@ -2001,3 +2001,32 @@ def test_leading_digits_not_glued_to_uppercase_still_merge_as_continuation():
     parsed = parse_docx(data)
     assert len(parsed.reference_paragraphs) == 1
     assert "451-482" in parsed.reference_paragraphs[0].raw_text
+
+
+def test_title_with_internal_abbreviation_periods_extracted_fully():
+    """Bug (Gledhill 1972): titles containing single-letter abbreviations
+    ('V.C.C. rock climbing guide…', 'U.S. foreign policy…') were truncated at
+    the first internal period — the extracted title became just 'V', so
+    Crossref/OpenAlex/Open Library were all queried with a garbage title and
+    indexed works could falsely come back 'not found'."""
+    from app.services.citation_extractor import parse_reference_entries
+
+    entries = parse_reference_entries([
+        "Gledhill, A., & Gledhill, G. (1972). V.C.C. rock climbing guide to "
+        "the Northern Grampians. Victorian Climbing Club.",
+        "Smith, J. (2020). U.S. foreign policy in the age of A.I. tools. "
+        "Journal of Things, 12(3), 45-67.",
+        # guards: ordinary titles unchanged
+        "Jiang, N. (2018). Second language processing: An introduction. Routledge.",
+        "Durrant, P., & Schmitt, N. (2009). To what extent do native and "
+        "non-native writers make use of collocations? International Review "
+        "of Applied Linguistics, 47(2), 157-177.",
+        # title ending in a multi-letter acronym must still stop at its period
+        "Lee, K. (2021). Effects of using AI. Journal of Things, 1(1), 1-10.",
+    ])
+    assert entries[0].title_normalized == "vcc rock climbing guide to the northern grampians"
+    assert entries[0].title_raw == "V.C.C. rock climbing guide to the Northern Grampians"
+    assert entries[1].title_normalized == "us foreign policy in the age of ai tools"
+    assert entries[2].title_normalized == "second language processing an introduction"
+    assert entries[3].title_normalized == "to what extent do native and nonnative writers make use of collocations"
+    assert entries[4].title_normalized == "effects of using ai"

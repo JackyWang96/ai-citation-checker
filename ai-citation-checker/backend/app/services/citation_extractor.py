@@ -149,7 +149,17 @@ def _extract_second_author(text: str) -> str:
 def _extract_title(text: str) -> str:
     # Period after year-parens is optional — APA requires it but many users
     # omit it (e.g. "(2010) More than words"). We still extract the title.
-    m = re.search(r'\(\d{4}[a-z]?\)\.?\s+(.+?)[\.\!\?]', text)
+    #
+    # A period after a word-initial single capital letter ('V.C.C.', 'U.S.')
+    # is an abbreviation, not the end of the title — consume it and keep
+    # going. Without this, 'V.C.C. rock climbing guide…' extracted as just
+    # 'V' and every database was then queried with a garbage title.
+    m = re.search(
+        r'\(\d{4}[a-z]?\)\.?\s+'
+        r'((?:(?<![A-Za-zÀ-ɏ])[A-ZÀ-Ɏ]\.|[^.!?])+?)'
+        r'[.!?]',
+        text,
+    )
     return m.group(1).strip() if m else ""
 
 
