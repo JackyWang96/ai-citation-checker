@@ -522,8 +522,10 @@ def test_online_first_year_not_flagged_as_mismatch():
 
 
 def test_not_found_includes_detailed_reason():
-    """Bug: 'Reference not found' had no detail — impossible to tell if failure
-    was a timeout, rate limit, or genuinely missing paper."""
+    """Hard not-found shows plain manual-check guidance. (Historically this
+    surfaced the raw per-database trail — 'Crossref: timeout · …' — but that
+    read like a system error, so it was replaced by user request. The trail
+    still exists in VerifyResult.not_found_reason for debugging.)"""
     entry = ReferenceEntry(
         raw_text="Ghost, A. (2099). Nonexistent. Fake Journal.",
         first_author_normalized="ghost",
@@ -543,8 +545,7 @@ def test_not_found_includes_detailed_reason():
     not_found_issue = next(
         i for c in report.citations for i in c.issues if i.type == "not_found"
     )
-    assert not_found_issue.detail is not None
-    assert "timeout" in not_found_issue.detail
+    assert not_found_issue.detail == "Please verify this reference manually"
 
 
 # ── verifier ─────────────────────────────────────────────────────────────────
@@ -2214,8 +2215,7 @@ def test_hard_not_found_detail_leads_with_manual_check_guidance():
     report = build_report("t", "t.docx", entry.raw_text, [], [entry], [para], [vr])
     issue = [i for i in report.citations[0].issues if i.type == "not_found"][0]
     assert issue.severity == "red"
-    assert issue.detail.startswith("Please verify this reference manually — ")
-    assert "Open Library: no results" in issue.detail
+    assert issue.detail == "Please verify this reference manually"
 
     # Soft category (software) keeps its own wording, no double guidance
     vr_soft = VerifyResult(found=False, not_found_reason="software citation — not in academic databases")
