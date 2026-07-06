@@ -28,7 +28,13 @@ _MISSING_PERIOD_AFTER_YEAR_RE = re.compile(r'\(\d{4}[a-z]?\)\s+[A-ZÀ-Ɏ]')
 
 # R010 — "Journal Name 12(3)" should be "Journal Name, 12(3)"
 # Matches a letter followed by space, digit, "(", digit — no comma between.
-_MISSING_COMMA_BEFORE_VOLUME_RE = re.compile(r'[A-Za-z]\s+\d+\(\d+\)')
+# Second alternation covers journals without issue numbers: "Name 45, 373-401"
+# (volume followed directly by a page range) also needs a comma after the
+# journal name. Dates like "May 28, 2026, from" don't match — no page range.
+_MISSING_COMMA_BEFORE_VOLUME_RE = re.compile(
+    r'[A-Za-z]\s+\d+\(\d+\)'
+    r'|[A-Za-z]\s+\d+\s*,\s*\d+\s*[-–—]\s*\d+'
+)
 
 # R011 — hyphen with adjacent space in compound words, e.g. "meta- analysis"
 # or "meta -analysis". Restricted to letter-hyphen-space-letter (or mirrored)

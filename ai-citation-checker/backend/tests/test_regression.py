@@ -2223,3 +2223,111 @@ def test_hard_not_found_detail_leads_with_manual_check_guidance():
     issue2 = [i for i in report2.citations[0].issues if i.type == "not_found"][0]
     assert issue2.severity == "yellow"
     assert not issue2.detail.startswith("Please verify this reference manually")
+
+
+# ── journal metadata rules: R010 no-issue form + R020 missing vol/pages ───────
+
+def test_r010_missing_comma_before_volume_without_issue_number():
+    """Bug (Leuckert 2024): 'Dictionaries Journal of the Dictionary Society
+    of North America 45, 373–401' — missing comma between journal name and
+    volume. R010 only matched the '12(3)' issue form, so journals without
+    issue numbers slipped through and the cite passed as 'APA format
+    correct'."""
+    from app.rules.apa7 import check_comma_before_volume
+    bad = ReferenceParagraph(
+        raw_text=(
+            "Leuckert, S. (2024). Stop Focusing on What the Dictionary Says! "
+            "Meta-Perspectives on Lexicographical Resources of Mountaineering "
+            "English on Reddit. Dictionaries Journal of the Dictionary Society "
+            "of North America 45, 373–401."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    good = ReferenceParagraph(
+        raw_text=(
+            "Leuckert, S. (2024). Stop Focusing on What the Dictionary Says! "
+            "Meta-Perspectives on Lexicographical Resources of Mountaineering "
+            "English on Reddit. Dictionaries: Journal of the Dictionary Society "
+            "of North America, 45, 373–401."
+        ),
+        runs=[], has_hanging_indent=True,
+    )
+    # dates ('Retrieved May 28, 2026, from …') must not false-trigger
+    date_ref = ReferenceParagraph(
+        raw_text="theCrag. (n.d.). Glossary. Retrieved May 28, 2026, from https://example.com",
+        runs=[], has_hanging_indent=True,
+    )
+    assert check_comma_before_volume(bad) is not None
+    assert check_comma_before_volume(good) is None
+    assert check_comma_before_volume(date_ref) is None
+
+
+def test_r020_journal_article_missing_volume_and_pages_flagged():
+    """Bug (Gyllstad 2024): a journal-article cite with NO volume/issue/pages
+    (and a stray publisher name) passed as 'APA format correct'. The verified
+    Crossref record (10.1075/itl.23005.gyl) has volume 176, issue 1, pages
+    1-43 — when the record proves the metadata exists but the cite has no
+    numeric metadata at all, R020 now reminds the user."""
+    entry = ReferenceEntry(
+        raw_text=(
+            "Gyllstad, H., Kupisch, T., & Lloyd-Smith, A. (2024). Development "
+            "and initial validation of a yes/no vocabulary test for North Sámi. "
+            "Drawing on item response theory and signal detection theory. "
+            "International Journal of Applied Linguistics. John Benjamins "
+            "Publishing Company."
+        ),
+        first_author_normalized="gyllstad",
+        year=2024,
+        title_normalized="development and initial validation of a yesno vocabulary test for north sámi",
+    )
+    canonical = {
+        "author": [{"family": "Gyllstad", "given": "Henrik"}],
+        "published": {"date-parts": [[2024]]},
+        "title": ["Development and initial validation of a yes/no vocabulary test for North Sámi"],
+        "container-title": ["ITL - International Journal of Applied Linguistics"],
+        "type": "journal-article",
+        "volume": "176", "issue": "1", "page": "1-43",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    r020 = [i for i in issues if i.rule_id == "R020"]
+    assert len(r020) == 1
+    assert r020[0].expected == "176(1), 1-43"
+    assert r020[0].severity == "yellow"
+
+    # Guard: cite WITH volume/pages (even malformed comma) → no R020
+    entry_with_meta = ReferenceEntry(
+        raw_text=(
+            "Leuckert, S. (2024). Stop Focusing! Dictionaries Journal of the "
+            "Dictionary Society of North America 45, 373–401."
+        ),
+        first_author_normalized="leuckert",
+        year=2024,
+        title_normalized="stop focusing",
+    )
+    vr2 = VerifyResult(found=True, exact_match=True, canonical={
+        "author": [{"family": "Leuckert", "given": "S"}],
+        "published": {"date-parts": [[2024]]},
+        "title": ["Stop Focusing!"],
+        "container-title": ["Dictionaries: Journal of the Dictionary Society of North America"],
+        "type": "journal-article",
+        "volume": "45", "page": "373-401",
+    })
+    assert [i for i in _compare_fields(entry_with_meta, vr2) if i.rule_id == "R020"] == []
+
+    # Guard: books never trigger R020
+    book_entry = ReferenceEntry(
+        raw_text="Jiang, N. (2018). Second language processing: An introduction. Routledge.",
+        first_author_normalized="jiang",
+        year=2018,
+        title_normalized="second language processing an introduction",
+    )
+    vr3 = VerifyResult(found=True, exact_match=True, canonical={
+        "author": [{"family": "Jiang", "given": "N"}],
+        "published": {"date-parts": [[2018]]},
+        "title": ["Second Language Processing"],
+        "container-title": [],
+        "type": "book",
+        "page": "1-300",
+    })
+    assert [i for i in _compare_fields(book_entry, vr3) if i.rule_id == "R020"] == []
