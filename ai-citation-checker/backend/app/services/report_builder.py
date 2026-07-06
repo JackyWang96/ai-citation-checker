@@ -297,7 +297,38 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
             expected=f"(pp. {cand_page})",
         ))
 
+    # R020 — journal article cited without volume/issue/pages, but the
+    # verified record HAS them. Data-driven like R019: only fires when the
+    # record proves the metadata exists, so unusual publication forms never
+    # false-trigger. Catches e.g. 'Gyllstad et al. (2024). Title. Journal.
+    # Publisher.' passing as "APA format correct" with no vol/pages/DOI.
+    if (
+        cand_type == "journal-article"
+        and (c.get("volume") or c.get("page"))
+        and not _VOL_PAGES_PRESENT_RE.search(entry.raw_text)
+    ):
+        vol = c.get("volume") or "?"
+        issue_no = c.get("issue")
+        page = c.get("page") or ""
+        expected = f"{vol}({issue_no}), {page}" if issue_no else f"{vol}, {page}"
+        issues.append(CitationIssue(
+            type="format_violation", severity="yellow", category="format",
+            rule_id="R020",
+            reason="Journal article may be missing volume/issue/page numbers (APA 7th R020)",
+            detail=f"The authoritative record lists {expected.rstrip(', ')} — "
+                   "journal-article references should include volume(issue) "
+                   "and page range after the journal name.",
+            expected=expected.rstrip(", "),
+        ))
+
     return issues
+
+
+# Volume/pages presence: '176(1)' or '45, 373-401' or any page range '1-43'.
+# Used by R020 to detect journal cites with no numeric metadata at all.
+_VOL_PAGES_PRESENT_RE = re.compile(
+    r'\d+\s*\(\d+\)|\d+\s*,\s*\d+\s*[-–—]\s*\d+|\d+\s*[-–—]\s*\d+'
+)
 
 
 def _norm_dashes(s: str) -> str:
