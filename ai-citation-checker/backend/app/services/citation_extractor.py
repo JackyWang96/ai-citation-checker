@@ -12,6 +12,40 @@ _INTEXT_RE = re.compile(
     r'(?:,\s*pp?\.\s*[\d\-–]+)?\)'
 )
 
+# Narrative in-text citations: the author names sit OUTSIDE the parens —
+#   Smith (2020), Smith and Jones (2019), Smith et al. (2021),
+#   Smith, Jones, and Brown (2020), Van Vu and Peters (2022), Smith's (2020)
+# Name words must start uppercase and contain letters only (no digits), so
+# 'the study (2019)' and 'Table 1 (2020)' never match. Year restricted to
+# 19xx/20xx so version numbers etc. don't false-trigger.
+_N_WORD = r"[A-ZÀ-Ɏ][a-zA-Zà-ɏÀ-Ɏ\-\']+"
+_N_NAME = rf"{_N_WORD}(?:\s+{_N_WORD}){{0,2}}"   # multi-word surnames (Van Vu)
+# A comma-separated author list is only valid when it ends with an and-group
+# ('Smith, Jones, and Brown (2019)') — APA narrative cites never have a bare
+# comma list. Without that constraint, sentence adverbs got glued on:
+# 'However, Gyllstad (2024)' parsed as authors ['However', 'Gyllstad'].
+_NARRATIVE_RE = re.compile(
+    rf"\b({_N_NAME})"                                        # first author
+    rf"(?:"
+    rf"((?:,\s*{_N_NAME})*),?\s+(?:and|&)\s+({_N_NAME})"     # list ending in 'and X'
+    rf"|\s+(et\s+al\.?)"                                     # or 'et al.'
+    rf")?"
+    rf"\s*\(((?:19|20)\d{{2}}[a-z]?)(?:,\s*pp?\.\s*[\d\-–]+)?\)"
+)
+
+# Sentence-initial words that the multi-word-surname pattern can wrongly
+# absorb into the first author ('Both Smith and Jones (2019)' → 'Both Smith').
+_LEADING_STOPWORDS = frozenset({
+    "The", "A", "An", "Both", "See", "Also", "However", "Moreover",
+    "Furthermore", "Similarly", "Likewise", "Finally", "Recently", "Notably",
+    "Importantly", "Following", "Unlike", "Whereas", "While", "Although",
+    "Though", "Since", "Because", "As", "In", "On", "At", "By", "For", "With",
+    "From", "To", "Of", "And", "But", "Or", "Yet", "So", "Thus", "Hence",
+    "Then", "Here", "There", "First", "Second", "Third", "Next", "Last",
+    "Overall", "Indeed", "Instead", "Meanwhile", "Nevertheless", "Nonetheless",
+    "Additionally", "Consequently", "Therefore",
+})
+
 _YEAR_RE = re.compile(r'\((\d{4}[a-z]?)\)')
 _AUTHOR_RE = re.compile(
     r'^((?:[A-ZÀ-ɏ][\wÀ-ɏ\-]*\s+)*[A-ZÀ-ɏ][\wÀ-ɏ\-]+\.?)'
@@ -34,6 +68,10 @@ class IntextCitation:
     # rule that 3+ authors should use "et al." instead of listing them all.
     n_authors: int = 1
     has_etal: bool = False
+    # Narrative style — 'Smith (2020) argued…' — vs parenthetical '(Smith,
+    # 2020)'. Narrative cites skip the parenthetical format check and use
+    # narrative forms in expected-value hints.
+    narrative: bool = False
 
 
 @dataclass
@@ -67,6 +105,18 @@ def _parse_intext_authors(author_str: str) -> tuple[list[str], bool]:
     return parts, has_etal
 
 
+def _strip_possessive(name: str) -> str:
+    """Narrative cites are often possessive: "Smith's (2020) study"."""
+    return re.sub(r"[\'’]s$", "", name)
+
+
+def _strip_leading_stopwords(name: str) -> str:
+    words = name.split()
+    while len(words) > 1 and words[0] in _LEADING_STOPWORDS:
+        words.pop(0)
+    return " ".join(words)
+
+
 def extract_intext_citations(text: str) -> list[IntextCitation]:
     results = []
     for m in _INTEXT_RE.finditer(text):
@@ -84,6 +134,34 @@ def extract_intext_citations(text: str) -> list[IntextCitation]:
             char_start=m.start(),
             char_end=m.end(),
         ))
+
+    taken = [(c.char_start, c.char_end) for c in results]
+    for m in _NARRATIVE_RE.finditer(text):
+        # Skip anything overlapping a parenthetical match (defensive — the
+        # two patterns shouldn't overlap, but never double-report a span).
+        if any(m.start() < e and m.end() > s for s, e in taken):
+            continue
+        first = _strip_leading_stopwords(_strip_possessive(m.group(1)))
+        middle = [
+            _strip_possessive(n.strip())
+            for n in re.split(r',\s*', (m.group(2) or '').strip(', '))
+            if n.strip()
+        ]
+        last_joined = _strip_possessive(m.group(3)) if m.group(3) else ""
+        names = [first] + middle + ([last_joined] if last_joined else [])
+        results.append(IntextCitation(
+            raw_text=m.group(0),
+            author=names[0],
+            second_author=names[1] if len(names) >= 2 else "",
+            n_authors=len(names),
+            has_etal=bool(m.group(4)),
+            year=int(m.group(5)[:4]),
+            char_start=m.start(),
+            char_end=m.end(),
+            narrative=True,
+        ))
+
+    results.sort(key=lambda c: c.char_start)
     return results
 
 

@@ -339,8 +339,9 @@ def _check_intext(intext: IntextCitation,
                   reference_entries: list[ReferenceEntry]) -> list[CitationIssue]:
     issues = []
 
-    # Format check
-    if not _INTEXT_FORMAT_RE.match(intext.raw_text):
+    # Format check — parenthetical citations only. Narrative cites ('Smith
+    # (2020) argued…') have their own shape and would all fail this regex.
+    if not intext.narrative and not _INTEXT_FORMAT_RE.match(intext.raw_text):
         issues.append(CitationIssue(
             type="format_violation", severity="yellow", category="format",
             reason="In-text citation format does not conform to APA 7th (missing comma, parens, etc.)",
@@ -349,11 +350,15 @@ def _check_intext(intext: IntextCitation,
 
     # R012: APA 7th requires 'et al.' for 3+ authors in in-text citations.
     if intext.n_authors >= 3 and not intext.has_etal:
+        expected = (
+            f"{intext.author} et al. ({intext.year})" if intext.narrative
+            else f"({intext.author} et al., {intext.year})"
+        )
         issues.append(CitationIssue(
             type="format_violation", severity="yellow", category="format",
             rule_id="R012",
             reason="In-text citation with 3+ authors should use 'et al.' (APA 7th R012)",
-            expected=f"({intext.author} et al., {intext.year})",
+            expected=expected,
             actual=intext.raw_text,
         ))
 
@@ -390,11 +395,15 @@ def _check_intext(intext: IntextCitation,
             else " or ".join(str(y) for y in years)
         )
         suffix = " et al." if intext.has_etal else ""
+        expected = (
+            f"{intext.author}{suffix} ({years_str})" if intext.narrative
+            else f"({intext.author}{suffix}, {years_str})"
+        )
         issues.append(CitationIssue(
             type="field_mismatch", severity="yellow", category="content",
             rule_id="R013", field="year",
             reason="In-text year doesn't match reference list (APA 7th R013)",
-            expected=f"({intext.author}{suffix}, {years_str})",
+            expected=expected,
             actual=intext.raw_text,
         ))
     else:
