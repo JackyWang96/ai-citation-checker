@@ -46,7 +46,7 @@ export default function Upload() {
 
   const handleFile = useCallback(
     (file: File) => {
-      if (!file.name.match(/\.(docx|pdf)$/i)) {
+      if (!file.name.match(/\.docx$/i)) {
         setError(t.invalidFile)
         return
       }
@@ -171,7 +171,7 @@ export default function Upload() {
           boxShadow: dragging ? '0 0 0 4px oklch(52% 0.16 240 / 0.12)' : 'none',
         }}
       >
-        <input ref={inputRef} type="file" accept=".docx,.pdf" style={{ display: 'none' }} onChange={onInput} />
+        <input ref={inputRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={onInput} />
         <div style={{ marginBottom: 16 }}>
           <svg
             width="48"

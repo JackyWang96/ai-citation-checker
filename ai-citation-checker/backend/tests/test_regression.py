@@ -2331,3 +2331,115 @@ def test_r020_journal_article_missing_volume_and_pages_flagged():
         "page": "1-300",
     })
     assert [i for i in _compare_fields(book_entry, vr3) if i.rule_id == "R020"] == []
+
+
+# ── narrative in-text citations ('Smith (2020) argued…') ─────────────────────
+
+def test_narrative_intext_citations_extracted():
+    """Gap: _INTEXT_RE only matched parenthetical '(Smith, 2020)'. Narrative
+    citations — the dominant form in academic prose — were invisible, so
+    orphan/year-mismatch checks silently skipped them."""
+    from app.services.citation_extractor import extract_intext_citations
+    text = (
+        "Smith (2020) argued that input matters. According to Van Vu and "
+        "Peters (2022), collocations are learned incidentally. Gyllstad's "
+        "(2007) test was influential, and Wolter et al. (2013) agreed. "
+        "Smith, Jones, and Brown (2019) listed everyone."
+    )
+    cites = extract_intext_citations(text)
+    by_author = {(c.author, c.year): c for c in cites}
+
+    c1 = by_author[("Smith", 2020)]
+    assert c1.narrative and c1.n_authors == 1
+
+    c2 = by_author[("Van Vu", 2022)]           # multi-word surname
+    assert c2.narrative and c2.second_author == "Peters" and c2.n_authors == 2
+
+    c3 = by_author[("Gyllstad", 2007)]         # possessive stripped
+    assert c3.narrative
+
+    c4 = by_author[("Wolter", 2013)]
+    assert c4.narrative and c4.has_etal
+
+    c5 = by_author[("Smith", 2019)]            # comma list, 3 authors
+    assert c5.narrative and c5.n_authors == 3 and c5.second_author == "Jones"
+
+
+def test_narrative_extraction_guards():
+    """Lowercase words, digit-containing tokens, and parenthetical cites must
+    not produce narrative matches (no double counting, no false orphans)."""
+    from app.services.citation_extractor import extract_intext_citations
+    text = (
+        "As shown in the study (2019), effects were large. See Table 1 "
+        "(2020) for details. Prior work (Smith, 2020) found the same."
+    )
+    cites = extract_intext_citations(text)
+    # only the parenthetical (Smith, 2020) — 'the study'/'Table 1' rejected
+    assert len(cites) == 1
+    assert cites[0].author == "Smith" and not cites[0].narrative
+
+
+def test_narrative_intext_matches_reference_without_format_warning():
+    """A correct narrative cite must produce zero issues — before the fix it
+    either produced nothing (invisible) or, had it been extracted, would have
+    failed the parenthetical format regex."""
+    from app.services.report_builder import _check_intext
+    from app.services.citation_extractor import extract_intext_citations
+    refs = [ReferenceEntry(
+        raw_text="Smith, J. (2020). A study. Journal, 1(1), 1-10.",
+        first_author_normalized="smith", year=2020, title_normalized="a study",
+    )]
+    cite = extract_intext_citations("Smith (2020) argued this.")[0]
+    assert cite.narrative
+    assert _check_intext(cite, refs) == []
+
+
+def test_narrative_intext_orphan_and_year_mismatch():
+    """Narrative cites now participate in orphan / R013 checks, with
+    narrative-form expected values ('Smith (2019)', not '(Smith, 2019)')."""
+    from app.services.report_builder import _check_intext
+    from app.services.citation_extractor import extract_intext_citations
+    refs = [ReferenceEntry(
+        raw_text="Smith, J. (2019). A study. Journal, 1(1), 1-10.",
+        first_author_normalized="smith", year=2019, title_normalized="a study",
+    )]
+    # year mismatch → R013 with narrative expected form
+    cite = extract_intext_citations("Smith (2020) argued this.")[0]
+    issues = _check_intext(cite, refs)
+    r013 = [i for i in issues if i.rule_id == "R013"]
+    assert len(r013) == 1 and r013[0].expected == "Smith (2019)"
+
+    # unknown author → orphan
+    cite2 = extract_intext_citations("Nobody (2020) claimed otherwise.")[0]
+    issues2 = _check_intext(cite2, refs)
+    assert any(i.type == "orphan" for i in issues2)
+
+
+def test_narrative_r012_uses_narrative_expected_form():
+    """3+ authors listed in a narrative cite → R012 with 'Smith et al. (2019)'
+    as the expected form (not the parenthetical '(Smith et al., 2019)')."""
+    from app.services.report_builder import _check_intext
+    from app.services.citation_extractor import extract_intext_citations
+    refs = [ReferenceEntry(
+        raw_text="Smith, J., Jones, A., & Brown, B. (2019). A study. Journal, 1(1), 1-10.",
+        first_author_normalized="smith", year=2019, title_normalized="a study",
+        second_author_normalized="jones",
+    )]
+    cite = extract_intext_citations("Smith, Jones, and Brown (2019) listed everyone.")[0]
+    issues = _check_intext(cite, refs)
+    r012 = [i for i in issues if i.rule_id == "R012"]
+    assert len(r012) == 1 and r012[0].expected == "Smith et al. (2019)"
+
+
+def test_narrative_sentence_adverbs_not_absorbed_into_author():
+    """Bug found during e2e: 'However, Gyllstad's (2024)' parsed the sentence
+    adverb as the first author (comma list without an and-group is not a
+    valid APA narrative form). 'Both Smith and Jones (2019)' similarly glued
+    'Both' onto the surname via the multi-word pattern."""
+    from app.services.citation_extractor import extract_intext_citations
+
+    c = extract_intext_citations("However, Gyllstad's (2024) work extends this.")[0]
+    assert c.author == "Gyllstad" and c.n_authors == 1
+
+    c2 = extract_intext_citations("Both Smith and Jones (2019) agree.")[0]
+    assert c2.author == "Smith" and c2.second_author == "Jones"
