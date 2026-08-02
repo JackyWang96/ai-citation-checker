@@ -1332,25 +1332,39 @@ async def test_jiang_2018_does_not_match_jiang_2011_with_similar_title(tmp_path)
 @pytest.mark.asyncio
 @respx.mock
 async def test_near_exact_title_accepted_within_reprint_window(tmp_path):
-    """Boundary: a near-exact (not 100) title with a small year drift (<5 yrs)
-    is still accepted — covers e.g. online-first / next-year reprints whose
-    Crossref title has minor punctuation differences from the cited form."""
+    """Boundary: a title that normalises to a genuinely near-exact score in the
+    95–99 band (not 100) with a small year drift (<5 yrs) is still accepted —
+    covers online-first / next-year reprints whose Crossref title has a minor
+    spelling difference from the cited form.
+
+    (Codex second-challenge condition 2: the earlier version relied on a
+    punctuation-only difference, but `_norm` strips punctuation, so both scores
+    were 100 and the 95–99 branch was never exercised. 'collocations' vs the
+    typo 'colocations' normalises to set==sort≈98.)"""
     db_path = str(tmp_path / "t.db")
     from app.storage.db import init_db
     from app.services.verifier import _search_crossref
+    from app.services.verifier import _norm
+    from rapidfuzz import fuzz
     await init_db(db_path)
 
     entry = ReferenceEntry(
-        raw_text="Smith, J. (2020). A useful study.",
+        raw_text="Smith, J. (2020). A useful study of collocations.",
         first_author_normalized="smith",
         year=2020,
-        title_normalized="a useful study",
+        title_normalized="a useful study of collocations",
     )
+    cand_title = "A Useful Study of Colocations"   # single-letter typo
+    # Guard the guard: assert this data really lands in the 95–99 band so the
+    # test keeps exercising the near-exact branch if the norm/scorer changes.
+    _s = fuzz.token_set_ratio(entry.title_normalized, _norm(cand_title))
+    assert 95 <= _s < 100, f"test data no longer in 95-99 band: {_s}"
+
     near_in_window = {
         "status": "ok",
         "message": {
             "items": [{
-                "title": ["A Useful Study!"],          # near-exact (punctuation)
+                "title": [cand_title],
                 "author": [{"family": "Smith"}],
                 "published": {"date-parts": [[2023]]}, # 3-year drift, within window
                 "DOI": "10.1/ok",
@@ -2450,12 +2464,13 @@ def test_narrative_sentence_adverbs_not_absorbed_into_author():
 @pytest.mark.asyncio
 @respx.mock
 async def test_subset_title_with_year_gap_rejected_by_token_sort_gate(tmp_path):
-    """Bug (Bandura 1986): a book whose title is a *subset* of a longer
-    same-author book-chapter title (token_set=100) was accepted by the
-    any-year-gap exact bypass despite a 16-year gap. The candidate here is a
-    book-chapter (NOT an article), so the article-type guard does NOT apply —
-    this isolates and verifies the token_sort_ratio gate: the length-sensitive
-    score (75 for this subset) is below the threshold, so the bypass is denied.
+    """Bug (Bandura 1986): a book-chapter candidate whose (shorter) title is a
+    *subset* of the cited book's title yields token_set=100, and the
+    any-year-gap exact bypass then accepted it despite a 16-year gap. The
+    candidate here is a book-chapter (NOT an article), so the article-type
+    guard does NOT apply — this isolates and verifies the token_sort_ratio
+    gate: the length-sensitive score (~75 for this subset) is below the
+    threshold, so the bypass is denied.
     (Codex cross-review #7: the earlier version used a journal-article
     candidate, which the type guard rejected regardless of token_sort, so it
     never actually exercised this gate.)"""

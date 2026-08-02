@@ -388,9 +388,15 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
     # must not resolve to a journal article via a year-gap bypass. Classic books
     # (Bandura 1997) share their exact title with same-author *articles* (a book
     # review, a reprint of the title in a journal) that sit a year or two away —
-    # accepting those produces a bogus year mismatch and a spurious R020. On the
-    # year-matches path there's no such risk, and book-chapter candidates stay
-    # allowed so genuine republished chapters (Schegloff 2006 → 2020) still match.
+    # accepting those produces a bogus year mismatch and a spurious R020.
+    # book-chapter candidates stay allowed so genuine republished chapters
+    # (Schegloff 2006 → 2020) still match.
+    #
+    # KNOWN GAP (Plan B): this guard only runs on the year-gap bypass, not on
+    # the year-matches path — a same-year (±1) same-title article/review still
+    # slips through via `year_ok`. Closing that safely requires accurate
+    # reference-form classification first (see `_looks_like_book`), so it is
+    # tracked in the Plan B backlog, not patched here.
     book_form = _looks_like_book(entry)
     # Non-book work types a whole-book citation must not resolve to via a
     # year-gap bypass. Includes review/peer-review (a book *review* shares the
