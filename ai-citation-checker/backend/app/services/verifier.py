@@ -392,7 +392,15 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
     # year-matches path there's no such risk, and book-chapter candidates stay
     # allowed so genuine republished chapters (Schegloff 2006 → 2020) still match.
     book_form = _looks_like_book(entry)
-    _ARTICLE_TYPES = {"journal-article", "article", "proceedings-article", "report"}
+    # Non-book work types a whole-book citation must not resolve to via a
+    # year-gap bypass. Includes review/peer-review (a book *review* shares the
+    # book's exact title — the classic false match) and preprint/posted-content
+    # (OpenAlex/Crossref names for the same). 'article' is OpenAlex's spelling
+    # of 'journal-article'.
+    _ARTICLE_TYPES = {
+        "journal-article", "article", "proceedings-article", "report",
+        "review", "peer-review", "preprint", "posted-content", "dissertation",
+    }
 
     def _bypass_ok(cand_year: int, score: float, sort_score: float, item: dict) -> bool:
         if cand_year == 0:

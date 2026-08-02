@@ -2449,15 +2449,51 @@ def test_narrative_sentence_adverbs_not_absorbed_into_author():
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_subset_title_with_year_gap_rejected(tmp_path):
-    """Bug (Bandura 1986/1997): classic pre-DOI books have no Crossref *book*
-    record, so the fuzzy search matched a same-author journal-article/chapter
-    whose title *contains* the book title. token_set_ratio returns 100 for
-    such subsets, and the any-year-gap exact bypass then accepted the wrong
-    work (1997 book → 1990 article) → bogus year mismatch + spurious R020.
-    The exact bypass now also requires token_sort_ratio (length-sensitive) to
-    be near-exact, so a subset title with a large year gap is rejected and the
-    entry falls through to the Open Library book lookup."""
+async def test_subset_title_with_year_gap_rejected_by_token_sort_gate(tmp_path):
+    """Bug (Bandura 1986): a book whose title is a *subset* of a longer
+    same-author book-chapter title (token_set=100) was accepted by the
+    any-year-gap exact bypass despite a 16-year gap. The candidate here is a
+    book-chapter (NOT an article), so the article-type guard does NOT apply —
+    this isolates and verifies the token_sort_ratio gate: the length-sensitive
+    score (75 for this subset) is below the threshold, so the bypass is denied.
+    (Codex cross-review #7: the earlier version used a journal-article
+    candidate, which the type guard rejected regardless of token_sort, so it
+    never actually exercised this gate.)"""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Bandura, A. (1986). Social foundations of thought and action: A social cognitive theory. Prentice-Hall.",
+        first_author_normalized="bandura",
+        year=1986,
+        title_normalized="social foundations of thought and action a social cognitive theory",
+    )
+    # A 2002 book-chapter whose (shorter) title is a subset of the book title:
+    # token_set=100 but token_sort~75. Not an article type, so only the
+    # token_sort gate can reject it.
+    crossref_payload = {"status": "ok", "message": {"items": [{
+        "title": ["Social Foundations of Thought and Action"],
+        "author": [{"family": "Bandura"}],
+        "published": {"date-parts": [[2002]]},
+        "type": "book-chapter",
+        "page": "94-106",
+        "DOI": "10.1/chapter",
+    }]}}
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=crossref_payload)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is None  # token_sort gate rejects → falls through to Open Library
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_book_form_rejects_journal_article_via_type_guard(tmp_path):
+    """Companion to the token_sort test: a same-author journal article whose
+    title *contains* the book title (Bandura 1997 → 1990 AIDS article) is
+    rejected by the article-type guard for a book-form entry."""
     db_path = str(tmp_path / "t.db")
     from app.storage.db import init_db
     from app.services.verifier import _search_crossref
@@ -2469,8 +2505,6 @@ async def test_subset_title_with_year_gap_rejected(tmp_path):
         year=1997,
         title_normalized="selfefficacy the exercise of control",
     )
-    # What Crossref actually returns: a same-author 1990 journal article whose
-    # title is a superset of the book title.
     crossref_payload = {"status": "ok", "message": {"items": [{
         "title": ["Perceived self-efficacy in the exercise of control over AIDS infection"],
         "author": [{"family": "Bandura"}],
@@ -2483,7 +2517,41 @@ async def test_subset_title_with_year_gap_rejected(tmp_path):
         return_value=httpx.Response(200, json=crossref_payload)
     )
     result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
-    assert result is None  # rejected → will fall through to Open Library
+    assert result is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_book_review_type_rejected_for_book_form_entry(tmp_path):
+    """Codex cross-review #3c: a book *review* (type=review) shares the book's
+    exact title and is the classic false match. 'review'/'preprint'/etc. are
+    now in the article-type guard, so a book-form entry rejects them."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_openalex
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Bandura, A. (1997). Self-efficacy: The exercise of control. W. H. Freeman.",
+        first_author_normalized="bandura", year=1997,
+        title_normalized="selfefficacy the exercise of control",
+    )
+    openalex_payload = {"results": [{
+        "title": "Self-Efficacy: The Exercise of Control",   # identical title, a review
+        "authorships": [{"author": {"display_name": "Albert Bandura"}}],
+        # gap 3 → not year_ok, forces the near-window bypass path where the
+        # article-type guard actually runs (a gap ≤1 would pass via year_ok,
+        # which the guard deliberately doesn't cover — see Codex #1 backlog).
+        "publication_year": 1994,
+        "doi": "https://doi.org/10.1/review",
+        "type": "review",
+        "host_venue": {"display_name": "Some Journal"},
+    }]}
+    respx.get("https://api.openalex.org/works").mock(
+        return_value=httpx.Response(200, json=openalex_payload)
+    )
+    result, _ = await _search_openalex(httpx.AsyncClient(), entry, db_path)
+    assert result is None
 
 
 @pytest.mark.asyncio

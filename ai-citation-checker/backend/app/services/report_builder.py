@@ -54,9 +54,9 @@ def build_report(
             issues.append(CitationIssue(
                 type="format_violation", severity="yellow", category="format",
                 reason="Two references appear to be merged into one entry",
-                detail="This entry contains multiple years/DOIs. Check for a "
-                       "missing paragraph break between the references, or "
-                       "stray characters (e.g. a page number copied from a "
+                detail="This entry contains multiple publication years. Check "
+                       "for a missing paragraph break between the references, "
+                       "or stray characters (e.g. a page number copied from a "
                        "PDF) at the start of the second reference, then "
                        "re-upload.",
             ))
