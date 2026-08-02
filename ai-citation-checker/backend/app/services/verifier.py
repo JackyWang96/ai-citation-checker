@@ -264,9 +264,14 @@ async def _search_openlibrary(client: httpx.AsyncClient, entry: ReferenceEntry,
     Stricter than the Crossref/OpenAlex scoring: library catalogues are noisy
     (many editions, user-contributed records), so require a near-exact title
     AND an author match AND a plausible edition year before accepting."""
+    # Use the general `q=` search rather than the fielded `title=`+`author=`
+    # search: the fielded form misses books whose catalogue title omits the
+    # cited subtitle (Bandura 1986 'Social foundations of thought and action:
+    # A social cognitive theory' is catalogued without the subtitle → 0 fielded
+    # hits). `q=` has higher recall; the strict post-filter below (near-exact
+    # title AND author AND year ±1) keeps precision.
     params = {
-        "title": entry.title_normalized,
-        "author": entry.first_author_normalized,
+        "q": f"{entry.title_normalized} {entry.first_author_normalized}",
         "limit": 5,
         "fields": "title,author_name,first_publish_year,publish_year,publisher",
     }
@@ -351,10 +356,16 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
         cand_year = ((item.get("published") or {}).get("date-parts") or [[0]])[0][0]
         cand_first_author = (cand_authors[0].get("family") or "") if cand_authors else ""
 
-        title_score = fuzz.token_set_ratio(
-            entry.title_normalized,
-            _norm(cand_title),
-        )
+        norm_cand = _norm(cand_title)
+        title_score = fuzz.token_set_ratio(entry.title_normalized, norm_cand)
+        # token_set_ratio returns 100 when one title is a subset of the other
+        # (e.g. book 'Self-efficacy: The exercise of control' ⊂ article
+        # 'Perceived self-efficacy in the exercise of control over AIDS').
+        # token_sort_ratio is length-sensitive, so it stays high only when the
+        # titles are genuinely near-identical — used to gate the any-year-gap
+        # exact bypass below so a book doesn't match a same-author article/
+        # chapter whose title merely contains it.
+        title_sort_score = fuzz.token_sort_ratio(entry.title_normalized, norm_cand)
         # Treat missing metadata as "unknown" rather than "mismatch" — Crossref
         # often has partial records for book chapters (one entry has authors,
         # another has the year, etc.). We don't want to reject either.
@@ -364,31 +375,40 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
         )
         year_match = cand_year == 0 or abs(cand_year - entry.year) <= 1
 
-        scored.append((title_score, author_match, year_match, cand_year, item, cand_title))
+        scored.append((title_score, author_match, year_match, cand_year, item, cand_title, title_sort_score))
 
     # Filter candidates where author+year match (lenient — used for the primary
     # match, accepts year-missing and near-exact-title cases).
+    # A whole-book reference (no DOI, no journal structure, not a chapter cite)
+    # must not resolve to a journal article via a year-gap bypass. Classic books
+    # (Bandura 1997) share their exact title with same-author *articles* (a book
+    # review, a reprint of the title in a journal) that sit a year or two away —
+    # accepting those produces a bogus year mismatch and a spurious R020. On the
+    # year-matches path there's no such risk, and book-chapter candidates stay
+    # allowed so genuine republished chapters (Schegloff 2006 → 2020) still match.
+    book_form = _looks_like_book(entry)
+    _ARTICLE_TYPES = {"journal-article", "article", "proceedings-article", "report"}
+
+    def _bypass_ok(cand_year: int, score: float, sort_score: float, item: dict) -> bool:
+        if cand_year == 0:
+            return False
+        if book_form and (item.get("type") or "").lower() in _ARTICLE_TYPES:
+            return False
+        # Identical title (set==100 AND sort>=95): same author + genuinely
+        # identical title is overwhelmingly the same work — accept any year drift
+        # (reprints decades later). The sort_score gate rejects subset matches
+        # where a book title is merely contained in a longer title (Bandura 1986).
+        if score >= SCORE_EXACT and sort_score >= SCORE_NEAR_EXACT:
+            return True
+        # Near-exact title (95–99): probably the same work but possibly a
+        # different book on the same topic — cap at REPRINT_YEAR_GAP_MAX years
+        # (Jiang 2018 vs 2011).
+        return abs(cand_year - entry.year) < REPRINT_YEAR_GAP_MAX and score >= SCORE_NEAR_EXACT
+
     author_year_matching = [
         (score, item, cand_title)
-        for score, author_ok, year_ok, cand_year, item, cand_title in scored
-        # Accept title + author match even when year disagrees, with two tiers:
-        #   - Exact title (==100): same author + literally identical title is
-        #     overwhelmingly the same work — accept any year drift (handles
-        #     reprints / re-publications decades later).
-        #   - Near-exact title (95–99): probably the same work but might be a
-        #     different book on the same topic by the same author. Cap at
-        #     REPRINT_YEAR_GAP_MAX years to avoid matching e.g. Jiang's 2018
-        #     "Second Language Processing: An Introduction" against his 2011
-        #     "Introducing Second Language Processing".
-        if author_ok and (
-            year_ok
-            or (cand_year != 0 and score >= SCORE_EXACT)
-            or (
-                cand_year != 0
-                and abs(cand_year - entry.year) < REPRINT_YEAR_GAP_MAX
-                and score >= SCORE_NEAR_EXACT
-            )
-        )
+        for score, author_ok, year_ok, cand_year, item, cand_title, sort_score in scored
+        if author_ok and (year_ok or _bypass_ok(cand_year, score, sort_score, item))
     ]
 
     # Filter to high-confidence matches for the primary result
@@ -424,7 +444,7 @@ async def _score_candidates(items: list[dict], entry: ReferenceEntry,
     # be treated as ambiguous — they're the same work or known different works.
     strict_matches = [
         (score, item, cand_title)
-        for score, author_ok, year_ok, cand_year, item, cand_title in scored
+        for score, author_ok, year_ok, cand_year, item, cand_title, sort_score in scored
         if author_ok
         and cand_year != 0
         and abs(cand_year - entry.year) <= 1

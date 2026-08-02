@@ -2443,3 +2443,110 @@ def test_narrative_sentence_adverbs_not_absorbed_into_author():
 
     c2 = extract_intext_citations("Both Smith and Jones (2019) agree.")[0]
     assert c2.author == "Smith" and c2.second_author == "Jones"
+
+
+# ── References check06 batch ──────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_subset_title_with_year_gap_rejected(tmp_path):
+    """Bug (Bandura 1986/1997): classic pre-DOI books have no Crossref *book*
+    record, so the fuzzy search matched a same-author journal-article/chapter
+    whose title *contains* the book title. token_set_ratio returns 100 for
+    such subsets, and the any-year-gap exact bypass then accepted the wrong
+    work (1997 book → 1990 article) → bogus year mismatch + spurious R020.
+    The exact bypass now also requires token_sort_ratio (length-sensitive) to
+    be near-exact, so a subset title with a large year gap is rejected and the
+    entry falls through to the Open Library book lookup."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Bandura, A. (1997). Self-efficacy: The exercise of control. W. H. Freeman.",
+        first_author_normalized="bandura",
+        year=1997,
+        title_normalized="selfefficacy the exercise of control",
+    )
+    # What Crossref actually returns: a same-author 1990 journal article whose
+    # title is a superset of the book title.
+    crossref_payload = {"status": "ok", "message": {"items": [{
+        "title": ["Perceived self-efficacy in the exercise of control over AIDS infection"],
+        "author": [{"family": "Bandura"}],
+        "published": {"date-parts": [[1990]]},
+        "type": "journal-article",
+        "volume": "13", "page": "9-17",
+        "DOI": "10.1/wrong",
+    }]}}
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=crossref_payload)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is None  # rejected → will fall through to Open Library
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_book_form_reference_still_matches_book_candidate(tmp_path):
+    """Guard: a book-form entry still matches a genuine book record."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_crossref
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Jiang, N. (2018). Second language processing: An introduction. Routledge.",
+        first_author_normalized="jiang", year=2018,
+        title_normalized="second language processing an introduction",
+    )
+    payload = {"status": "ok", "message": {"items": [{
+        "title": ["Second Language Processing"],
+        "author": [{"family": "Jiang"}],
+        "published": {"date-parts": [[2018]]},
+        "type": "book", "DOI": "10.1/book",
+    }]}}
+    respx.get("https://api.crossref.org/works").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+    result, _ = await _search_crossref(httpx.AsyncClient(), entry, db_path)
+    assert result is not None and result.found
+
+
+def test_r020_not_flagged_for_article_number_volume_form():
+    """Bug (Wang & Sun 2020): 'System, 95, 102366' is the modern article-number
+    form (volume, article no., no page range). _VOL_PAGES_PRESENT_RE only knew
+    page ranges and vol(issue), so R020 falsely fired even though the metadata
+    is present and matches the record."""
+    entry = ReferenceEntry(
+        raw_text="Wang, C., & Sun, T. (2020). Relationship between self-efficacy and language proficiency: A meta-analysis. System, 95, 102366.",
+        first_author_normalized="wang", year=2020,
+        title_normalized="relationship between selfefficacy and language proficiency a metaanalysis",
+    )
+    canonical = {
+        "author": [{"family": "Wang", "given": "C"}],
+        "published": {"date-parts": [[2020]]},
+        "title": ["Relationship between self-efficacy and language proficiency: A meta-analysis"],
+        "container-title": ["System"],
+        "type": "journal-article", "volume": "95", "page": "102366",
+    }
+    vr = VerifyResult(found=True, exact_match=True, canonical=canonical)
+    issues = _compare_fields(entry, vr)
+    assert [i for i in issues if i.rule_id == "R020"] == []
+
+
+def test_merged_detection_ignores_orphan_doi_line():
+    """Bug (Horwitz 1986): a single reference that already has its own DOI
+    picked up a trailing orphan DOI line (another entry's DOI that wrapped
+    onto its own line and merged into the previous entry). Two DOIs but one
+    (YYYY) — must NOT be flagged as merged. Merged detection now keys only on
+    2+ parenthetical years."""
+    from app.services.report_builder import _looks_like_merged_references
+    horwitz = (
+        "Horwitz, E. K., Horwitz, M. B., & Cope, J. (1986). Foreign language "
+        "classroom anxiety. The Modern Language Journal, 70(2), 125-132. "
+        "https://doi.org/10.2307/327317 https://doi.org/10.1080/01443410.2016.1149549"
+    )
+    assert _looks_like_merged_references(horwitz) is False
+    # genuine merge (two years) still caught
+    assert _looks_like_merged_references(_SCHMITT_WOLTER_MERGED) is True
