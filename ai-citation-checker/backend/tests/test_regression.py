@@ -2550,3 +2550,37 @@ def test_merged_detection_ignores_orphan_doi_line():
     assert _looks_like_merged_references(horwitz) is False
     # genuine merge (two years) still caught
     assert _looks_like_merged_references(_SCHMITT_WOLTER_MERGED) is True
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_book_form_rejects_openalex_article_via_bypass(tmp_path):
+    """Self-review gap: the book-form article-type guard read item['type'],
+    but OpenAlex candidates carried no type, so a same-exact-title journal
+    article a year or two from a book (Bandura 1997 → a 1999 'Self-Efficacy:
+    The Exercise of Control' article) could slip through the near-window
+    bypass on the OpenAlex path. OpenAlex items now carry their type so the
+    guard applies there too."""
+    db_path = str(tmp_path / "t.db")
+    from app.storage.db import init_db
+    from app.services.verifier import _search_openalex
+    await init_db(db_path)
+
+    entry = ReferenceEntry(
+        raw_text="Bandura, A. (1997). Self-efficacy: The exercise of control. W. H. Freeman.",
+        first_author_normalized="bandura", year=1997,
+        title_normalized="selfefficacy the exercise of control",
+    )
+    openalex_payload = {"results": [{
+        "title": "Self-Efficacy: The Exercise of Control",   # identical title
+        "authorships": [{"author": {"display_name": "Albert Bandura"}}],
+        "publication_year": 1999,                            # 2-year gap
+        "doi": "https://doi.org/10.1/wrong",
+        "type": "article",
+        "host_venue": {"display_name": "Some Journal"},
+    }]}
+    respx.get("https://api.openalex.org/works").mock(
+        return_value=httpx.Response(200, json=openalex_payload)
+    )
+    result, _ = await _search_openalex(httpx.AsyncClient(), entry, db_path)
+    assert result is None   # article rejected for a book-form entry

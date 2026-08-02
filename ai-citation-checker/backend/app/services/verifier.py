@@ -248,6 +248,11 @@ async def _search_openalex(client: httpx.AsyncClient, entry: ReferenceEntry,
             "published": {"date-parts": [[year]]},
             "container-title": [w.get("host_venue", {}).get("display_name", "")],
             "DOI": doi,
+            # OpenAlex work type (article / book / book-chapter / …) so the
+            # book-form article-type guard in _score_candidates applies to
+            # OpenAlex candidates too, not just Crossref — otherwise a book
+            # citation could still match a same-title journal article here.
+            "type": (w.get("type") or "").lower(),
             "score": 0,
         })
 
