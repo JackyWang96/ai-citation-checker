@@ -16,20 +16,20 @@ _INTEXT_FORMAT_RE = re.compile(
     r',\s*\d{4}[a-z]?(?:,\s*pp?\.\s*[\d\-]+)?\)$'
 )
 
-# Merged-entry detection: a healthy reference has exactly one '(YYYY)' and at
-# most one DOI URL. Two of either means two references glued into one entry
-# (a lost paragraph break in Word) — field comparison against such a chimera
-# produces nonsense warnings (e.g. journal name from ref #2 compared against
-# the Crossref record of ref #1).
-_DOI_URL_RE = re.compile(r'https?://doi\.org/')
+# Merged-entry detection: every reference has exactly one '(YYYY)' date, so
+# two '(YYYY)' tokens mean two references glued into one entry (a lost
+# paragraph break in Word). Field comparison against such a chimera produces
+# nonsense warnings (journal name from ref #2 vs the Crossref record of ref #1).
+#
+# We deliberately do NOT key off DOI count: a stray/orphan DOI line (one
+# reference's DOI wrapping onto its own line and getting merged into the
+# *previous* entry) inflates the DOI count without there being two references —
+# e.g. Horwitz (1986) picking up a trailing DOI belonging to another entry.
 _YEAR_PARENS_RE = re.compile(r'\(\d{4}[a-z]?\)')
 
 
 def _looks_like_merged_references(text: str) -> bool:
-    return (
-        len(_DOI_URL_RE.findall(text)) >= 2
-        or len(_YEAR_PARENS_RE.findall(text)) >= 2
-    )
+    return len(_YEAR_PARENS_RE.findall(text)) >= 2
 
 
 def build_report(
@@ -54,9 +54,9 @@ def build_report(
             issues.append(CitationIssue(
                 type="format_violation", severity="yellow", category="format",
                 reason="Two references appear to be merged into one entry",
-                detail="This entry contains multiple years/DOIs. Check for a "
-                       "missing paragraph break between the references, or "
-                       "stray characters (e.g. a page number copied from a "
+                detail="This entry contains multiple publication years. Check "
+                       "for a missing paragraph break between the references, "
+                       "or stray characters (e.g. a page number copied from a "
                        "PDF) at the start of the second reference, then "
                        "re-upload.",
             ))
@@ -324,10 +324,15 @@ def _compare_fields(entry: ReferenceEntry, vr: VerifyResult) -> list[CitationIss
     return issues
 
 
-# Volume/pages presence: '176(1)' or '45, 373-401' or any page range '1-43'.
-# Used by R020 to detect journal cites with no numeric metadata at all.
+# Volume/pages presence: '176(1)' or '45, 373-401' or a page range '1-43' or
+# the modern article-number form 'System, 95, 102366' (volume, article no. —
+# no page range). Used by R020 to detect journal cites with no numeric
+# metadata at all.
 _VOL_PAGES_PRESENT_RE = re.compile(
-    r'\d+\s*\(\d+\)|\d+\s*,\s*\d+\s*[-–—]\s*\d+|\d+\s*[-–—]\s*\d+'
+    r'\d+\s*\(\d+\)'                       # 176(1)
+    r'|\d+\s*,\s*\d+\s*[-–—]\s*\d+'        # 45, 373-401
+    r'|\d+\s*[-–—]\s*\d+'                  # 1-43
+    r'|,\s*\d+\s*,\s*\d+'                  # , 95, 102366  (vol, article no.)
 )
 
 
