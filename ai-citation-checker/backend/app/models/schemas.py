@@ -34,6 +34,9 @@ class Citation(BaseModel):
     issues: list[CitationIssue]
     verified_reference_id: Optional[str] = None
     runs: Optional[list[TextRun]] = None
+    # Stage 2 — populated only after the user runs LLM analysis on the report.
+    suggestion: Optional[str] = None
+    suggestion_explanation: Optional[str] = None
 
 
 class Report(BaseModel):

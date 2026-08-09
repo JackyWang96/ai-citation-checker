@@ -22,6 +22,8 @@ interface CitationData {
   status: 'pass' | 'warning' | 'error'
   issues: Issue[]
   runs?: TextRun[] | null
+  suggestion?: string
+  suggestion_explanation?: string
 }
 
 interface Props {
@@ -136,6 +138,23 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
               )}
             </div>
           ))}
+
+          {/* AI fix suggestion (Stage 2 — populated after AI analysis) */}
+          {cit.suggestion && (
+            <div style={{ marginTop: 10, padding: '8px 10px', background: 'var(--accent-bg, var(--bg))', border: '1px solid var(--accent)', borderRadius: 6, fontSize: 12, lineHeight: 1.6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, color: 'var(--accent)', fontWeight: 600, fontSize: 11 }}>
+                ✨ {t.suggestedFix}
+              </div>
+              <div style={{ color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11.5, whiteSpace: 'pre-wrap' }}>
+                {cit.suggestion}
+              </div>
+              {cit.suggestion_explanation && (
+                <div style={{ marginTop: 4, color: 'var(--text-3)', fontSize: 11 }}>
+                  {cit.suggestion_explanation}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

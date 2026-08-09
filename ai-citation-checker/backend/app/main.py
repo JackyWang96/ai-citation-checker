@@ -14,6 +14,7 @@ from app.storage.db import init_db
 from app.storage.cleanup import start_cleanup_scheduler
 from app.routes.upload import router as upload_router
 from app.routes.report import router as report_router
+from app.routes.analyze import router as analyze_router
 
 STATIC_DIR = Path(__file__).parent.parent.parent.parent / "frontend" / "dist"
 
@@ -56,6 +57,7 @@ def _make_app() -> FastAPI:
     )
     application.include_router(upload_router)
     application.include_router(report_router)
+    application.include_router(analyze_router)
 
     @application.get("/healthz", include_in_schema=False)
     async def healthz():

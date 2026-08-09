@@ -2667,3 +2667,91 @@ async def test_book_form_rejects_openalex_article_via_bypass(tmp_path):
     )
     result, _ = await _search_openalex(httpx.AsyncClient(), entry, db_path)
     assert result is None   # article rejected for a book-form entry
+
+
+# ── Stage 2: LLM fix suggestions (opt-in) ─────────────────────────────────────
+
+class _FakeContentBlock:
+    def __init__(self, text): self.type = "text"; self.text = text
+class _FakeResp:
+    def __init__(self, text): self.content = [_FakeContentBlock(text)]
+class _FakeMessages:
+    def __init__(self, handler): self._handler = handler
+    async def create(self, **kwargs): return self._handler(kwargs)
+class _FakeAsyncAnthropic:
+    """Minimal stand-in for anthropic.AsyncAnthropic — no network."""
+    def __init__(self, handler): self.messages = _FakeMessages(handler)
+    async def close(self): pass
+
+
+def _citation(cid, kind="reference", issues=None, suggestion=None):
+    c = {"id": cid, "kind": kind, "raw_text": f"Ref {cid}.", "issues": issues or []}
+    if suggestion:
+        c["suggestion"] = suggestion
+    return c
+
+
+@pytest.mark.asyncio
+async def test_suggest_fixes_only_targets_fixable_reference_citations():
+    """Only reference citations with a format/field issue are sent to the LLM;
+    passes, not-found-only, in-text, and already-analysed citations are skipped."""
+    from app.services.fix_suggester import suggest_fixes
+    seen = []
+
+    def handler(kwargs):
+        seen.append(kwargs["messages"][0]["content"])
+        return _FakeResp('{"corrected_reference": "FIXED", "explanation": "did x"}')
+
+    citations = [
+        _citation("r1", issues=[{"type": "format_violation", "reason": "R010"}]),
+        _citation("r2", issues=[{"type": "field_mismatch", "reason": "Year mismatch",
+                                 "expected": "2019", "actual": "2018"}]),
+        _citation("r3", issues=[]),                                        # pass
+        _citation("r4", issues=[{"type": "not_found", "reason": "gone"}]), # can't rewrite
+        _citation("i5", kind="intext", issues=[{"type": "format_violation", "reason": "x"}]),
+        _citation("r6", issues=[{"type": "format_violation", "reason": "y"}],
+                  suggestion="already"),                                   # already analysed
+    ]
+    result = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert set(result.keys()) == {"r1", "r2"}
+    assert result["r1"]["suggestion"] == "FIXED"
+    assert result["r2"]["suggestion_explanation"] == "did x"
+    assert len(seen) == 2
+    # the prompt carries the detected issue + expected/actual values
+    assert "Year mismatch" in seen[1] and "2019" in seen[1] and "2018" in seen[1]
+
+
+@pytest.mark.asyncio
+async def test_suggest_fixes_skips_on_llm_error_without_failing_batch():
+    """One citation's API failure or unparseable output must not drop the
+    others — the report is still valid without a suggestion."""
+    from app.services.fix_suggester import suggest_fixes
+
+    def handler(kwargs):
+        body = kwargs["messages"][0]["content"]
+        if "r1" in body:
+            raise RuntimeError("api down")
+        if "r2" in body:
+            return _FakeResp("not json")
+        return _FakeResp('{"corrected_reference": "OK", "explanation": ""}')
+
+    citations = [
+        _citation("r1", issues=[{"type": "format_violation", "reason": "a"}]),
+        _citation("r2", issues=[{"type": "format_violation", "reason": "b"}]),
+        _citation("r3", issues=[{"type": "format_violation", "reason": "c"}]),
+    ]
+    result = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert set(result.keys()) == {"r3"}   # r1 (error) and r2 (bad json) skipped
+
+
+@pytest.mark.asyncio
+async def test_suggest_fixes_empty_when_nothing_fixable():
+    """No fixable citations → no client call at all."""
+    from app.services.fix_suggester import suggest_fixes
+    calls = []
+    citations = [_citation("r1", issues=[]), _citation("i2", kind="intext")]
+    result = await suggest_fixes(
+        citations,
+        client=_FakeAsyncAnthropic(lambda k: calls.append(k) or _FakeResp("{}")),
+    )
+    assert result == {} and calls == []
