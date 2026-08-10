@@ -1,4 +1,12 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load backend/.env if present (local dev convenience). Path is resolved
+# relative to this file, not the cwd, because `make dev` runs uvicorn from the
+# repo root. Real env vars (e.g. Railway) always win — load_dotenv never
+# overrides an already-set variable.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 DB_PATH = os.getenv("DB_PATH", "/data/reports.db")
 CROSSREF_MAILTO = os.getenv("CROSSREF_MAILTO", "jackywangmel96@gmail.com")
