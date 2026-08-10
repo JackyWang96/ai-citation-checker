@@ -1,0 +1,154 @@
+# APA 7th guidance — cross-cutting formatting (capitalisation, italics,
+# punctuation, identifiers) and in-text citations. These chunks back the rules
+# that fire across every citation type.
+
+- chunk_id: apa7-title-case-vs-sentence-case
+  category: formatting
+  title: Sentence case for works, title case for the containing source
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case
+  related_rules: [R018]
+  text: |
+    Two capitalisation styles apply in different places. Use sentence case for
+    the title of the work being cited: capitalise only the first word, the
+    first word after a colon, and proper nouns.
+
+    Incidental learning of collocations from meaningful input: A longitudinal
+    study.
+
+    Use title case for the name of the periodical or larger source that
+    contains it: capitalise all major words.
+
+    Studies in Second Language Acquisition. Language Learning. TESOL
+    Quarterly.
+
+    A journal name written in sentence case, such as "Language learning" or
+    "Tesol Quarterly", is miscapitalised.
+
+- chunk_id: apa7-italics-by-type
+  category: formatting
+  title: Which element takes italics in each reference type
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/references-italics
+  related_rules: [R003]
+  text: |
+    Italics mark the largest self-contained work in the reference.
+
+    Journal article: italicise the journal name and volume; the article title
+    is plain.
+    Whole book: italicise the book title.
+    Chapter in an edited book: italicise the book title; the chapter title is
+    plain.
+    Web page: italicise the page title.
+    Software, dataset, report: italicise the title of the item.
+
+    The rule is consistent: whatever contains the piece you are citing takes
+    the italics. A journal article title in italics with a plain journal name
+    has the relationship backwards.
+
+- chunk_id: apa7-doi-url-format
+  category: identifiers
+  title: DOIs are written as full https://doi.org/ links
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/dois-urls
+  related_rules: [R005]
+  text: |
+    Present a DOI as a complete hyperlink beginning with https://doi.org/ and
+    do not label it.
+
+    Correct: https://doi.org/10.1017/S0272263121000462
+    Wrong: doi:10.1017/S0272263121000462
+    Wrong: DOI: 10.1017/S0272263121000462
+    Wrong: 10.1017/S0272263121000462   (bare identifier, not a link)
+
+    A DOI always has the shape 10.<registrant>/<suffix>, with a slash after
+    the registrant prefix. A string such as 10.1353dic.2024.a944944 is missing
+    that slash and will not resolve; the correct form is
+    https://doi.org/10.1353/dic.2024.a944944.
+
+    Do not put a period after a DOI or URL, and do not write "Retrieved from"
+    before a DOI.
+
+- chunk_id: apa7-punctuation-and-spacing
+  category: formatting
+  title: Periods between elements; hyphens without surrounding spaces
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/elements-list-entry
+  related_rules: [R009, R011]
+  text: |
+    Separate the four reference elements — author, date, title, source — with
+    periods. A period follows the closing parenthesis of the date and the end
+    of the title.
+
+    Hyphenated compounds carry no space around the hyphen. Text copied out of
+    a PDF frequently breaks this because a line break falls inside the word.
+
+    Correct: non-native, bigram-based, out-of-class, meta-analysis.
+    Wrong: non- native, bigram- based, meta -analysis.
+
+    Page ranges may legitimately contain a hyphen or an en dash with no
+    surrounding spaces: 373-401 or 373–401.
+
+- chunk_id: apa7-merged-references
+  category: formatting
+  title: One reference per entry, each starting on its own line
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/reference-list-format
+  related_rules: []
+  text: |
+    Each reference is its own paragraph in the reference list, formatted with
+    a hanging indent, and the list is alphabetised by the first author's
+    surname.
+
+    Text pasted out of a PDF often merges two references into one paragraph,
+    or carries a stray page number or footnote marker glued to the start of a
+    reference, as in "12Wolter, B., & Gyllstad, H. (2013)." An entry that
+    contains two publication years usually contains two references and needs
+    splitting; a stray leading number should simply be deleted.
+
+- chunk_id: apa7-intext-parenthetical-vs-narrative
+  category: in-text
+  title: Parenthetical and narrative in-text citations
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/citations/basic-principles/parenthetical-versus-narrative
+  related_rules: [R012, R013]
+  text: |
+    A parenthetical citation puts the author and year inside parentheses,
+    separated by a comma, and uses an ampersand between two authors:
+    (Durrant & Schmitt, 2009).
+
+    A narrative citation puts the author into the sentence and only the year
+    in parentheses, and uses the word and rather than an ampersand:
+    Durrant and Schmitt (2009) found that...
+
+    Both forms are correct APA and either may be used. The ampersand belongs
+    to the parenthetical form only; the word and belongs to the narrative
+    form.
+
+- chunk_id: apa7-intext-et-al
+  category: in-text
+  title: et al. for three or more authors in in-text citations
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/citations/basic-principles/author-date
+  related_rules: [R012]
+  text: |
+    A work with three or more authors is cited in text with the first author's
+    surname followed by et al., from the very first citation onwards. There is
+    no first-mention full listing in APA 7th.
+
+    Parenthetical: (Horwitz et al., 1986)
+    Narrative: Horwitz et al. (1986) argued that...
+
+    Note the punctuation: no period after et, a period after al. A work with
+    exactly two authors always names both and never uses et al.
+
+- chunk_id: apa7-intext-matches-reference-list
+  category: in-text
+  title: Every in-text citation must match an entry in the reference list
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/citations/basic-principles/author-date
+  related_rules: [R013]
+  text: |
+    The author surname and year in an in-text citation must match the
+    corresponding reference-list entry exactly, and every citation in the text
+    must have an entry in the list. A citation with no matching entry is an
+    orphan; an entry never cited in the text should be removed.
+
+    A mismatch is usually a typo in the year rather than a missing source: if
+    the text says (Smith, 2025) and the list has Smith, J. (2024), one of the
+    two years is wrong.
+
+    For a direct quotation, add the page: (Smith, 2024, p. 15) or
+    (Smith, 2024, pp. 15-16).

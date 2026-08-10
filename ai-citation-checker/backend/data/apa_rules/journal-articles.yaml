@@ -1,0 +1,120 @@
+# APA 7th guidance — journal articles.
+#
+# Original prose written for this project, summarising publicly documented APA
+# Style guidance. Not a reproduction of the APA Publication Manual. Each chunk
+# carries the public source page it summarises.
+#
+# Text is English on purpose: the citations being checked and the issue
+# descriptions produced by app/rules/apa7.py are English, so English chunks
+# keep the query and the corpus in the same semantic space.
+
+- chunk_id: apa7-journal-basic-shape
+  category: journal-article
+  title: Basic shape of a journal article reference
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/journal-article-references
+  related_rules: [R001, R002]
+  text: |
+    A journal article reference has four parts in this order: author, date,
+    title of the article, and source. The source for a journal article is the
+    periodical information: the journal name, the volume, the issue if the
+    journal has one, and the page range or article number. A DOI closes the
+    reference when the article has one.
+
+    Smith, J. A., & Chen, L. (2020). Working memory and second language
+    reading. Journal of Memory and Language, 112(3), 104-121.
+    https://doi.org/10.1016/j.jml.2020.104121
+
+- chunk_id: apa7-journal-volume-issue-pages
+  category: journal-article
+  title: Comma between journal name and volume; italics on volume; page range
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/journal-article-references
+  related_rules: [R010, R020]
+  text: |
+    Put a comma after the journal name, then the volume number. The journal
+    name and the volume number are both italicised; the issue number is not,
+    and it sits in parentheses immediately after the volume with no space.
+    A comma then separates the issue from the page range.
+
+    Correct: Journal of Abnormal Psychology, 128(6), 510-516.
+    Wrong (no comma after the journal name): Journal of Abnormal Psychology
+    128(6), 510-516.
+
+    A journal that numbers pages continuously across a volume may have no
+    issue number. In that case the volume is followed directly by a comma and
+    the page range: Cognition, 45, 373-401.
+
+- chunk_id: apa7-journal-article-number
+  category: journal-article
+  title: Article numbers and eLocators instead of page ranges
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/journal-article-references
+  related_rules: [R020]
+  text: |
+    Many online-only journals assign each article an article number (also
+    called an eLocator) instead of a continuous page range. Give the article
+    number in the position where the page range would go. Do not invent a page
+    range for such an article, and do not treat a missing page range as an
+    error when an article number is present.
+
+    System, 95, 102366.
+    PLOS ONE, 15(4), e0234567.
+    Frontiers in Psychology, 11, Article 1523.
+
+    A reference showing volume followed by a single number and no hyphenated
+    range is therefore usually complete, not truncated.
+
+- chunk_id: apa7-journal-missing-metadata
+  category: journal-article
+  title: A journal article needs volume and pages or an article number
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/journal-article-references
+  related_rules: [R020]
+  text: |
+    A journal article reference is incomplete when it names the journal but
+    gives no volume and no page range or article number. Readers cannot locate
+    the article from the journal name alone. Add the volume, the issue if the
+    journal uses issue numbers, and either the page range or the article
+    number.
+
+    Incomplete: Gyllstad, H. (2024). Development and validation of a
+    vocabulary test. International Journal of Applied Linguistics.
+    Complete: Gyllstad, H. (2024). Development and validation of a vocabulary
+    test. ITL - International Journal of Applied Linguistics, 176(1), 1-43.
+
+    A publisher name does not belong in a journal article reference; the
+    journal is the source, not the publishing house.
+
+- chunk_id: apa7-journal-name-form
+  category: journal-article
+  title: Journal names are given in full and in title case
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/journal-article-references
+  related_rules: [R018]
+  text: |
+    Write the journal name in full, exactly as the journal presents it, and in
+    title case: capitalise the major words. Do not abbreviate the journal name
+    and do not convert it to sentence case.
+
+    Correct: Language Learning; TESOL Quarterly; Studies in Second Language
+    Acquisition.
+    Wrong: Language learning; Tesol Quarterly; Lang. Learn.
+
+    Some journals officially carry an abbreviation or prefix as part of their
+    registered name, such as "ITL - International Journal of Applied
+    Linguistics" or "IRAL - International Review of Applied Linguistics in
+    Language Teaching". Reproduce the name the journal itself uses.
+
+- chunk_id: apa7-journal-italics-scope
+  category: journal-article
+  title: What is italicised in a journal article reference
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/references-italics
+  related_rules: [R003]
+  text: |
+    In a journal article reference, italicise the journal name and the volume
+    number. Do not italicise the article title, the issue number, the page
+    range, or the DOI. The article title is set in plain text and in sentence
+    case.
+
+    Chen, L. (2019). Incidental vocabulary learning from reading. Applied
+    Linguistics, 40(2), 233-259.
+
+    Italics mark the larger work: for a journal article the larger work is the
+    journal, so the journal name carries the italics rather than the article
+    title.
