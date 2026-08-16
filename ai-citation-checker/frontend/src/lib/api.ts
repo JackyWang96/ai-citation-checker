@@ -17,3 +17,12 @@ export async function fetchReport(id: string) {
   if (!res.ok) throw new Error(`Failed to load report: ${res.status}`)
   return res.json()
 }
+
+/** Stage 2 — opt-in LLM fix suggestions. Returns the updated report. */
+export async function analyzeReport(id: string) {
+  const res = await fetch(`${BASE}/api/analyze/${id}`, { method: 'POST' })
+  if (res.status === 503) throw new Error('AI analysis is not available on this server')
+  if (res.status === 410) throw new Error('Report expired or not found')
+  if (!res.ok) throw new Error(`AI analysis failed: ${res.status}`)
+  return res.json()
+}

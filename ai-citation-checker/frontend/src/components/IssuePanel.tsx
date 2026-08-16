@@ -19,6 +19,8 @@ interface CitationData {
   raw_text: string
   status: 'pass' | 'warning' | 'error'
   issues: Issue[]
+  suggestion?: string
+  suggestion_explanation?: string
 }
 
 interface Summary {

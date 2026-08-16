@@ -2667,3 +2667,195 @@ async def test_book_form_rejects_openalex_article_via_bypass(tmp_path):
     )
     result, _ = await _search_openalex(httpx.AsyncClient(), entry, db_path)
     assert result is None   # article rejected for a book-form entry
+
+
+# ── Stage 2: LLM fix suggestions (opt-in) ─────────────────────────────────────
+
+class _FakeContentBlock:
+    def __init__(self, text): self.type = "text"; self.text = text
+class _FakeResp:
+    def __init__(self, text): self.content = [_FakeContentBlock(text)]
+class _FakeMessages:
+    def __init__(self, handler): self._handler = handler
+    async def create(self, **kwargs): return self._handler(kwargs)
+class _FakeAsyncAnthropic:
+    """Minimal stand-in for anthropic.AsyncAnthropic — no network."""
+    def __init__(self, handler): self.messages = _FakeMessages(handler)
+    async def close(self): pass
+
+
+def _citation(cid, kind="reference", issues=None, suggestion=None):
+    c = {"id": cid, "kind": kind, "raw_text": f"Ref {cid}.", "issues": issues or []}
+    if suggestion:
+        c["suggestion"] = suggestion
+    return c
+
+
+@pytest.mark.asyncio
+async def test_suggest_fixes_only_targets_fixable_reference_citations():
+    """Only reference citations with a format/field issue are sent to the LLM;
+    passes, not-found-only, in-text, and already-analysed citations are skipped."""
+    from app.services.fix_suggester import suggest_fixes
+    seen = []
+
+    def handler(kwargs):
+        seen.append(kwargs["messages"][0]["content"])
+        return _FakeResp('{"corrected_reference": "FIXED", "explanation": "did x"}')
+
+    citations = [
+        _citation("r1", issues=[{"type": "format_violation", "reason": "R010"}]),
+        _citation("r2", issues=[{"type": "field_mismatch", "reason": "Year mismatch",
+                                 "expected": "2019", "actual": "2018"}]),
+        _citation("r3", issues=[]),                                        # pass
+        _citation("r4", issues=[{"type": "not_found", "reason": "gone"}]), # can't rewrite
+        _citation("i5", kind="intext", issues=[{"type": "format_violation", "reason": "x"}]),
+        _citation("r6", issues=[{"type": "format_violation", "reason": "y"}],
+                  suggestion="already"),                                   # already analysed
+    ]
+    result = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert set(result.keys()) == {"r1", "r2"}
+    assert result["r1"]["suggestion"] == "FIXED"
+    assert result["r2"]["suggestion_explanation"] == "did x"
+    assert len(seen) == 2
+    # the prompt carries the detected issue + expected/actual values
+    assert "Year mismatch" in seen[1] and "2019" in seen[1] and "2018" in seen[1]
+
+
+@pytest.mark.asyncio
+async def test_suggest_fixes_skips_on_llm_error_without_failing_batch():
+    """One citation's API failure or unparseable output must not drop the
+    others — the report is still valid without a suggestion."""
+    from app.services.fix_suggester import suggest_fixes
+
+    def handler(kwargs):
+        body = kwargs["messages"][0]["content"]
+        if "r1" in body:
+            raise RuntimeError("api down")
+        if "r2" in body:
+            return _FakeResp("not json")
+        return _FakeResp('{"corrected_reference": "OK", "explanation": ""}')
+
+    citations = [
+        _citation("r1", issues=[{"type": "format_violation", "reason": "a"}]),
+        _citation("r2", issues=[{"type": "format_violation", "reason": "b"}]),
+        _citation("r3", issues=[{"type": "format_violation", "reason": "c"}]),
+    ]
+    result = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert set(result.keys()) == {"r3"}   # r1 (error) and r2 (bad json) skipped
+
+
+@pytest.mark.asyncio
+async def test_suggest_fixes_empty_when_nothing_fixable():
+    """No fixable citations → no client call at all."""
+    from app.services.fix_suggester import suggest_fixes
+    calls = []
+    citations = [_citation("r1", issues=[]), _citation("i2", kind="intext")]
+    result = await suggest_fixes(
+        citations,
+        client=_FakeAsyncAnthropic(lambda k: calls.append(k) or _FakeResp("{}")),
+    )
+    assert result == {} and calls == []
+
+
+# ── RAG PR1: APA rules corpus + index builder ────────────────────────────────
+
+def test_apa_corpus_loads_and_is_valid():
+    """The committed corpus must load, have unique chunk_ids, and carry every
+    required field — a malformed chunk would otherwise only surface when the
+    index is rebuilt (a manual step that may be days later)."""
+    from app.scripts.build_rules_index import load_corpus, DEFAULT_CORPUS_DIR, REQUIRED_FIELDS
+    chunks = load_corpus(DEFAULT_CORPUS_DIR)
+    assert len(chunks) >= 30
+    ids = [c["chunk_id"] for c in chunks]
+    assert len(ids) == len(set(ids)), "duplicate chunk_id"
+    for c in chunks:
+        for field in REQUIRED_FIELDS:
+            assert c.get(field), f"{c.get('chunk_id')} missing {field}"
+        assert c["source_url"].startswith("https://"), c["chunk_id"]
+
+
+def test_apa_corpus_covers_every_text_checkable_rule():
+    """Every rule the self-validation loop can check must have at least one
+    guidance chunk backing it, otherwise a retry has no grounding to work from.
+    R006 (hanging indent) is excluded: it is a layout rule that cannot be
+    judged from a plain-text suggestion, so the loop never validates it."""
+    from app.scripts.build_rules_index import load_corpus, DEFAULT_CORPUS_DIR
+    covered = {r for c in load_corpus(DEFAULT_CORPUS_DIR) for r in c["related_rules"]}
+    expected = {f"R{n:03d}" for n in list(range(1, 6)) + list(range(7, 21))} - {"R004"}
+    assert expected <= covered, f"rules with no guidance chunk: {sorted(expected - covered)}"
+
+
+def test_corpus_hash_is_deterministic_and_content_sensitive():
+    """corpus_sha256 gates index rebuilds: it must be stable across runs (or
+    every start-up fails) yet change when embedded text changes (or a stale
+    index silently serves outdated guidance)."""
+    from app.scripts.build_rules_index import load_corpus, corpus_sha256, DEFAULT_CORPUS_DIR
+    chunks = load_corpus(DEFAULT_CORPUS_DIR)
+    assert corpus_sha256(chunks) == corpus_sha256(load_corpus(DEFAULT_CORPUS_DIR))
+
+    mutated = [dict(c) for c in chunks]
+    mutated[0]["text"] = mutated[0]["text"] + " extra guidance."
+    assert corpus_sha256(mutated) != corpus_sha256(chunks)
+
+
+def test_corpus_loader_rejects_duplicate_and_incomplete_chunks(tmp_path):
+    """Fail loudly at build time rather than shipping a broken index."""
+    from app.scripts.build_rules_index import load_corpus
+    (tmp_path / "a.yaml").write_text(
+        "- {chunk_id: x, category: c, title: t, text: body, source_url: 'https://e.org'}\n"
+        "- {chunk_id: x, category: c, title: t2, text: body2, source_url: 'https://e.org'}\n"
+    )
+    with pytest.raises(ValueError, match="duplicate chunk_id"):
+        load_corpus(tmp_path)
+
+    (tmp_path / "a.yaml").write_text(
+        "- {chunk_id: y, category: c, title: t, text: body}\n"   # no source_url
+    )
+    with pytest.raises(ValueError, match="missing required field"):
+        load_corpus(tmp_path)
+
+
+def test_embed_text_includes_category_and_title():
+    """The embedded string carries the citation *type*, so a query naming a
+    type ('encyclopedia entry') can match a chunk that shares no distinctive
+    body vocabulary with it."""
+    from app.scripts.build_rules_index import embed_text
+    chunk = {"category": "reference-work", "title": "Encyclopedia entries",
+             "text": "Entries are cited with the entry author..."}
+    embedded = embed_text(chunk)
+    assert "reference-work" in embedded and "Encyclopedia entries" in embedded
+    assert "entry author" in embedded
+
+
+def test_write_index_roundtrip_with_fake_vectors(tmp_path):
+    """Build a real sqlite-vec index from fake vectors (no API) and query it
+    back — proves the schema, the vec0 table, and index_meta all work, and
+    that a KNN query returns the nearest chunk."""
+    from app.scripts.build_rules_index import write_index
+    from app.services.vectors import open_rules_db      # PR2 helper, added below
+    chunks = [
+        {"chunk_id": "a", "category": "journal-article", "title": "A", "text": "aaa",
+         "source_url": "https://e.org/a", "related_rules": ["R010"]},
+        {"chunk_id": "b", "category": "chapter", "title": "B", "text": "bbb",
+         "source_url": "https://e.org/b", "related_rules": []},
+    ]
+    vectors = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]]
+    out = tmp_path / "idx.db"
+    write_index(out, chunks, vectors,
+                {"embedding_provider": "openai", "embedding_model": "m",
+                 "embedding_dim": "4", "normalized": "true",
+                 "corpus_sha256": "deadbeef", "built_at": "now",
+                 "sqlite_vec_version": "v0.1.9"})
+
+    db = open_rules_db(str(out))
+    meta = dict(db.execute("SELECT key, value FROM index_meta").fetchall())
+    assert meta["embedding_dim"] == "4" and meta["corpus_sha256"] == "deadbeef"
+
+    import struct
+    hit = db.execute(
+        """SELECT c.chunk_id FROM rule_vectors v JOIN rule_chunks c ON c.rowid = v.rowid
+           WHERE v.embedding MATCH ? AND k = 1""",
+        (struct.pack("4f", 1.0, 0.0, 0.0, 0.0),),
+    ).fetchone()
+    assert hit[0] == "a"
+    db.close()

@@ -17,6 +17,13 @@ dependencies = [
     "slowapi==0.1.9",
     "pydantic==2.8.2",
     "python-multipart==0.0.9",
+    "anthropic>=0.69",
+    "python-dotenv>=1.0",
+    # RAG: APA rules index. sqlite-vec is pinned because the committed
+    # apa_rules.db carries a vec0 virtual table written by this exact version.
+    "sqlite-vec==0.1.9",
+    "openai>=1.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]

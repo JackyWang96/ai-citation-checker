@@ -1,0 +1,110 @@
+# APA 7th guidance — author names and dates in the reference list.
+# Original prose summarising publicly documented APA Style guidance.
+
+- chunk_id: apa7-author-name-format
+  category: authors
+  title: Author names are surname first, then initials with periods and spaces
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/elements-list-entry
+  related_rules: [R001]
+  text: |
+    Invert every author name in the reference list: surname, comma, then the
+    initials of the given names. Put a period after each initial and a space
+    between initials.
+
+    Correct: Horwitz, E. K.  Correct: Bandura, A.  Correct: Wang, C.
+    Wrong: E. K. Horwitz.  Wrong: Horwitz, EK.  Wrong: Horwitz E. K.
+
+    Keep multi-word surnames intact and capitalised as the author writes them:
+    Van Vu, D.; Pekarek Doehler, S.; Al-Gahtani, S.; Vilkaite-Lozdiene, L.
+    A surname made of more than one word is still a single surname, not a
+    surname plus a given name.
+
+- chunk_id: apa7-author-separators
+  category: authors
+  title: Separating multiple authors — commas and the ampersand
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/elements-list-entry
+  related_rules: [R007, R008]
+  text: |
+    Separate authors with commas and place an ampersand, not the word and,
+    before the final author. The comma before the ampersand is required even
+    when there are only two authors.
+
+    Two authors: Durrant, P., & Schmitt, N.
+    Three authors: Horwitz, E. K., Horwitz, M. B., & Cope, J.
+    Wrong: Durrant, P. and Schmitt, N.
+    Wrong: Durrant, P. & Schmitt, N.   (missing the comma before &)
+
+    Use the word and only in narrative in-text citations running in your
+    sentence; the reference list itself always uses the ampersand.
+
+- chunk_id: apa7-author-count-twenty-one
+  category: authors
+  title: Up to 20 authors are listed; 21 or more use an ellipsis
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples
+  related_rules: []
+  text: |
+    List every author up to twenty. With twenty-one or more authors, list the
+    first nineteen, insert an ellipsis, and then give the final author's name
+    without an ampersand before it.
+
+    Author, A. A., Author, B. B., ... Author, Z. Z. (2021). Title of the work.
+
+    Do not use et al. in the reference list to shorten a long author list; et
+    al. belongs to in-text citations.
+
+- chunk_id: apa7-group-author
+  category: authors
+  title: Organisations as authors
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/elements-list-entry
+  related_rules: [R001]
+  text: |
+    An organisation, agency, association, or company can be the author. Write
+    the group name in full in the author position and follow it with the date.
+    Do not invert it and do not reduce it to initials in the reference list.
+
+    Council of Europe. (2001). Common European framework of reference for
+    languages: Learning, teaching, assessment. Cambridge University Press.
+    American Psychological Association. (2020). Publication manual of the
+    American Psychological Association (7th ed.).
+
+    When the group is also the publisher, do not repeat the name in the
+    publisher position.
+
+- chunk_id: apa7-date-forms
+  category: dates
+  title: The date element — year in parentheses, n.d., and in press
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/elements-list-entry
+  related_rules: [R002, R009]
+  text: |
+    Put the publication year in parentheses after the author, and follow the
+    closing parenthesis with a period.
+
+    Correct: Bandura, A. (1997). Self-efficacy: The exercise of control.
+    Wrong: Bandura, A. 1997. Self-efficacy.
+    Wrong: Bandura, A. (1997) Self-efficacy.   (missing period after the year)
+
+    When a work carries no date, write (n.d.) in the date position, keeping
+    both periods. When a work is accepted but not yet published, write
+    (in press) instead of a year. Neither form is a missing date to be filled
+    in with a guess.
+
+    Sources with a more specific date, such as news articles, blog posts, and
+    conference presentations, take the year followed by month and day:
+    (2023, September 28).
+
+- chunk_id: apa7-same-author-same-year
+  category: dates
+  title: Distinguishing two works by the same author in the same year
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/elements-list-entry
+  related_rules: [R013]
+  text: |
+    When one author has two works in the same year, append lowercase letters
+    to the year to tell them apart, ordered by the titles as they appear
+    alphabetically in the reference list.
+
+    Leuckert, S. (2024a). Moving lexicographical mountains...
+    Leuckert, S. (2024b). Stop focusing on what the dictionary says...
+
+    Use the same letter in the in-text citation: (Leuckert, 2024a). Without
+    the letters a reader cannot tell which of the two works a citation points
+    to.

@@ -1,0 +1,149 @@
+# APA 7th guidance — whole books, edited-book chapters, and reference-work
+# entries. Original prose summarising publicly documented APA Style guidance;
+# each chunk carries the public source page it summarises.
+
+- chunk_id: apa7-whole-book
+  category: book
+  title: Whole book reference — publisher, no place of publication
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/book-references
+  related_rules: [R003]
+  text: |
+    A whole-book reference is author, year, book title in italics, and
+    publisher. The book title is italicised and set in sentence case. End with
+    the publisher name.
+
+    Bandura, A. (1997). Self-efficacy: The exercise of control. W. H. Freeman.
+
+    APA 7th removed the publisher location. Do not write a city or state
+    before the publisher.
+    Wrong: Plenum Press, New York.  Wrong: New York, NY: Routledge.
+    Correct: Plenum Press.  Correct: Routledge.
+
+    A book has no volume, issue, or page range in the reference; those belong
+    to journal articles and to chapters within a larger work.
+
+- chunk_id: apa7-book-edition-and-editors
+  category: book
+  title: Editions, and books that have editors rather than authors
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/book-references
+  related_rules: [R017]
+  text: |
+    Give a non-first edition in parentheses after the title, before the
+    publisher, and do not italicise it:
+    Nation, I. S. P. (2013). Learning vocabulary in another language
+    (2nd ed.). Cambridge University Press.
+
+    When a whole book is edited rather than authored, the editors take the
+    author position followed by an editor label in parentheses with a period
+    inside the abbreviation: (Ed.) for one editor, (Eds.) for two or more.
+    Robinson, P., & Ellis, N. C. (Eds.). (2008). Handbook of cognitive
+    linguistics and second language acquisition. Routledge.
+
+- chunk_id: apa7-edited-book-chapter
+  category: chapter
+  title: Chapter in an edited book — In, editors, book title, page range
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/edited-book-chapter-references
+  related_rules: [R014, R015, R016, R017, R019]
+  text: |
+    A chapter in an edited book names the chapter authors, the year, the
+    chapter title in plain text, then the word In, the editors, the book title
+    in italics, the chapter page range in parentheses, and the publisher.
+
+    Ellis, N. C. (2008). Usage-based and form-focused language acquisition.
+    In P. Robinson & N. C. Ellis (Eds.), Handbook of cognitive linguistics and
+    second language acquisition (pp. 372-405). Routledge.
+
+    Four things go wrong most often:
+    - the editors are omitted entirely after In;
+    - the editor label is written without its period, as (Eds) instead of (Eds.);
+    - the page range is written without pp., as (372-405);
+    - the editor names are inverted.
+
+- chunk_id: apa7-chapter-editor-name-order
+  category: chapter
+  title: Editor names go initials-first, unlike author names
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/edited-book-chapter-references
+  related_rules: [R016]
+  text: |
+    Author names at the start of a reference are inverted: surname first, then
+    initials (Ellis, N. C.). Editor names that follow the word In are not
+    inverted: initials come first, then the surname (N. C. Ellis).
+
+    Correct: In P. Robinson & N. C. Ellis (Eds.), Handbook of cognitive
+    linguistics and second language acquisition (pp. 372-405). Routledge.
+    Wrong: In Robinson, P., & Ellis, N. C. (Eds.), Handbook of cognitive
+    linguistics and second language acquisition (pp. 372-405). Routledge.
+
+    This asymmetry is deliberate: the inverted form is for alphabetising the
+    reference list, and editors are not the alphabetising element.
+
+- chunk_id: apa7-chapter-page-range
+  category: chapter
+  title: Chapter page range uses pp. inside parentheses
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/edited-book-chapter-references
+  related_rules: [R015, R019]
+  text: |
+    Give the chapter's page range in parentheses after the book title, marked
+    with pp. for a span of pages or p. for a single page. The parentheses and
+    the abbreviation are both required.
+
+    Correct: (pp. 372-405).  Correct: (p. 87).
+    Wrong: (372-405).  Wrong: pp. 372-405.
+
+    The page range describes where the chapter sits inside the book, so it
+    belongs to chapters in larger works, not to whole books.
+
+- chunk_id: apa7-chapter-italics-scope
+  category: chapter
+  title: In a chapter reference the book title is italicised, not the chapter title
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/references-italics
+  related_rules: [R003]
+  text: |
+    Italics always mark the larger work. In a chapter reference the larger
+    work is the book, so the book title is italicised and the chapter title is
+    plain text in sentence case.
+
+    Ellis, N. C. (2008). Usage-based and form-focused language acquisition.
+    In P. Robinson & N. C. Ellis (Eds.), Handbook of cognitive linguistics and
+    second language acquisition (pp. 372-405). Routledge.
+
+    Italicising the chapter title and leaving the book title plain reverses
+    the relationship and is incorrect.
+
+- chunk_id: apa7-reference-work-entry
+  category: reference-work
+  title: Encyclopedia and dictionary entries — usually no page range
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/dictionary-encyclopedia-entry-references
+  related_rules: [R019]
+  text: |
+    An entry in a reference work such as an encyclopedia, an encyclopaedia, a
+    dictionary, or a handbook of record is cited with the entry author, the
+    year, the entry title, then In the editor and the italicised title of the
+    reference work, and the publisher.
+
+    Schmitt, N., Sonbul, S., & Macis, M. (2019). Formulaic language and
+    collocation. In C. A. Chapelle (Ed.), The encyclopedia of applied
+    linguistics. John Wiley & Sons.
+    https://doi.org/10.1002/9781405198431.wbeal0433.pub2
+
+    Online reference works are continuously revised and often have no stable
+    pagination, so a page range is normally omitted. A missing page range in
+    such an entry is not an error and should not be flagged as one.
+
+- chunk_id: apa7-reference-work-continuously-updated
+  category: reference-work
+  title: Continuously updated works use n.d. and a retrieval date
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/dictionary-encyclopedia-entry-references
+  related_rules: []
+  text: |
+    When a reference-work entry is updated continuously and carries no version
+    date, use n.d. in the date position and add a retrieval date before the
+    URL, because the content the reader sees may differ from the content you
+    read.
+
+    Merriam-Webster. (n.d.). Collocation. In Merriam-Webster.com dictionary.
+    Retrieved May 28, 2026, from
+    https://www.merriam-webster.com/dictionary/collocation
+
+    A retrieval date is only for sources designed to change. An archived or
+    versioned entry with a stable date does not need one.

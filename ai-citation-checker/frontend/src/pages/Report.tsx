@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { fetchReport } from '../lib/api'
+import { fetchReport, analyzeReport } from '../lib/api'
 import { useT } from '../i18n'
 import AnnotatedText from '../components/AnnotatedText'
 import IssuePanel from '../components/IssuePanel'
@@ -31,6 +31,8 @@ interface Citation {
   status: CitationStatus
   issues: CitationIssue[]
   verified_reference_id?: string
+  suggestion?: string
+  suggestion_explanation?: string
 }
 
 interface ReportData {
@@ -86,6 +88,8 @@ export default function Report() {
   const [activeCitId, setActiveCitId] = useState<string | null>(null)
   const [hoveredCitId, setHoveredCitId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeError, setAnalyzeError] = useState('')
   const issueRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
@@ -107,6 +111,20 @@ export default function Report() {
     setHoveredCitId(citId)
   }, [])
 
+  const handleAnalyze = useCallback(async () => {
+    if (!id) return
+    setAnalyzing(true)
+    setAnalyzeError('')
+    try {
+      const updated = await analyzeReport(id)
+      setReport(updated)
+    } catch (e: unknown) {
+      setAnalyzeError(e instanceof Error ? e.message : t.analyzeError)
+    } finally {
+      setAnalyzing(false)
+    }
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (error) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -125,6 +143,14 @@ export default function Report() {
 
   const { summary, citations, full_text, filename, expires_at } = report
   const hasAmbiguous = citations.some((c) => c.issues.some((iss) => iss.category === 'ambiguous'))
+  // AI fix button appears only while there's something a rewrite could fix
+  // that hasn't been analysed yet.
+  const hasFixable = citations.some(
+    (c) =>
+      c.kind === 'reference' &&
+      !c.suggestion &&
+      c.issues.some((iss) => iss.type === 'format_violation' || iss.type === 'field_mismatch'),
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'var(--font)' }}>
@@ -176,6 +202,28 @@ export default function Report() {
                 </svg>
                 {t.doiTip}
               </div>
+            </>
+          )}
+
+          {hasFixable && (
+            <>
+              <Divider />
+              <button
+                onClick={handleAnalyze}
+                disabled={analyzing}
+                title={analyzeError || undefined}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                  border: `1px solid ${analyzeError ? 'var(--red-border)' : 'var(--accent)'}`,
+                  background: analyzeError ? 'var(--red-bg)' : 'transparent',
+                  color: analyzeError ? 'var(--red)' : 'var(--accent)',
+                  cursor: analyzing ? 'default' : 'pointer',
+                  opacity: analyzing ? 0.6 : 1,
+                }}
+              >
+                {analyzing ? t.analyzing : analyzeError ? t.analyzeRetry : `✨ ${t.analyzeButton}`}
+              </button>
             </>
           )}
 

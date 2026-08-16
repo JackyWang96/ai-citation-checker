@@ -1,0 +1,136 @@
+# APA 7th guidance — web pages, software, and grey literature (theses,
+# conference papers, preprints, datasets, reports). These are the citation
+# types the deterministic rule set R001-R020 covers least, so they matter most
+# for retrieval.
+
+- chunk_id: apa7-webpage
+  category: web
+  title: Web page and online document references
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/webpage-website-references
+  related_rules: []
+  text: |
+    A web page reference is author, date, title of the page in italics, the
+    name of the website, and the URL. When the author and the site name are
+    the same, omit the site name.
+
+    theCrag. (n.d.). Glossary. Retrieved May 28, 2026, from
+    https://www.thecrag.com/en/article/glossary
+
+    Give the bare URL. Do not write "Available at" and do not put a period
+    after the URL. Add a retrieval date only when the page is designed to
+    change over time and is not archived.
+
+    Web pages have no volume, issue, or page numbers, and they are usually
+    absent from academic databases such as Crossref, so failing to find one
+    there is expected rather than evidence of a fabricated source.
+
+- chunk_id: apa7-software
+  category: software
+  title: Software, apps, and R packages
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/software-references
+  related_rules: []
+  text: |
+    Cite software with the individual or organisation that owns the copyright,
+    the year of the version used, the name and version, a bracketed
+    descriptor, and the URL.
+
+    The jamovi project. (2024). jamovi (Version 2.5) [Computer software].
+    https://www.jamovi.org
+
+    The version goes in parentheses after the name; the descriptor goes in
+    square brackets: [Computer software], [Mobile app], [R package].
+    Standard software such as Microsoft Word or SPSS usually needs no
+    reference at all, only a mention in the method section.
+
+    Note that some tools are documented in a journal article as well as in a
+    package. When the article is the intended source, cite the article with
+    its journal, volume, and pages rather than the package descriptor.
+
+- chunk_id: apa7-thesis-dissertation
+  category: thesis
+  title: Theses and dissertations
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/dissertation-references
+  related_rules: []
+  text: |
+    A thesis or dissertation takes the author, the year, the title in italics,
+    a bracketed description naming the degree and the awarding institution,
+    and then the repository or database.
+
+    Gyllstad, H. (2007). Testing English collocations: Developing receptive
+    tests for use with advanced Swedish learners [Doctoral dissertation, Lund
+    University]. Lund University Publications.
+
+    Use [Master's thesis, Institution] or [Doctoral dissertation, Institution]
+    as appropriate. An unpublished thesis names the institution in the same
+    bracket and ends there, with no repository.
+
+- chunk_id: apa7-conference
+  category: conference
+  title: Conference presentations and proceedings papers
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/conference-presentation-references
+  related_rules: []
+  text: |
+    A conference presentation takes the presenter, the full date range of the
+    conference, the title in italics, a bracketed description of the format,
+    and the conference name and location.
+
+    Author, A. A. (2023, September 14-17). Title of the presentation
+    [Conference presentation]. Annual Meeting of the Cognitive Science
+    Society, Sydney, Australia.
+
+    A paper published in conference proceedings is cited like a chapter in an
+    edited book, or like a journal article when the proceedings appear as a
+    journal issue. Self-hosted proceedings papers are often absent from
+    Crossref, so a failed database lookup does not imply the source is
+    fabricated.
+
+- chunk_id: apa7-preprint
+  category: preprint
+  title: Preprints
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/preprint-article-references
+  related_rules: []
+  text: |
+    A preprint is cited with the author, the year the preprint was posted, the
+    title in italics, a bracketed description, the preprint server, and the
+    DOI or URL.
+
+    Author, A. A. (2025). Title of the preprint [Preprint]. PsyArXiv.
+    https://doi.org/10.31234/osf.io/example
+
+    A preprint and its later peer-reviewed version are different works with
+    different years. Cite the version you actually read, and prefer the
+    published version when one exists.
+
+- chunk_id: apa7-dataset
+  category: dataset
+  title: Datasets
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/data-set-references
+  related_rules: []
+  text: |
+    Cite a dataset with the author, the year, the title in italics, a
+    bracketed description, the repository or publisher, and the DOI or URL.
+
+    Author, A. A. (2024). Corpus of learner English [Data set]. Open Science
+    Framework. https://doi.org/10.17605/OSF.IO/EXAMPLE
+
+    Use [Data set] for the data itself and [Code] or [Computer software] for
+    the accompanying analysis scripts. A dataset has no volume, issue, or page
+    range.
+
+- chunk_id: apa7-report
+  category: report
+  title: Reports from organisations and government bodies
+  source_url: https://apastyle.apa.org/style-grammar-guidelines/references/examples/report-references
+  related_rules: []
+  text: |
+    A report takes the authoring body, the year, the report title in italics,
+    a report number in parentheses when one exists, the publisher when it
+    differs from the author, and the URL.
+
+    Organisation Name. (2022). Title of the report (Report No. 123).
+    https://example.org/report
+
+    Reports, standards, and other grey literature are frequently missing from
+    Crossref, OpenAlex, and library catalogues. Absence from those sources is
+    not evidence that the work does not exist; it means the reference has to
+    be verified by hand.

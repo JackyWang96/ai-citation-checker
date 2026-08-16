@@ -56,6 +56,12 @@ const zh = {
   catContent: '内容', catFormat: '格式', catOrphan: '孤立引用', catAmbiguous: '模糊引用',
   // error
   loadReportError: '加载报告失败',
+  // AI fix suggestions (Stage 2)
+  analyzeButton: 'AI 修正建议',
+  analyzing: '分析中…',
+  analyzeRetry: '重试 AI 分析',
+  analyzeError: 'AI 分析失败',
+  suggestedFix: '建议修正',
 }
 
 const en: typeof zh = {
@@ -103,6 +109,11 @@ const en: typeof zh = {
   pass: 'Pass', warning: 'Warning', error: 'Error',
   catContent: 'Content', catFormat: 'Format', catOrphan: 'Orphan', catAmbiguous: 'Ambiguous',
   loadReportError: 'Failed to load report',
+  analyzeButton: 'AI fix suggestions',
+  analyzing: 'Analyzing…',
+  analyzeRetry: 'Retry AI analysis',
+  analyzeError: 'AI analysis failed',
+  suggestedFix: 'Suggested fix',
 }
 
 export type Translations = typeof zh

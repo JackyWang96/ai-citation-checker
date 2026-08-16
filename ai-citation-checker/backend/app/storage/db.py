@@ -47,6 +47,17 @@ async def save_report(db_path: str, report_id: str, report_json: str, filename: 
         await db.commit()
 
 
+async def update_report(db_path: str, report_id: str, report_json: str) -> None:
+    """Overwrite a report's JSON blob in place (e.g. after attaching LLM fix
+    suggestions). Leaves created_at/expires_at unchanged."""
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            "UPDATE reports SET report_json=? WHERE id=?",
+            (report_json, report_id),
+        )
+        await db.commit()
+
+
 async def get_report(db_path: str, report_id: str) -> dict | None:
     now = datetime.now(timezone.utc).isoformat()
     async with aiosqlite.connect(db_path) as db:
