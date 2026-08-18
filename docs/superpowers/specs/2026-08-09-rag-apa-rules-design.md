@@ -232,22 +232,39 @@ git add data/apa_rules.db data/apa_rules/   # 语料与索引一起提交
 
 ## 6. 组件三:检索层
 
-`services/rules_retriever.py`(约 60 行):
+`services/rules_retriever.py`(约 60 行)。
+
+### ⚠️ 查询里绝不能塞完整引用原文(PR 1 实测结论)
+
+**查询构造是本设计最关键、也最容易做错的一环。** PR 1 阶段用真实索引做了召回评估,结论明确:
+
+| 查询构造 | top-1 命中 | top-3 命中 | 距离区间 |
+|---|---|---|---|
+| **完整引用原文 + 问题描述** | 3/6 | 4/6 | 0.90–1.16 |
+| **问题描述 + 结构化类型线索** | **4/6** | **6/6** | **0.67–0.95** |
+
+原因:引用原文里的**专有名词**(人名、书名、期刊名)贡献了大量语义噪声,把"哪里出了问题"这个真正的信号压了下去。最典型的证据是 Van Vu 那条——`apa7-author-name-format` 块里**字面就写着 "Van Vu, D."**,但把完整引用塞进查询后**反而检索不到它**,只用问题描述却能命中。
+
+**正确做法**:查询 = 检出的问题描述 + **从引用结构推断的类型线索**,不含任何专有名词。
 
 ```python
 def build_query(citation: dict) -> str:
-    """把检测结果转成语义查询——不是用户提问。"""
-    # 引用类型线索(即使没有规则触发也能检索到对应类型的指引)
-    # + 触发的规则 reason + expected/actual
+    """检出的问题 + 引用类型线索;不含人名/书名/期刊名。"""
+    hints = type_hints(citation["raw_text"])   # 复用 _is_chapter / _journal_name 等既有判定
+    reasons = [i["reason"] for i in citation["issues"] if i["type"] in _FIXABLE_ISSUE_TYPES]
+    return f"{'. '.join(reasons)}. Reference type: {hints}."
 ```
 
-**查询构造是设计关键**:同时编码「这是什么类型的引用」和「哪里出了问题」。例如 Schmitt 那条百科条目会构造出:
+`type_hints()` 由引用的**结构**推断,复用 `apa7.py` 里已有的 `_is_chapter` / `_journal_name`,以及软件标签、`Retrieved from`、`(n.d.)`、文章编号等形态判定,输出如:
 
 ```
-"encyclopedia reference work entry edited by editors, chapter page range missing"
+"chapter in an edited book, with editors after In; has a page range"
+"journal article with a periodical name; article number or eLocator instead of a page range"
 ```
 
-即使我们**没有**针对百科条目的硬编码规则,也能检索到 `apa7-reference-work-entry` 那一块——**这就是 RAG 相对硬编码规则的增量价值**。
+**验收标准**:PR 2 必须用真实 bug 样本(Leuckert / Schmitt / Ellis / Wang / Meichenbaum / Van Vu)做召回评估,**top-3 命中率 ≥ 6/6**;低于此值先调查询构造或语料,不要靠调大 k 掩盖。
+
+由于检索的是 top-3 并全部喂给 Claude,**top-3 命中率才是有效指标**,top-1 不是。
 
 ## 7. 组件四:LangGraph 自校验循环
 
