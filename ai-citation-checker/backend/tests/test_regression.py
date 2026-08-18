@@ -2,6 +2,7 @@
 Regression tests — one test per bug found in production.
 Each test documents WHAT broke, WHY, and verifies the fix.
 """
+import json
 import pytest
 import respx
 import httpx
@@ -2859,3 +2860,63 @@ def test_write_index_roundtrip_with_fake_vectors(tmp_path):
     ).fetchone()
     assert hit[0] == "a"
     db.close()
+
+
+@pytest.mark.asyncio
+async def test_noop_fix_suggestion_is_dropped():
+    """Bug (observed against the live API on Wang & Sun 2020): Claude replied
+    "no correction was needed" yet still returned corrected_reference set to
+    the original string. The UI then rendered an "AI fix suggestion" that was
+    character-for-character what the student wrote. A suggestion identical to
+    the input is not a suggestion — drop it."""
+    from app.services.fix_suggester import suggest_fixes
+    raw = ("Wang, C., & Sun, T. (2020). Relationship between self-efficacy and "
+           "language proficiency: A meta-analysis. System, 95, 102366.")
+
+    def handler(kwargs):
+        return _FakeResp(json.dumps({
+            "corrected_reference": raw,
+            "explanation": "The reference is already correct; no changes were made.",
+        }))
+
+    citations = [{"id": "c1", "kind": "reference", "raw_text": raw,
+                  "issues": [{"type": "format_violation", "reason": "Missing volume/pages"}]}]
+    assert await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler)) == {}
+
+
+@pytest.mark.asyncio
+async def test_whitespace_only_rewrite_is_dropped():
+    """Re-wrapping or collapsing spaces isn't a fix either, and the NBSP Word
+    inserts would otherwise make an identical string compare as different."""
+    from app.services.fix_suggester import suggest_fixes
+    raw = "Meichenbaum, D. (1977).\xa0Cognitive-behavior modification. Plenum Press."
+
+    def handler(kwargs):
+        return _FakeResp(json.dumps({
+            "corrected_reference":
+                "Meichenbaum, D. (1977).  Cognitive-behavior modification.  Plenum Press.",
+            "explanation": "Tidied spacing.",
+        }))
+
+    citations = [{"id": "c1", "kind": "reference", "raw_text": raw,
+                  "issues": [{"type": "format_violation", "reason": "Title should be italic"}]}]
+    assert await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler)) == {}
+
+
+@pytest.mark.asyncio
+async def test_capitalisation_only_rewrite_survives_the_noop_filter():
+    """Guard the fix from over-reaching: recapitalising a journal name (R018)
+    is a genuine correction, so the comparison must stay case-sensitive."""
+    from app.services.fix_suggester import suggest_fixes
+    raw = "Smith, J. (2020). A study. journal of testing, 5(2), 1-10."
+    fixed = "Smith, J. (2020). A study. Journal of Testing, 5(2), 1-10."
+
+    def handler(kwargs):
+        return _FakeResp(json.dumps({
+            "corrected_reference": fixed, "explanation": "Capitalised the journal name.",
+        }))
+
+    citations = [{"id": "c1", "kind": "reference", "raw_text": raw,
+                  "issues": [{"type": "format_violation", "reason": "Journal name capitalisation"}]}]
+    out = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert out["c1"]["suggestion"] == fixed
