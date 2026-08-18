@@ -2763,7 +2763,8 @@ def test_apa_corpus_loads_and_is_valid():
     """The committed corpus must load, have unique chunk_ids, and carry every
     required field — a malformed chunk would otherwise only surface when the
     index is rebuilt (a manual step that may be days later)."""
-    from app.scripts.build_rules_index import load_corpus, DEFAULT_CORPUS_DIR, REQUIRED_FIELDS
+    from app.scripts.build_rules_index import DEFAULT_CORPUS_DIR
+    from app.services.rules_corpus import load_corpus, REQUIRED_FIELDS
     chunks = load_corpus(DEFAULT_CORPUS_DIR)
     assert len(chunks) >= 30
     ids = [c["chunk_id"] for c in chunks]
@@ -2859,3 +2860,43 @@ def test_write_index_roundtrip_with_fake_vectors(tmp_path):
     ).fetchone()
     assert hit[0] == "a"
     db.close()
+
+
+# ── RAG PR2: retrieval layer ─────────────────────────────────────────────────
+
+def test_committed_index_is_in_sync_with_committed_corpus():
+    """The shipped apa_rules.db must still match the shipped YAML.
+
+    Editing a rule chunk without re-running build_rules_index leaves an index
+    that answers with the *old* text while looking perfectly healthy. The
+    fingerprint check catches it — but only if something calls it, and in
+    production nothing does until a user clicks the button. Assert it here so
+    the mismatch fails the build instead of shipping."""
+    import app.config as cfg
+    from app.services.rules_retriever import verify_rules_index
+    from app.services.vectors import open_rules_db
+    db = open_rules_db(cfg.RULES_DB_PATH, read_only=True)
+    try:
+        verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+    finally:
+        db.close()
+
+
+def test_retrieval_query_never_carries_the_reference_text():
+    """Recall evaluation finding (PR 1, re-confirmed in PR 2): putting the
+    reference text in the query drops top-3 recall from 6/6 to 4/6, because
+    author and journal names outweigh the description of what went wrong.
+    'Van Vu' is the sharpest case — the chunk that literally contains that
+    name stops being retrievable once the full citation is in the query."""
+    from app.services.rules_retriever import build_query
+    raw = ("Van Vu, D., & Peters, E. (2022). Incidental learning of collocations "
+           "from meaningful input. Studies in Second Language Acquisition, "
+           "44(3), 685-707.")
+    query = build_query({
+        "raw_text": raw,
+        "issues": [{"type": "field_mismatch", "reason": "Author name mismatch",
+                    "expected": "Vu", "actual": "Van Vu"}],
+    })
+    assert "Van Vu" not in query
+    assert "Studies in Second Language Acquisition" not in query
+    assert "Incidental learning" not in query

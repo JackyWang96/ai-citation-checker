@@ -14,63 +14,17 @@ Requires OPENAI_API_KEY (embedding only; unrelated to ANTHROPIC_API_KEY).
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import yaml
-
+from app.services.rules_corpus import load_corpus, corpus_sha256
 from app.services.vectors import open_rules_db, pack_vector, vec_version
 
-REQUIRED_FIELDS = ("chunk_id", "category", "title", "text", "source_url")
 DEFAULT_CORPUS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "apa_rules"
 DEFAULT_OUT = DEFAULT_CORPUS_DIR.parent / "apa_rules.db"
-
-
-def load_corpus(corpus_dir: Path) -> list[dict[str, Any]]:
-    """Load and validate every chunk, in a deterministic order.
-
-    Order matters: the corpus hash must be reproducible across machines, so
-    files are read sorted and chunks are sorted by chunk_id.
-    """
-    chunks: list[dict[str, Any]] = []
-    for path in sorted(corpus_dir.glob("*.yaml")):
-        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or []
-        if not isinstance(loaded, list):
-            raise ValueError(f"{path.name}: expected a list of chunks")
-        for entry in loaded:
-            missing = [f for f in REQUIRED_FIELDS if not entry.get(f)]
-            if missing:
-                raise ValueError(
-                    f"{path.name}: chunk {entry.get('chunk_id', '<no id>')!r} "
-                    f"is missing required field(s): {', '.join(missing)}"
-                )
-            entry.setdefault("related_rules", [])
-            entry["_source_file"] = path.name
-            chunks.append(entry)
-
-    ids = [c["chunk_id"] for c in chunks]
-    duplicates = sorted({i for i in ids if ids.count(i) > 1})
-    if duplicates:
-        raise ValueError(f"duplicate chunk_id(s): {', '.join(duplicates)}")
-    if not chunks:
-        raise ValueError(f"no chunks found in {corpus_dir}")
-
-    return sorted(chunks, key=lambda c: c["chunk_id"])
-
-
-def corpus_sha256(chunks: list[dict[str, Any]]) -> str:
-    """Hash the semantic content only, so cosmetic YAML edits don't force a
-    rebuild but any change to embedded text does."""
-    payload = [
-        {f: c[f] for f in REQUIRED_FIELDS} | {"related_rules": c["related_rules"]}
-        for c in chunks
-    ]
-    blob = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
-    return hashlib.sha256(blob).hexdigest()
 
 
 def embed_text(chunk: dict[str, Any]) -> str:

@@ -20,3 +20,20 @@ LLM_ENABLED = bool(ANTHROPIC_API_KEY)
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-haiku-4-5")
 # Cap concurrent Claude calls so a large document doesn't fan out unbounded.
 LLM_CONCURRENCY = int(os.getenv("LLM_CONCURRENCY", "4"))
+
+# RAG — APA rules index. The index is a read-only artifact committed to the
+# repo and copied into the image; these values MUST match what
+# `build_rules_index` recorded in its index_meta, or the query vectors and the
+# indexed vectors live in different spaces. rules_retriever enforces that.
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+RULES_DB_PATH = os.getenv("RULES_DB_PATH", str(_BACKEND_DIR / "data" / "apa_rules.db"))
+RULES_CORPUS_DIR = os.getenv("RULES_CORPUS_DIR", str(_BACKEND_DIR / "data" / "apa_rules"))
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "openai")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "1536"))
+EMBEDDING_NORMALIZED = os.getenv("EMBEDDING_NORMALIZED", "true").lower() == "true"
+# Retrieval is a separate opt-in from generation: OpenAI does embeddings,
+# Anthropic does generation, and either key can be absent independently.
+RAG_ENABLED = bool(OPENAI_API_KEY)
+RAG_TOP_K = int(os.getenv("RAG_TOP_K", "3"))
