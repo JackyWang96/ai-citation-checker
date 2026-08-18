@@ -8,6 +8,7 @@ report page, only when an API key is configured.
 from __future__ import annotations
 import asyncio
 import json
+import re
 from typing import Optional
 import anthropic
 import app.config as cfg
@@ -40,6 +41,15 @@ _OUTPUT_SCHEMA = {
     "required": ["corrected_reference", "explanation"],
     "additionalProperties": False,
 }
+
+
+def _normalise(text: str) -> str:
+    """Collapse whitespace for a no-op comparison.
+
+    Case is deliberately preserved: recapitalising a journal name (R018) is a
+    real fix, so lowercasing here would discard valid suggestions.
+    """
+    return re.sub(r"\s+", " ", text.replace("\xa0", " ")).strip()
 
 
 def _fixable(citation: dict) -> bool:
@@ -98,6 +108,12 @@ async def _suggest_one(client: anthropic.AsyncAnthropic, citation: dict,
         return None
     corrected = (data.get("corrected_reference") or "").strip()
     if not corrected:
+        return None
+    # The model sometimes concludes no change is needed but still echoes the
+    # reference back, explanation and all. Rendering that as a suggestion
+    # shows the user an "AI fix" identical to what they wrote — worse than
+    # showing nothing, because it implies the checker and the model disagree.
+    if _normalise(corrected) == _normalise(citation.get("raw_text", "")):
         return None
     return {
         "suggestion": corrected,
