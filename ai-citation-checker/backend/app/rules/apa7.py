@@ -15,6 +15,15 @@ _AUTHOR_FORMAT_RE = re.compile(
 )
 _YEAR_PARENS_RE = re.compile(r'\(\d{4}[a-z]?\)')
 _DOI_URL_RE = re.compile(r'https?://doi\.org/')
+# R021 — 'are page numbers present at all?', in any written form. Broader
+# than _PAGE_GROUP_RE, which requires 'pp.' to directly follow the opening
+# paren and so misses the common '(Vol. 2, pp. 27-44)'. Also matches a bare
+# range written without parentheses (', 441-461.'), which is malformed but
+# is still page information, so R021 must not claim it is absent.
+_ANY_PAGES_RE = re.compile(r'\bpp?\.\s*\d|\d+\s*[-–—]\s*\d+')
+# Any locator that lets a reader reach the entry without page numbers:
+# a DOI in any written form, or a plain URL.
+_LOCATOR_RE = re.compile(r'https?://|\bdoi:\s*10\.|\b10\.\d{4,9}/', re.IGNORECASE)
 _DOI_BARE_RE = re.compile(r'\bdoi:\s*10\.')
 _AND_RE = re.compile(r'\band\b', re.IGNORECASE)
 _AMPERSAND_MULTI_RE = re.compile(r'[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-Z]\.\s*,')
@@ -324,6 +333,56 @@ def check_chapter_editors_period(para: ReferenceParagraph) -> Optional[CitationI
     )
 
 
+def check_chapter_page_range(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R021: a chapter / reference-work entry cited with no page range at all.
+
+    APA 7 §10.3 gives edited-book chapters and reference-work entries a single
+    template, and that template includes ``(pp. xx-xx)``. APA's own
+    encyclopedia and dictionary examples omit pages only because those works
+    are genuinely unpaginated.
+
+    Deliberately structural rather than data-driven. The existing R019 asks
+    Crossref for the page range and stays silent when there isn't one — but
+    Crossref records no `page` field for most encyclopedia entries, so R019 is
+    silent on exactly the references most likely to be missing pages. Verified
+    against the reported case: Crossref returns no page for
+    10.1002/9781444316568.wiem02057.
+
+    Bug this was written for: 'Grimm, P. (2010). Social desirability bias. In
+    J. Sheth & N. Malhotra (Eds.), Wiley international encyclopedia of
+    marketing. Wiley. https://doi.org/...' passed as "APA format correct"
+    despite having no page range.
+
+    A DOI or URL does not excuse a missing page range — a paginated work can
+    have both — but it does change the advice, so the detail text branches on
+    it. Known cost: an online-only work that truly has no pagination (the
+    Stanford Encyclopedia of Philosophy) is flagged too. The wording says so
+    rather than asserting the reference is wrong.
+    """
+    if not _is_chapter(para.raw_text):
+        return None
+    if _ANY_PAGES_RE.search(para.raw_text):
+        return None   # pages present in some form; R015 covers bad formatting
+
+    if _LOCATOR_RE.search(para.raw_text):
+        detail = ("APA 7 chapter and reference-work entries take (pp. xx-xx) "
+                  "after the book title. Add the page range from the published "
+                  "work. If this entry is from an online-only reference work "
+                  "with no pagination, it has no page range and the reference "
+                  "is already correct.")
+    else:
+        detail = ("APA 7 chapter and reference-work entries take (pp. xx-xx) "
+                  "after the book title. This reference has neither a page "
+                  "range nor a DOI/URL, so it is incomplete either way: add "
+                  "the page range, or the locator if the work is unpaginated.")
+    return _issue(
+        "R021",
+        "Book chapter should include a page range (APA 7th R021)",
+        detail=detail,
+        expected="In E. E. Editor (Eds.), Book title (pp. xx-xx). Publisher.",
+    )
+
+
 # NOTE: R006 (check_hanging_indent) intentionally excluded — many real-world
 # docs mix Normal/Bibliography styles for references, causing too many
 # noisy warnings. Re-add to ALL_RULES if hanging-indent enforcement is wanted.
@@ -341,4 +400,5 @@ ALL_RULES = [
     check_chapter_page_format,
     check_chapter_editor_order,
     check_chapter_editors_period,
+    check_chapter_page_range,
 ]

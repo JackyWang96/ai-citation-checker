@@ -2920,3 +2920,79 @@ async def test_capitalisation_only_rewrite_survives_the_noop_filter():
                   "issues": [{"type": "format_violation", "reason": "Journal name capitalisation"}]}]
     out = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
     assert out["c1"]["suggestion"] == fixed
+
+
+# ── R021: chapter cited with no page range ───────────────────────────────────
+
+def _para(raw: str) -> ReferenceParagraph:
+    return ReferenceParagraph(raw_text=raw, runs=[], has_hanging_indent=True)
+
+
+def test_r021_flags_encyclopedia_entry_with_no_page_range():
+    """Bug (Grimm 2010): an encyclopedia entry with editors, book title and a
+    DOI but no page range passed as "APA format correct". R019 could not catch
+    it — R019 only fires when the authoritative record supplies a page range,
+    and Crossref returns no `page` field for 10.1002/9781444316568.wiem02057,
+    which is typical for encyclopedia entries."""
+    from app.rules.apa7 import check_chapter_page_range
+    issue = check_chapter_page_range(_para(
+        "Grimm, P. (2010). Social desirability bias. In J. Sheth & N. Malhotra "
+        "(Eds.), Wiley international encyclopedia of marketing. Wiley. "
+        "https://doi.org/10.1002/9781444316568.wiem02057"
+    ))
+    assert issue is not None and issue.rule_id == "R021"
+
+
+def test_r021_ignores_volume_prefixed_page_ranges():
+    """False positive found while evaluating the rule against References
+    check06: '(Vol. 2, pp. 27-44)' does carry a page range, but _PAGE_GROUP_RE
+    requires 'pp.' to follow the opening paren directly, so the first draft
+    reported it as missing."""
+    from app.rules.apa7 import check_chapter_page_range
+    assert check_chapter_page_range(_para(
+        "Sarason, I. G. (1975). Anxiety and self-preoccupation. In I. G. Sarason "
+        "& C. D. Spielberger (Eds.), Stress and anxiety (Vol. 2, pp. 27-44). "
+        "Hemisphere."
+    )) is None
+
+
+def test_r021_leaves_malformed_page_ranges_to_r015():
+    """A bare range (', 441-461.') is page information, badly formatted. R021
+    must stay quiet so the user isn't told the pages are absent when they are
+    merely mispunctuated."""
+    from app.rules.apa7 import check_chapter_page_range
+    assert check_chapter_page_range(_para(
+        "Corder, S., & Meyerhoff, M. (2007). Communities of practice. In "
+        "H. Kotthoff & H. Spencer-Oatey (Eds.), Handbook of intercultural "
+        "communication, 441-461. Walter de Gruyter."
+    )) is None
+
+
+def test_r021_ignores_well_formed_chapters_and_non_chapters():
+    from app.rules.apa7 import check_chapter_page_range
+    good_chapter = _para(
+        "Zimmerman, B. J., & Cleary, T. J. (2006). Adolescents' development. In "
+        "F. Pajares & T. Urdan (Eds.), Self-efficacy beliefs of adolescents "
+        "(pp. 45-69). Information Age Publishing."
+    )
+    journal = _para(
+        "Durrant, P., & Schmitt, N. (2009). To what extent do writers use "
+        "collocations? IRAL, 47(2), 157-177."
+    )
+    assert check_chapter_page_range(good_chapter) is None
+    assert check_chapter_page_range(journal) is None
+
+
+def test_r021_detail_distinguishes_missing_locator():
+    """A reference with neither pages nor a DOI/URL is incomplete under either
+    reading, so it gets firmer advice than one that at least has a locator."""
+    from app.rules.apa7 import check_chapter_page_range
+    with_doi = check_chapter_page_range(_para(
+        "Grimm, P. (2010). Social desirability bias. In J. Sheth & N. Malhotra "
+        "(Eds.), Wiley international encyclopedia of marketing. Wiley. "
+        "https://doi.org/10.1002/9781444316568.wiem02057"))
+    without = check_chapter_page_range(_para(
+        "Grimm, P. (2010). Social desirability bias. In J. Sheth & N. Malhotra "
+        "(Eds.), Wiley international encyclopedia of marketing. Wiley."))
+    assert "already correct" in with_doi.detail
+    assert "nor a DOI/URL" in without.detail
