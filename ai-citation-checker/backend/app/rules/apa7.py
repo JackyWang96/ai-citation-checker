@@ -20,7 +20,19 @@ _DOI_URL_RE = re.compile(r'https?://doi\.org/')
 # paren and so misses the common '(Vol. 2, pp. 27-44)'. Also matches a bare
 # range written without parentheses (', 441-461.'), which is malformed but
 # is still page information, so R021 must not claim it is absent.
+_PP_ANYWHERE_RE = re.compile(r'\bpp?\.\s*\d')
 _ANY_PAGES_RE = re.compile(r'\bpp?\.\s*\d|\d+\s*[-–—]\s*\d+')
+# Page range with no parentheses at all: 'Handbook of X, 441-461. Publisher.'
+# Anchored on the comma before and the period after so it only matches the
+# slot where the page element belongs.
+_BARE_PAGES_NO_PARENS_RE = re.compile(r',\s*\d+\s*[-–—]\s*\d+\s*\.')
+# Whole DOI / URL spans. These must be removed before looking for page
+# ranges: a Springer-style DOI suffix ('10.1007/978-3-319-12345-6_7')
+# contains digit-hyphen-digit runs that read as a page range and would
+# silence R021 on exactly the chapters that carry such DOIs.
+_LOCATOR_SPAN_RE = re.compile(
+    r'https?://\S+|\bdoi:\s*\S+|\b10\.\d{4,9}/\S+', re.IGNORECASE
+)
 # Any locator that lets a reader reach the entry without page numbers:
 # a DOI in any written form, or a plain URL.
 _LOCATOR_RE = re.compile(r'https?://|\bdoi:\s*10\.|\b10\.\d{4,9}/', re.IGNORECASE)
@@ -74,6 +86,11 @@ _PP_OK_RE = re.compile(r'\(\s*pp?\.\s*\d')
 _BARE_PAGES_RE = re.compile(r'\(\s*\d+\s*[-–—]\s*\d+\s*\)')
 # Editor section written in author order ("Surname, I.") instead of "I. Surname".
 _EDITOR_AUTHOR_ORDER_RE = re.compile(r'[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-Z]\.')
+
+
+def _without_locators(text: str) -> str:
+    """Blank out DOIs and URLs so their digits can't be read as pages."""
+    return _LOCATOR_SPAN_RE.sub(' ', text)
 
 
 def _is_chapter(text: str) -> bool:
@@ -284,15 +301,38 @@ def check_chapter_editors(para: ReferenceParagraph) -> Optional[CitationIssue]:
 
 
 def check_chapter_page_format(para: ReferenceParagraph) -> Optional[CitationIssue]:
-    """R015: Chapter page range must use 'pp.' — '(pp. 351–381)' not '(351–381)'."""
-    if not _is_chapter(para.raw_text) or _PP_OK_RE.search(para.raw_text):
+    """R015: chapter page range must be written '(pp. 351-381)'.
+
+    Two malformed shapes are caught: parenthesised without the 'pp.' prefix
+    ('(351-381)'), and no parentheses at all (', 441-461.'). The second was
+    found in References check03, where three references written in APA 6 style
+    put the range after a comma; the old parentheses-only pattern let all
+    three pass with no issue at all.
+
+    The 'already correct' test looks for 'pp.' anywhere rather than directly
+    after an opening paren, so the common '(Vol. 2, pp. 27-44)' counts as
+    correct.
+    """
+    text = _without_locators(para.raw_text)
+    if not _is_chapter(para.raw_text) or _PP_ANYWHERE_RE.search(text):
         return None
-    if _BARE_PAGES_RE.search(para.raw_text):
+    if _BARE_PAGES_RE.search(text):
         return _issue(
             "R015",
             "Book chapter page range should use 'pp.' (APA 7th R015)",
-            expected="(pp. 351–381)",
-            actual="(351–381)",
+            expected="(pp. 351-381)",
+            actual="(351-381)",
+        )
+    if _BARE_PAGES_NO_PARENS_RE.search(text):
+        return _issue(
+            "R015",
+            "Book chapter page range should be in parentheses with 'pp.' "
+            "(APA 7th R015)",
+            detail="APA 7 puts the chapter page range in parentheses after the "
+                   "book title, prefixed with 'pp.'. An edition number shares "
+                   "the same parentheses: '(2nd ed., pp. 109-112)'.",
+            expected="(pp. 441-461).",
+            actual=", 441-461.",
         )
     return None
 
@@ -361,7 +401,7 @@ def check_chapter_page_range(para: ReferenceParagraph) -> Optional[CitationIssue
     """
     if not _is_chapter(para.raw_text):
         return None
-    if _ANY_PAGES_RE.search(para.raw_text):
+    if _ANY_PAGES_RE.search(_without_locators(para.raw_text)):
         return None   # pages present in some form; R015 covers bad formatting
 
     if _LOCATOR_RE.search(para.raw_text):

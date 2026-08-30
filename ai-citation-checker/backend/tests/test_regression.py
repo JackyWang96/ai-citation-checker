@@ -2996,3 +2996,47 @@ def test_r021_detail_distinguishes_missing_locator():
         "(Eds.), Wiley international encyclopedia of marketing. Wiley."))
     assert "already correct" in with_doi.detail
     assert "nor a DOI/URL" in without.detail
+
+
+def test_r015_flags_page_range_written_without_parentheses():
+    """Gap found in References check03: three APA 6-style references put the
+    chapter page range after a comma ('Handbook of intercultural
+    communication, 441-461.'). R015 only recognised the parenthesised form
+    '(351-381)', so all three passed with no issue reported at all."""
+    from app.rules.apa7 import check_chapter_page_format
+    for raw in (
+        "Corder, S., & Meyerhoff, M. (2007). Communities of practice. In "
+        "H. Kotthoff & H. Spencer-Oatey (Eds.), Handbook of intercultural "
+        "communication, 441-461. Walter de Gruyter.",
+        "Eckert, P. (2009). Communities of practice. In J. L. Mey (Ed.), "
+        "Concise encyclopedia of pragmatics (2nd ed.), 109-112. Elsevier.",
+        "Labov, W. (1989). The exact description. In R. W. Fasold & "
+        "D. Schiffrin (Eds.), Language change and variation, 1-57. Benjamins.",
+    ):
+        issue = check_chapter_page_format(_para(raw))
+        assert issue is not None and issue.rule_id == "R015", raw[:40]
+
+
+def test_r015_accepts_pp_not_directly_after_the_paren():
+    """'(Vol. 2, pp. 27-44)' is correct APA. The old gate required 'pp.' to
+    follow the opening paren directly, which made this depend on the bare-range
+    pattern happening not to match."""
+    from app.rules.apa7 import check_chapter_page_format
+    assert check_chapter_page_format(_para(
+        "Sarason, I. G. (1975). Anxiety and self-preoccupation. In I. G. Sarason "
+        "& C. D. Spielberger (Eds.), Stress and anxiety (Vol. 2, pp. 27-44). "
+        "Hemisphere."
+    )) is None
+
+
+def test_doi_digits_are_not_mistaken_for_a_page_range():
+    """A Springer-style DOI suffix ('10.1007/978-3-319-12345-6_7') contains
+    digit-hyphen-digit runs. Without stripping locators first, R021 read that
+    as 'pages are present' and stayed silent on chapters carrying such DOIs —
+    the opposite of the rule's purpose."""
+    from app.rules.apa7 import check_chapter_page_range
+    issue = check_chapter_page_range(_para(
+        "Smith, J. (2020). A chapter. In A. Editor (Ed.), Some handbook. "
+        "Springer. https://doi.org/10.1007/978-3-319-12345-6_7"
+    ))
+    assert issue is not None and issue.rule_id == "R021"
