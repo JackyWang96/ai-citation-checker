@@ -3040,3 +3040,57 @@ def test_doi_digits_are_not_mistaken_for_a_page_range():
         "Springer. https://doi.org/10.1007/978-3-319-12345-6_7"
     ))
     assert issue is not None and issue.rule_id == "R021"
+
+
+# ── R022: APA 6 publisher location ───────────────────────────────────────────
+
+def test_r022_flags_publisher_location():
+    """APA 7 dropped the publisher's location. Gap found in References
+    check03, where five references still carried it and nothing was
+    reported."""
+    from app.rules.apa7 import check_publisher_location
+    for raw, expected_actual in (
+        ("Corder, S. (2007). Communities of practice. In H. Kotthoff (Ed.), "
+         "Handbook of intercultural communication (pp. 441-461). "
+         "Berlin, Germany: Walter de Gruyter.", "Berlin, Germany"),
+        ("Labov, W. (1989). The exact description of the speech community: "
+         "Short a in Philadelphia. In R. W. Fasold (Ed.), Language change "
+         "(pp. 1-57). Amsterdam: John Benjamins.", "Amsterdam"),
+        ("Eckert, P. (2018). Meaning and linguistic variation: The third wave "
+         "in sociolinguistics. Cambridge: Cambridge University Press.",
+         "Cambridge"),
+    ):
+        issue = check_publisher_location(_para(raw))
+        assert issue is not None and issue.rule_id == "R022", raw[:40]
+        assert issue.actual.startswith(expected_actual)
+
+
+def test_r022_accepts_apa7_publisher_alone():
+    from app.rules.apa7 import check_publisher_location
+    for raw in (
+        "Zimmerman, B. J. (2006). Agency. In F. Pajares (Ed.), Self-efficacy "
+        "beliefs of adolescents (pp. 45-69). Information Age Publishing.",
+        "Bezuidenhout, J. (2020). A glossary of survey research methods. "
+        "Sage Publications, Inc.",
+        "Wenger-Trayner, E. (2020). Learning in landscapes of practice. Routledge.",
+    ):
+        assert check_publisher_location(_para(raw)) is None, raw[:40]
+
+
+def test_r022_ignores_a_colon_inside_a_title():
+    """A subtitle colon is always followed by more elements, so anchoring the
+    pattern to the final element keeps titles out of it."""
+    from app.rules.apa7 import check_publisher_location
+    assert check_publisher_location(_para(
+        "Labov, W. (1989). The exact description of the speech community: "
+        "Short a in Philadelphia. In R. W. Fasold & D. Schiffrin (Eds.), "
+        "Language change and variation (pp. 1-57). John Benjamins."
+    )) is None
+
+
+def test_r022_ignores_journal_articles():
+    from app.rules.apa7 import check_publisher_location
+    assert check_publisher_location(_para(
+        "Durrant, P., & Schmitt, N. (2009). To what extent do writers use "
+        "collocations? IRAL, 47(2), 157-177."
+    )) is None

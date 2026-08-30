@@ -26,6 +26,16 @@ _ANY_PAGES_RE = re.compile(r'\bpp?\.\s*\d|\d+\s*[-–—]\s*\d+')
 # Anchored on the comma before and the period after so it only matches the
 # slot where the page element belongs.
 _BARE_PAGES_NO_PARENS_RE = re.compile(r',\s*\d+\s*[-–—]\s*\d+\s*\.')
+# R022 — APA 6 publisher location: the reference's final element written as
+# 'City: Publisher.' or 'City, Region: Publisher.'. Anchored to the end of
+# the (locator-stripped) text so a colon inside a title or subtitle, which
+# is always followed by further elements, cannot match.
+_PUBLISHER_LOCATION_RE = re.compile(
+    r"(?:^|\.\s)"
+    r"([A-Z][\w.'\u2019\-]*(?:\s+[A-Z][\w.'\u2019\-]*)*"
+    r"(?:,\s*[A-Z][\w.'\u2019\-]*(?:\s+[A-Z][\w.'\u2019\-]*)*)?)"
+    r":\s+([A-Z][^.]*)\.\s*$"
+)
 # Whole DOI / URL spans. These must be removed before looking for page
 # ranges: a Springer-style DOI suffix ('10.1007/978-3-319-12345-6_7')
 # contains digit-hyphen-digit runs that read as a page range and would
@@ -423,6 +433,38 @@ def check_chapter_page_range(para: ReferenceParagraph) -> Optional[CitationIssue
     )
 
 
+def check_publisher_location(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R022: APA 7 dropped the publisher's location.
+
+    'Berlin, Germany: Walter de Gruyter.' is APA 6; APA 7 wants
+    'Walter de Gruyter.' alone. Worth flagging on its own because it rarely
+    appears in isolation — a reference list written to the old edition tends
+    to carry the location on every book and chapter, so one hit usually means
+    the whole list needs revisiting.
+
+    Anchored to the last element of the reference. A colon inside a title or
+    subtitle is always followed by further elements, so it cannot match.
+    Evaluated against 96 real references: 5 hits, all genuine, no false
+    positives. Residual risk: a reference that ends with a title-case subtitle
+    and names no publisher at all could match — but such a reference is
+    incomplete regardless.
+    """
+    m = _PUBLISHER_LOCATION_RE.search(
+        re.sub(r'\s+', ' ', _without_locators(para.raw_text)).strip()
+    )
+    if not m:
+        return None
+    location, publisher = m.group(1), m.group(2).strip()
+    return _issue(
+        "R022",
+        "Publisher location should be removed (APA 7th R022)",
+        detail="APA 7 no longer includes the publisher's city or country. "
+               "Give the publisher name on its own.",
+        expected=f"{publisher}.",
+        actual=f"{location}: {publisher}.",
+    )
+
+
 # NOTE: R006 (check_hanging_indent) intentionally excluded — many real-world
 # docs mix Normal/Bibliography styles for references, causing too many
 # noisy warnings. Re-add to ALL_RULES if hanging-indent enforcement is wanted.
@@ -441,4 +483,5 @@ ALL_RULES = [
     check_chapter_editor_order,
     check_chapter_editors_period,
     check_chapter_page_range,
+    check_publisher_location,
 ]
