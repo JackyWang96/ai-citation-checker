@@ -14,7 +14,6 @@ import re
 import sqlite3
 import threading
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 
 import openai
@@ -22,7 +21,6 @@ import openai
 import app.config as cfg
 from app.rules.apa7 import _is_chapter, _journal_name
 from app.services.embeddings import embed_query
-from app.services.rules_corpus import corpus_sha256, load_corpus
 from app.services.vectors import open_rules_db, pack_vector
 from app.services.verifier import _SOFTWARE_TAG_RE
 
@@ -36,12 +34,20 @@ _FIXABLE_ISSUE_TYPES = frozenset({"format_violation", "field_mismatch"})
 # Any mismatch means the query vectors and the indexed vectors are not
 # comparable. `normalized` is the dangerous one: dimensions still line up, no
 # error is raised, and the ranking is silently wrong.
+#
+# corpus_sha256 is deliberately NOT here. Corpus drift — YAML edited without
+# rebuilding the index — is caught by
+# test_committed_index_is_in_sync_with_committed_corpus, which fails the build
+# before a stale index can ship. Re-hashing at runtime cost ~10ms and forced
+# 30KB of YAML into the image for no other reason, since the index already
+# stores the rule text. The residual gap: a deployment that points
+# RULES_CORPUS_DIR at a corpus other than the committed one would go
+# unnoticed, which no code path does today.
 _FINGERPRINT_KEYS = (
     "embedding_provider",
     "embedding_model",
     "embedding_dim",
     "normalized",
-    "corpus_sha256",
 )
 
 # 'System, 95, 102366.' — the modern article-number / eLocator form: volume
@@ -123,14 +129,14 @@ def build_query(citation: dict) -> str:
     return f"APA 7th rule for: {problems}. Reference type: {hint}."
 
 
-def verify_rules_index(db: sqlite3.Connection, corpus_dir: str) -> None:
-    """Fail fast when the index cannot be trusted for the running config.
+def verify_rules_index(db: sqlite3.Connection) -> None:
+    """Raise when the index cannot be trusted for the running config.
 
-    This is deliberately a hard error, not a degradation: a mismatch is a
-    deployment mistake (someone edited the corpus, or changed the embedding
-    model, without rebuilding), and serving confidently-ranked wrong rules is
-    worse than serving none. Callers that must stay up catch it and fall back
-    to no retrieval — see `search`.
+    A mismatch means a deployment mistake — the embedding model was changed
+    without rebuilding — and serving confidently-ranked wrong rules is worse
+    than serving none. Callers decide what to do about it: `search` degrades
+    to no retrieval, and startup disables the feature rather than refusing to
+    boot (see `app.main`).
     """
     meta = dict(db.execute("SELECT key, value FROM index_meta").fetchall())
     runtime = {
@@ -138,7 +144,6 @@ def verify_rules_index(db: sqlite3.Connection, corpus_dir: str) -> None:
         "embedding_model": cfg.EMBEDDING_MODEL,
         "embedding_dim": str(cfg.EMBEDDING_DIM),
         "normalized": str(cfg.EMBEDDING_NORMALIZED).lower(),
-        "corpus_sha256": corpus_sha256(load_corpus(Path(corpus_dir))),
     }
     mismatches = [
         f"{k}: index={meta.get(k)!r} runtime={runtime[k]!r}"
@@ -166,7 +171,7 @@ def open_index() -> sqlite3.Connection:
         if _db is None:
             db = open_rules_db(cfg.RULES_DB_PATH, read_only=True)
             try:
-                verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+                verify_rules_index(db)
             except Exception:
                 db.close()
                 raise

@@ -161,8 +161,7 @@ def test_query_survives_a_citation_with_no_usable_reason():
 # -- verify_rules_index -------------------------------------------------------
 
 def test_verify_accepts_a_matching_index(fake_index):
-    rr.verify_rules_index(rr.open_rules_db(str(fake_index), read_only=True),
-                          cfg.RULES_CORPUS_DIR)
+    rr.verify_rules_index(rr.open_rules_db(str(fake_index), read_only=True))
 
 
 @pytest.mark.parametrize("attr,value", [
@@ -178,25 +177,14 @@ def test_verify_rejects_an_incompatible_index(fake_index, monkeypatch, attr, val
     monkeypatch.setattr(cfg, attr, value)
     db = rr.open_rules_db(str(fake_index), read_only=True)
     with pytest.raises(RuntimeError, match="incompatible"):
-        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
-
-
-def test_verify_rejects_a_corpus_edited_without_a_rebuild(fake_index, tmp_path):
-    """Editing the YAML without re-running build_rules_index would otherwise
-    serve stale rule text under a fresh-looking index."""
-    corpus = tmp_path / "apa_rules" / "rules.yaml"
-    corpus.write_text(_CORPUS_YAML.replace("Publisher.", "Publisher, City."),
-                      encoding="utf-8")
-    db = rr.open_rules_db(str(fake_index), read_only=True)
-    with pytest.raises(RuntimeError, match="corpus_sha256"):
-        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+        rr.verify_rules_index(db)
 
 
 def test_verify_error_names_the_build_for_diagnosis(fake_index, monkeypatch):
     monkeypatch.setattr(cfg, "EMBEDDING_MODEL", "some-other-model")
     db = rr.open_rules_db(str(fake_index), read_only=True)
     with pytest.raises(RuntimeError) as exc:
-        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+        rr.verify_rules_index(db)
     assert "2026-08-17" in str(exc.value) and "v0.1.9" in str(exc.value)
 
 

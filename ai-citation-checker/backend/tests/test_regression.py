@@ -2717,7 +2717,9 @@ async def test_suggest_fixes_only_targets_fixable_reference_citations():
     assert set(result.keys()) == {"r1", "r2"}
     assert result["r1"]["suggestion"] == "FIXED"
     assert result["r2"]["suggestion_explanation"] == "did x"
-    assert len(seen) == 2
+    # Two calls per citation: "FIXED" is not a valid APA reference, so the
+    # validator rejects it and the loop retries once before giving up.
+    assert len(seen) == 4
     # the prompt carries the detected issue + expected/actual values
     assert "Year mismatch" in seen[1] and "2019" in seen[1] and "2018" in seen[1]
 
@@ -2869,18 +2871,26 @@ def test_committed_index_is_in_sync_with_committed_corpus():
     """The shipped apa_rules.db must still match the shipped YAML.
 
     Editing a rule chunk without re-running build_rules_index leaves an index
-    that answers with the *old* text while looking perfectly healthy. The
-    fingerprint check catches it — but only if something calls it, and in
-    production nothing does until a user clicks the button. Assert it here so
-    the mismatch fails the build instead of shipping."""
+    that answers with the *old* text while looking perfectly healthy. This
+    test is the only guard: corpus_sha256 was deliberately dropped from the
+    runtime fingerprint (it cost a YAML read on every boot and forced the
+    corpus into the image, which nothing else at runtime needs), so if this
+    assertion goes away, stale rule text ships silently."""
+    from pathlib import Path
     import app.config as cfg
-    from app.services.rules_retriever import verify_rules_index
+    from app.services.rules_corpus import corpus_sha256, load_corpus
     from app.services.vectors import open_rules_db
     db = open_rules_db(cfg.RULES_DB_PATH, read_only=True)
     try:
-        verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+        stored = db.execute(
+            "SELECT value FROM index_meta WHERE key='corpus_sha256'"
+        ).fetchone()[0]
     finally:
         db.close()
+    assert stored == corpus_sha256(load_corpus(Path(cfg.RULES_CORPUS_DIR))), (
+        "apa_rules.db is stale — rebuild with "
+        "`python -m app.scripts.build_rules_index` and commit the result"
+    )
 
 
 def test_retrieval_query_never_carries_the_reference_text():
