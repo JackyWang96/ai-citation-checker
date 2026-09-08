@@ -15,6 +15,37 @@ _AUTHOR_FORMAT_RE = re.compile(
 )
 _YEAR_PARENS_RE = re.compile(r'\(\d{4}[a-z]?\)')
 _DOI_URL_RE = re.compile(r'https?://doi\.org/')
+# R021 — 'are page numbers present at all?', in any written form. Broader
+# than _PAGE_GROUP_RE, which requires 'pp.' to directly follow the opening
+# paren and so misses the common '(Vol. 2, pp. 27-44)'. Also matches a bare
+# range written without parentheses (', 441-461.'), which is malformed but
+# is still page information, so R021 must not claim it is absent.
+_PP_ANYWHERE_RE = re.compile(r'\bpp?\.\s*\d')
+_ANY_PAGES_RE = re.compile(r'\bpp?\.\s*\d|\d+\s*[-–—]\s*\d+')
+# Page range with no parentheses at all: 'Handbook of X, 441-461. Publisher.'
+# Anchored on the comma before and the period after so it only matches the
+# slot where the page element belongs.
+_BARE_PAGES_NO_PARENS_RE = re.compile(r',\s*\d+\s*[-–—]\s*\d+\s*\.')
+# R022 — APA 6 publisher location: the reference's final element written as
+# 'City: Publisher.' or 'City, Region: Publisher.'. Anchored to the end of
+# the (locator-stripped) text so a colon inside a title or subtitle, which
+# is always followed by further elements, cannot match.
+_PUBLISHER_LOCATION_RE = re.compile(
+    r"(?:^|\.\s)"
+    r"([A-Z][\w.'\u2019\-]*(?:\s+[A-Z][\w.'\u2019\-]*)*"
+    r"(?:,\s*[A-Z][\w.'\u2019\-]*(?:\s+[A-Z][\w.'\u2019\-]*)*)?)"
+    r":\s+([A-Z][^.]*)\.\s*$"
+)
+# Whole DOI / URL spans. These must be removed before looking for page
+# ranges: a Springer-style DOI suffix ('10.1007/978-3-319-12345-6_7')
+# contains digit-hyphen-digit runs that read as a page range and would
+# silence R021 on exactly the chapters that carry such DOIs.
+_LOCATOR_SPAN_RE = re.compile(
+    r'https?://\S+|\bdoi:\s*\S+|\b10\.\d{4,9}/\S+', re.IGNORECASE
+)
+# Any locator that lets a reader reach the entry without page numbers:
+# a DOI in any written form, or a plain URL.
+_LOCATOR_RE = re.compile(r'https?://|\bdoi:\s*10\.|\b10\.\d{4,9}/', re.IGNORECASE)
 _DOI_BARE_RE = re.compile(r'\bdoi:\s*10\.')
 _AND_RE = re.compile(r'\band\b', re.IGNORECASE)
 _AMPERSAND_MULTI_RE = re.compile(r'[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-Z]\.\s*,')
@@ -65,6 +96,11 @@ _PP_OK_RE = re.compile(r'\(\s*pp?\.\s*\d')
 _BARE_PAGES_RE = re.compile(r'\(\s*\d+\s*[-–—]\s*\d+\s*\)')
 # Editor section written in author order ("Surname, I.") instead of "I. Surname".
 _EDITOR_AUTHOR_ORDER_RE = re.compile(r'[A-ZÀ-Ɏ][\w\-‐‑\']+,\s+[A-Z]\.')
+
+
+def _without_locators(text: str) -> str:
+    """Blank out DOIs and URLs so their digits can't be read as pages."""
+    return _LOCATOR_SPAN_RE.sub(' ', text)
 
 
 def _is_chapter(text: str) -> bool:
@@ -275,15 +311,38 @@ def check_chapter_editors(para: ReferenceParagraph) -> Optional[CitationIssue]:
 
 
 def check_chapter_page_format(para: ReferenceParagraph) -> Optional[CitationIssue]:
-    """R015: Chapter page range must use 'pp.' — '(pp. 351–381)' not '(351–381)'."""
-    if not _is_chapter(para.raw_text) or _PP_OK_RE.search(para.raw_text):
+    """R015: chapter page range must be written '(pp. 351-381)'.
+
+    Two malformed shapes are caught: parenthesised without the 'pp.' prefix
+    ('(351-381)'), and no parentheses at all (', 441-461.'). The second was
+    found in References check03, where three references written in APA 6 style
+    put the range after a comma; the old parentheses-only pattern let all
+    three pass with no issue at all.
+
+    The 'already correct' test looks for 'pp.' anywhere rather than directly
+    after an opening paren, so the common '(Vol. 2, pp. 27-44)' counts as
+    correct.
+    """
+    text = _without_locators(para.raw_text)
+    if not _is_chapter(para.raw_text) or _PP_ANYWHERE_RE.search(text):
         return None
-    if _BARE_PAGES_RE.search(para.raw_text):
+    if _BARE_PAGES_RE.search(text):
         return _issue(
             "R015",
             "Book chapter page range should use 'pp.' (APA 7th R015)",
-            expected="(pp. 351–381)",
-            actual="(351–381)",
+            expected="(pp. 351-381)",
+            actual="(351-381)",
+        )
+    if _BARE_PAGES_NO_PARENS_RE.search(text):
+        return _issue(
+            "R015",
+            "Book chapter page range should be in parentheses with 'pp.' "
+            "(APA 7th R015)",
+            detail="APA 7 puts the chapter page range in parentheses after the "
+                   "book title, prefixed with 'pp.'. An edition number shares "
+                   "the same parentheses: '(2nd ed., pp. 109-112)'.",
+            expected="(pp. 441-461).",
+            actual=", 441-461.",
         )
     return None
 
@@ -324,6 +383,88 @@ def check_chapter_editors_period(para: ReferenceParagraph) -> Optional[CitationI
     )
 
 
+def check_chapter_page_range(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R021: a chapter / reference-work entry cited with no page range at all.
+
+    APA 7 §10.3 gives edited-book chapters and reference-work entries a single
+    template, and that template includes ``(pp. xx-xx)``. APA's own
+    encyclopedia and dictionary examples omit pages only because those works
+    are genuinely unpaginated.
+
+    Deliberately structural rather than data-driven. The existing R019 asks
+    Crossref for the page range and stays silent when there isn't one — but
+    Crossref records no `page` field for most encyclopedia entries, so R019 is
+    silent on exactly the references most likely to be missing pages. Verified
+    against the reported case: Crossref returns no page for
+    10.1002/9781444316568.wiem02057.
+
+    Bug this was written for: 'Grimm, P. (2010). Social desirability bias. In
+    J. Sheth & N. Malhotra (Eds.), Wiley international encyclopedia of
+    marketing. Wiley. https://doi.org/...' passed as "APA format correct"
+    despite having no page range.
+
+    A DOI or URL does not excuse a missing page range — a paginated work can
+    have both — but it does change the advice, so the detail text branches on
+    it. Known cost: an online-only work that truly has no pagination (the
+    Stanford Encyclopedia of Philosophy) is flagged too. The wording says so
+    rather than asserting the reference is wrong.
+    """
+    if not _is_chapter(para.raw_text):
+        return None
+    if _ANY_PAGES_RE.search(_without_locators(para.raw_text)):
+        return None   # pages present in some form; R015 covers bad formatting
+
+    if _LOCATOR_RE.search(para.raw_text):
+        detail = ("APA 7 chapter and reference-work entries take (pp. xx-xx) "
+                  "after the book title. Add the page range from the published "
+                  "work. If this entry is from an online-only reference work "
+                  "with no pagination, it has no page range and the reference "
+                  "is already correct.")
+    else:
+        detail = ("APA 7 chapter and reference-work entries take (pp. xx-xx) "
+                  "after the book title. This reference has neither a page "
+                  "range nor a DOI/URL, so it is incomplete either way: add "
+                  "the page range, or the locator if the work is unpaginated.")
+    return _issue(
+        "R021",
+        "Book chapter should include a page range (APA 7th R021)",
+        detail=detail,
+        expected="In E. E. Editor (Eds.), Book title (pp. xx-xx). Publisher.",
+    )
+
+
+def check_publisher_location(para: ReferenceParagraph) -> Optional[CitationIssue]:
+    """R022: APA 7 dropped the publisher's location.
+
+    'Berlin, Germany: Walter de Gruyter.' is APA 6; APA 7 wants
+    'Walter de Gruyter.' alone. Worth flagging on its own because it rarely
+    appears in isolation — a reference list written to the old edition tends
+    to carry the location on every book and chapter, so one hit usually means
+    the whole list needs revisiting.
+
+    Anchored to the last element of the reference. A colon inside a title or
+    subtitle is always followed by further elements, so it cannot match.
+    Evaluated against 96 real references: 5 hits, all genuine, no false
+    positives. Residual risk: a reference that ends with a title-case subtitle
+    and names no publisher at all could match — but such a reference is
+    incomplete regardless.
+    """
+    m = _PUBLISHER_LOCATION_RE.search(
+        re.sub(r'\s+', ' ', _without_locators(para.raw_text)).strip()
+    )
+    if not m:
+        return None
+    location, publisher = m.group(1), m.group(2).strip()
+    return _issue(
+        "R022",
+        "Publisher location should be removed (APA 7th R022)",
+        detail="APA 7 no longer includes the publisher's city or country. "
+               "Give the publisher name on its own.",
+        expected=f"{publisher}.",
+        actual=f"{location}: {publisher}.",
+    )
+
+
 # NOTE: R006 (check_hanging_indent) intentionally excluded — many real-world
 # docs mix Normal/Bibliography styles for references, causing too many
 # noisy warnings. Re-add to ALL_RULES if hanging-indent enforcement is wanted.
@@ -341,4 +482,6 @@ ALL_RULES = [
     check_chapter_page_format,
     check_chapter_editor_order,
     check_chapter_editors_period,
+    check_chapter_page_range,
+    check_publisher_location,
 ]

@@ -2920,3 +2920,177 @@ async def test_capitalisation_only_rewrite_survives_the_noop_filter():
                   "issues": [{"type": "format_violation", "reason": "Journal name capitalisation"}]}]
     out = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
     assert out["c1"]["suggestion"] == fixed
+
+
+# ── R021: chapter cited with no page range ───────────────────────────────────
+
+def _para(raw: str) -> ReferenceParagraph:
+    return ReferenceParagraph(raw_text=raw, runs=[], has_hanging_indent=True)
+
+
+def test_r021_flags_encyclopedia_entry_with_no_page_range():
+    """Bug (Grimm 2010): an encyclopedia entry with editors, book title and a
+    DOI but no page range passed as "APA format correct". R019 could not catch
+    it — R019 only fires when the authoritative record supplies a page range,
+    and Crossref returns no `page` field for 10.1002/9781444316568.wiem02057,
+    which is typical for encyclopedia entries."""
+    from app.rules.apa7 import check_chapter_page_range
+    issue = check_chapter_page_range(_para(
+        "Grimm, P. (2010). Social desirability bias. In J. Sheth & N. Malhotra "
+        "(Eds.), Wiley international encyclopedia of marketing. Wiley. "
+        "https://doi.org/10.1002/9781444316568.wiem02057"
+    ))
+    assert issue is not None and issue.rule_id == "R021"
+
+
+def test_r021_ignores_volume_prefixed_page_ranges():
+    """False positive found while evaluating the rule against References
+    check06: '(Vol. 2, pp. 27-44)' does carry a page range, but _PAGE_GROUP_RE
+    requires 'pp.' to follow the opening paren directly, so the first draft
+    reported it as missing."""
+    from app.rules.apa7 import check_chapter_page_range
+    assert check_chapter_page_range(_para(
+        "Sarason, I. G. (1975). Anxiety and self-preoccupation. In I. G. Sarason "
+        "& C. D. Spielberger (Eds.), Stress and anxiety (Vol. 2, pp. 27-44). "
+        "Hemisphere."
+    )) is None
+
+
+def test_r021_leaves_malformed_page_ranges_to_r015():
+    """A bare range (', 441-461.') is page information, badly formatted. R021
+    must stay quiet so the user isn't told the pages are absent when they are
+    merely mispunctuated."""
+    from app.rules.apa7 import check_chapter_page_range
+    assert check_chapter_page_range(_para(
+        "Corder, S., & Meyerhoff, M. (2007). Communities of practice. In "
+        "H. Kotthoff & H. Spencer-Oatey (Eds.), Handbook of intercultural "
+        "communication, 441-461. Walter de Gruyter."
+    )) is None
+
+
+def test_r021_ignores_well_formed_chapters_and_non_chapters():
+    from app.rules.apa7 import check_chapter_page_range
+    good_chapter = _para(
+        "Zimmerman, B. J., & Cleary, T. J. (2006). Adolescents' development. In "
+        "F. Pajares & T. Urdan (Eds.), Self-efficacy beliefs of adolescents "
+        "(pp. 45-69). Information Age Publishing."
+    )
+    journal = _para(
+        "Durrant, P., & Schmitt, N. (2009). To what extent do writers use "
+        "collocations? IRAL, 47(2), 157-177."
+    )
+    assert check_chapter_page_range(good_chapter) is None
+    assert check_chapter_page_range(journal) is None
+
+
+def test_r021_detail_distinguishes_missing_locator():
+    """A reference with neither pages nor a DOI/URL is incomplete under either
+    reading, so it gets firmer advice than one that at least has a locator."""
+    from app.rules.apa7 import check_chapter_page_range
+    with_doi = check_chapter_page_range(_para(
+        "Grimm, P. (2010). Social desirability bias. In J. Sheth & N. Malhotra "
+        "(Eds.), Wiley international encyclopedia of marketing. Wiley. "
+        "https://doi.org/10.1002/9781444316568.wiem02057"))
+    without = check_chapter_page_range(_para(
+        "Grimm, P. (2010). Social desirability bias. In J. Sheth & N. Malhotra "
+        "(Eds.), Wiley international encyclopedia of marketing. Wiley."))
+    assert "already correct" in with_doi.detail
+    assert "nor a DOI/URL" in without.detail
+
+
+def test_r015_flags_page_range_written_without_parentheses():
+    """Gap found in References check03: three APA 6-style references put the
+    chapter page range after a comma ('Handbook of intercultural
+    communication, 441-461.'). R015 only recognised the parenthesised form
+    '(351-381)', so all three passed with no issue reported at all."""
+    from app.rules.apa7 import check_chapter_page_format
+    for raw in (
+        "Corder, S., & Meyerhoff, M. (2007). Communities of practice. In "
+        "H. Kotthoff & H. Spencer-Oatey (Eds.), Handbook of intercultural "
+        "communication, 441-461. Walter de Gruyter.",
+        "Eckert, P. (2009). Communities of practice. In J. L. Mey (Ed.), "
+        "Concise encyclopedia of pragmatics (2nd ed.), 109-112. Elsevier.",
+        "Labov, W. (1989). The exact description. In R. W. Fasold & "
+        "D. Schiffrin (Eds.), Language change and variation, 1-57. Benjamins.",
+    ):
+        issue = check_chapter_page_format(_para(raw))
+        assert issue is not None and issue.rule_id == "R015", raw[:40]
+
+
+def test_r015_accepts_pp_not_directly_after_the_paren():
+    """'(Vol. 2, pp. 27-44)' is correct APA. The old gate required 'pp.' to
+    follow the opening paren directly, which made this depend on the bare-range
+    pattern happening not to match."""
+    from app.rules.apa7 import check_chapter_page_format
+    assert check_chapter_page_format(_para(
+        "Sarason, I. G. (1975). Anxiety and self-preoccupation. In I. G. Sarason "
+        "& C. D. Spielberger (Eds.), Stress and anxiety (Vol. 2, pp. 27-44). "
+        "Hemisphere."
+    )) is None
+
+
+def test_doi_digits_are_not_mistaken_for_a_page_range():
+    """A Springer-style DOI suffix ('10.1007/978-3-319-12345-6_7') contains
+    digit-hyphen-digit runs. Without stripping locators first, R021 read that
+    as 'pages are present' and stayed silent on chapters carrying such DOIs —
+    the opposite of the rule's purpose."""
+    from app.rules.apa7 import check_chapter_page_range
+    issue = check_chapter_page_range(_para(
+        "Smith, J. (2020). A chapter. In A. Editor (Ed.), Some handbook. "
+        "Springer. https://doi.org/10.1007/978-3-319-12345-6_7"
+    ))
+    assert issue is not None and issue.rule_id == "R021"
+
+
+# ── R022: APA 6 publisher location ───────────────────────────────────────────
+
+def test_r022_flags_publisher_location():
+    """APA 7 dropped the publisher's location. Gap found in References
+    check03, where five references still carried it and nothing was
+    reported."""
+    from app.rules.apa7 import check_publisher_location
+    for raw, expected_actual in (
+        ("Corder, S. (2007). Communities of practice. In H. Kotthoff (Ed.), "
+         "Handbook of intercultural communication (pp. 441-461). "
+         "Berlin, Germany: Walter de Gruyter.", "Berlin, Germany"),
+        ("Labov, W. (1989). The exact description of the speech community: "
+         "Short a in Philadelphia. In R. W. Fasold (Ed.), Language change "
+         "(pp. 1-57). Amsterdam: John Benjamins.", "Amsterdam"),
+        ("Eckert, P. (2018). Meaning and linguistic variation: The third wave "
+         "in sociolinguistics. Cambridge: Cambridge University Press.",
+         "Cambridge"),
+    ):
+        issue = check_publisher_location(_para(raw))
+        assert issue is not None and issue.rule_id == "R022", raw[:40]
+        assert issue.actual.startswith(expected_actual)
+
+
+def test_r022_accepts_apa7_publisher_alone():
+    from app.rules.apa7 import check_publisher_location
+    for raw in (
+        "Zimmerman, B. J. (2006). Agency. In F. Pajares (Ed.), Self-efficacy "
+        "beliefs of adolescents (pp. 45-69). Information Age Publishing.",
+        "Bezuidenhout, J. (2020). A glossary of survey research methods. "
+        "Sage Publications, Inc.",
+        "Wenger-Trayner, E. (2020). Learning in landscapes of practice. Routledge.",
+    ):
+        assert check_publisher_location(_para(raw)) is None, raw[:40]
+
+
+def test_r022_ignores_a_colon_inside_a_title():
+    """A subtitle colon is always followed by more elements, so anchoring the
+    pattern to the final element keeps titles out of it."""
+    from app.rules.apa7 import check_publisher_location
+    assert check_publisher_location(_para(
+        "Labov, W. (1989). The exact description of the speech community: "
+        "Short a in Philadelphia. In R. W. Fasold & D. Schiffrin (Eds.), "
+        "Language change and variation (pp. 1-57). John Benjamins."
+    )) is None
+
+
+def test_r022_ignores_journal_articles():
+    from app.rules.apa7 import check_publisher_location
+    assert check_publisher_location(_para(
+        "Durrant, P., & Schmitt, N. (2009). To what extent do writers use "
+        "collocations? IRAL, 47(2), 157-177."
+    )) is None
