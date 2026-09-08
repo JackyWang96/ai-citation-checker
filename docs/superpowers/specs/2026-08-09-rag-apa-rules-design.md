@@ -245,22 +245,37 @@ git add data/apa_rules.db data/apa_rules/   # 语料与索引一起提交
 
 原因:引用原文里的**专有名词**(人名、书名、期刊名)贡献了大量语义噪声,把"哪里出了问题"这个真正的信号压了下去。最典型的证据是 Van Vu 那条——`apa7-author-name-format` 块里**字面就写着 "Van Vu, D."**,但把完整引用塞进查询后**反而检索不到它**,只用问题描述却能命中。
 
-**正确做法**:查询 = 检出的问题描述 + **从引用结构推断的类型线索**,不含任何专有名词。
+**正确做法**:查询 = 检出的问题描述 + **从引用结构推断的简短类型标签**,不含任何专有名词。
 
 ```python
 def build_query(citation: dict) -> str:
-    """检出的问题 + 引用类型线索;不含人名/书名/期刊名。"""
-    hints = type_hints(citation["raw_text"])   # 复用 _is_chapter / _journal_name 等既有判定
-    reasons = [i["reason"] for i in citation["issues"] if i["type"] in _FIXABLE_ISSUE_TYPES]
-    return f"{'. '.join(reasons)}. Reference type: {hints}."
+    """检出的问题 + 引用类型标签;不含人名/书名/期刊名,也不含 expected/actual。"""
+    reasons = [i["reason"] for i in citation["issues"]
+               if i["type"] in _FIXABLE_ISSUE_TYPES]
+    hint = type_hints(citation["raw_text"])   # 结构推断,复用 _is_chapter / _journal_name
+    return f"APA 7th rule for: {'. '.join(reasons)}. Reference type: {hint}."
 ```
 
-`type_hints()` 由引用的**结构**推断,复用 `apa7.py` 里已有的 `_is_chapter` / `_journal_name`,以及软件标签、`Retrieved from`、`(n.d.)`、文章编号等形态判定,输出如:
+### PR 2 实测:类型提示要**短**,查询要**框成「求规则」而非「报缺陷」**
 
-```
-"chapter in an edited book, with editors after In; has a page range"
-"journal article with a periodical name; article number or eLocator instead of a page range"
-```
+PR 2 阶段又跑了一轮对照(同 6 个样本,top-3):
+
+| 查询构造 | top-1 | top-3 |
+|---|---|---|
+| 完整引用原文 + 问题描述(朴素基线) | 1/6 | **3/6** |
+| 问题描述 + **详细**类型描述 | 3/6 | 5/6 |
+| 问题描述 + **简短**类型标签 | 4/6 | 5/6 |
+| 仅问题描述,无类型标签 | 4/6 | 5/6 |
+| **`APA 7th rule for:` + 问题 + 简短类型标签** | **4/6** | **6/6** |
+
+两条结论:
+
+1. **类型提示必须短。** 早期实现返回 `"chapter in an edited book; editors are named; page range written with pp."`,词汇量远超 `"Author name mismatch"` 这类三词问题描述,查询于是被拉向「匹配类型」而非「回答问题」。改成 `"edited book chapter"` / `"journal article"` / `"book"` 这类标签后才稳定。
+2. **`APA 7th rule for:` 这个前缀有实测收益**(5/6 → 6/6)。它把查询框定成「在找一条规则」,而不是「这是一段缺陷描述」,从而更靠近规则条文块本身的语气。
+
+`type_hints()` 由引用**结构**推断,复用 `apa7.py` 的 `_is_chapter` / `_journal_name`,外加文章编号形式(`System, 95, 102366` —— `_journal_name` 因要求页码范围而看不见它,不特判会被误认成 book)、软件标签、URL、`(n.d.)`。
+
+> ⚠️ **这个 6/6 的可信度有上限**:样本只有 6 条,且查询模板是在同一批样本上调出来的(5/6 → 6/6),存在过拟合。其中 Van Vu 一条是压线通过——排第 3,距离 0.983,而前两个不相关块是 0.972 / 0.974。**换 embedding 模型或改语料后必须重跑评估**,不要默认它还成立。扩充样本集是提高该指标可信度的前置条件。
 
 **验收标准**:PR 2 必须用真实 bug 样本(Leuckert / Schmitt / Ellis / Wang / Meichenbaum / Van Vu)做召回评估,**top-3 命中率 ≥ 6/6**;低于此值先调查询构造或语料,不要靠调大 k 掩盖。
 
