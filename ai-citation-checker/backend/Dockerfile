@@ -7,9 +7,10 @@ COPY app/ app/
 # build generates: no embedding API key is needed at build time, and the
 # image is reproducible. Verify it landed rather than discovering it is
 # missing when the first retrieval silently returns nothing.
-# Only the index ships — the YAML corpus it was built from is a
-# maintenance input, and nothing at runtime reads it.
-COPY data/apa_rules.db data/apa_rules.db
+# The YAML corpus ships too: startup re-hashes it to prove the index was
+# built from this exact corpus. CI cannot stand in for that check — main
+# is unprotected and this Dockerfile is the deploy path.
+COPY data/ data/
 RUN test -f /app/data/apa_rules.db
 RUN mkdir -p /data
 EXPOSE 8000

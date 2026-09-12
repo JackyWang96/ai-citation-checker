@@ -13,6 +13,7 @@ import logging
 import re
 import sqlite3
 import threading
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 
@@ -21,6 +22,7 @@ import openai
 import app.config as cfg
 from app.rules.apa7 import _is_chapter, _journal_name
 from app.services.embeddings import embed_query
+from app.services.rules_corpus import corpus_sha256, load_corpus
 from app.services.vectors import open_rules_db, pack_vector
 from app.services.verifier import _SOFTWARE_TAG_RE
 
@@ -35,19 +37,19 @@ _FIXABLE_ISSUE_TYPES = frozenset({"format_violation", "field_mismatch"})
 # comparable. `normalized` is the dangerous one: dimensions still line up, no
 # error is raised, and the ranking is silently wrong.
 #
-# corpus_sha256 is deliberately NOT here. Corpus drift — YAML edited without
-# rebuilding the index — is caught by
-# test_committed_index_is_in_sync_with_committed_corpus, which fails the build
-# before a stale index can ship. Re-hashing at runtime cost ~10ms and forced
-# 30KB of YAML into the image for no other reason, since the index already
-# stores the rule text. The residual gap: a deployment that points
-# RULES_CORPUS_DIR at a corpus other than the committed one would go
-# unnoticed, which no code path does today.
+# corpus_sha256 was briefly dropped from this list on the reasoning that CI
+# already caught corpus drift. Cross-review disproved the premise: main has no
+# branch protection and railway.toml builds straight from the Dockerfile, so
+# the test gates nothing about what actually deploys. Editing a rule chunk
+# without rebuilding would have shipped stale guidance with no check anywhere.
+# The cost of keeping it — ~10ms once at boot, 30KB of YAML in the image — is
+# far below that.
 _FINGERPRINT_KEYS = (
     "embedding_provider",
     "embedding_model",
     "embedding_dim",
     "normalized",
+    "corpus_sha256",
 )
 
 # 'System, 95, 102366.' — the modern article-number / eLocator form: volume
@@ -129,14 +131,19 @@ def build_query(citation: dict) -> str:
     return f"APA 7th rule for: {problems}. Reference type: {hint}."
 
 
-def verify_rules_index(db: sqlite3.Connection) -> None:
+def verify_rules_index(db: sqlite3.Connection, corpus_dir: str) -> None:
     """Raise when the index cannot be trusted for the running config.
 
-    A mismatch means a deployment mistake — the embedding model was changed
-    without rebuilding — and serving confidently-ranked wrong rules is worse
-    than serving none. Callers decide what to do about it: `search` degrades
-    to no retrieval, and startup disables the feature rather than refusing to
-    boot (see `app.main`).
+    Checks both the fingerprint and the index's structure. Fingerprint alone
+    was not enough: an index holding valid `index_meta` and zero rows passed,
+    logged "verified", and left RAG enabled, so every request paid for an
+    embedding before retrieval came back empty.
+
+    A mismatch means a deployment mistake — the embedding model was changed,
+    or the corpus edited without rebuilding — and serving confidently-ranked
+    wrong rules is worse than serving none. Callers decide what to do about
+    it: `search` degrades to no retrieval, and startup disables the feature
+    rather than refusing to boot (see `app.main`).
     """
     meta = dict(db.execute("SELECT key, value FROM index_meta").fetchall())
     runtime = {
@@ -144,6 +151,7 @@ def verify_rules_index(db: sqlite3.Connection) -> None:
         "embedding_model": cfg.EMBEDDING_MODEL,
         "embedding_dim": str(cfg.EMBEDDING_DIM),
         "normalized": str(cfg.EMBEDDING_NORMALIZED).lower(),
+        "corpus_sha256": corpus_sha256(load_corpus(Path(corpus_dir))),
     }
     mismatches = [
         f"{k}: index={meta.get(k)!r} runtime={runtime[k]!r}"
@@ -157,7 +165,43 @@ def verify_rules_index(db: sqlite3.Connection) -> None:
             f"[index built_at={meta.get('built_at')} "
             f"sqlite_vec={meta.get('sqlite_vec_version')}] " + " | ".join(mismatches)
         )
-    db.execute("SELECT vec_version()")  # prove the extension really loaded
+    _verify_index_contents(db)
+
+
+def _verify_index_contents(db: sqlite3.Connection) -> None:
+    """Prove the index actually holds usable data, not just correct metadata."""
+    chunks = db.execute("SELECT COUNT(*) FROM rule_chunks").fetchone()[0]
+    if not chunks:
+        raise RuntimeError("APA rules index holds no rule_chunks")
+
+    # Compared both ways round. A one-directional check (chunks missing a
+    # vector) passed an index holding more vectors than chunks, which ranks
+    # rows that have no text to return.
+    vectors = db.execute("SELECT COUNT(*) FROM rule_vectors").fetchone()[0]
+    if vectors != chunks:
+        raise RuntimeError(
+            f"APA rules index has {chunks} chunk(s) but {vectors} vector(s); "
+            "rebuild with `python -m app.scripts.build_rules_index`"
+        )
+    mismatched = db.execute(
+        "SELECT COUNT(*) FROM rule_chunks c "
+        "LEFT JOIN rule_vectors v ON v.rowid = c.rowid WHERE v.rowid IS NULL"
+    ).fetchone()[0]
+    if mismatched:
+        raise RuntimeError(
+            f"APA rules index has {mismatched} chunk(s) whose rowid has no "
+            "matching vector; rebuild with "
+            "`python -m app.scripts.build_rules_index`"
+        )
+
+    # One real KNN query: the only way to prove the vec0 extension loaded on
+    # this connection *and* that the stored vectors match the declared
+    # dimension. Both fail at request time otherwise.
+    probe = pack_vector([0.0] * cfg.EMBEDDING_DIM)
+    db.execute(
+        "SELECT rowid FROM rule_vectors WHERE embedding MATCH ? AND k = 1",
+        (probe,),
+    ).fetchall()
 
 
 _db: Optional[sqlite3.Connection] = None
@@ -171,7 +215,7 @@ def open_index() -> sqlite3.Connection:
         if _db is None:
             db = open_rules_db(cfg.RULES_DB_PATH, read_only=True)
             try:
-                verify_rules_index(db)
+                verify_rules_index(db, cfg.RULES_CORPUS_DIR)
             except Exception:
                 db.close()
                 raise

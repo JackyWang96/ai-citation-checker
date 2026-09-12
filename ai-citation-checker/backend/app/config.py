@@ -18,7 +18,9 @@ ALLOWED_ORIGIN = os.getenv("ALLOWED_ORIGIN", "http://localhost:5173")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 LLM_ENABLED = bool(ANTHROPIC_API_KEY)
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-haiku-4-5")
-# Cap concurrent Claude calls so a large document doesn't fan out unbounded.
+# Cap how many citations are in the fix loop at once. Each one holds the
+# slot for its embedding call and up to LLM_MAX_FIX_ATTEMPTS Claude calls,
+# so this bounds the whole pipeline, not just the Claude requests.
 LLM_CONCURRENCY = int(os.getenv("LLM_CONCURRENCY", "4"))
 # Attempts per citation in the validate/retry loop. 2 means at most one
 # retry: the first pass fixes most references, and a second failure

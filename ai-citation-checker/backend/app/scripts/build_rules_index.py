@@ -61,6 +61,14 @@ def write_index(
     vectors: list[list[float]],
     meta: dict[str, str],
 ) -> None:
+    # zip() stops at the shorter sequence, so a short embedding response would
+    # silently produce an index missing chunks while index_meta still recorded
+    # the full corpus hash — an index that looks healthy and answers wrongly.
+    if len(vectors) != len(chunks):
+        raise RuntimeError(
+            f"embedding returned {len(vectors)} vectors for {len(chunks)} chunks"
+        )
+
     if out_path.exists():
         out_path.unlink()
 

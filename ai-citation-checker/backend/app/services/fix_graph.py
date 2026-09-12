@@ -167,7 +167,7 @@ async def validate_fix(state: FixState) -> FixState:
     suggestion = state.get("suggestion") or ""
     if not suggestion:
         return {"validation": ["generation failed"], "verified": False}
-    failures = validate_suggestion(suggestion)
+    failures = validate_suggestion(state["citation"], suggestion)
     return {"validation": failures, "verified": not failures}
 
 
