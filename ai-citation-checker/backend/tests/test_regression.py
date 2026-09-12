@@ -2717,7 +2717,9 @@ async def test_suggest_fixes_only_targets_fixable_reference_citations():
     assert set(result.keys()) == {"r1", "r2"}
     assert result["r1"]["suggestion"] == "FIXED"
     assert result["r2"]["suggestion_explanation"] == "did x"
-    assert len(seen) == 2
+    # Two calls per citation: "FIXED" is not a valid APA reference, so the
+    # validator rejects it and the loop retries once before giving up.
+    assert len(seen) == 4
     # the prompt carries the detected issue + expected/actual values
     assert "Year mismatch" in seen[1] and "2019" in seen[1] and "2018" in seen[1]
 
@@ -2869,18 +2871,26 @@ def test_committed_index_is_in_sync_with_committed_corpus():
     """The shipped apa_rules.db must still match the shipped YAML.
 
     Editing a rule chunk without re-running build_rules_index leaves an index
-    that answers with the *old* text while looking perfectly healthy. The
-    fingerprint check catches it — but only if something calls it, and in
-    production nothing does until a user clicks the button. Assert it here so
-    the mismatch fails the build instead of shipping."""
+    that answers with the *old* text while looking perfectly healthy.
+
+    This duplicates the runtime fingerprint check on purpose: it fails the
+    build, where the fix is cheap, instead of only disabling RAG at boot after
+    the stale index has already shipped."""
+    from pathlib import Path
     import app.config as cfg
-    from app.services.rules_retriever import verify_rules_index
+    from app.services.rules_corpus import corpus_sha256, load_corpus
     from app.services.vectors import open_rules_db
     db = open_rules_db(cfg.RULES_DB_PATH, read_only=True)
     try:
-        verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+        stored = db.execute(
+            "SELECT value FROM index_meta WHERE key='corpus_sha256'"
+        ).fetchone()[0]
     finally:
         db.close()
+    assert stored == corpus_sha256(load_corpus(Path(cfg.RULES_CORPUS_DIR))), (
+        "apa_rules.db is stale — rebuild with "
+        "`python -m app.scripts.build_rules_index` and commit the result"
+    )
 
 
 def test_retrieval_query_never_carries_the_reference_text():
@@ -3133,3 +3143,67 @@ def test_r022_ignores_journal_articles():
         "Durrant, P., & Schmitt, N. (2009). To what extent do writers use "
         "collocations? IRAL, 47(2), 157-177."
     )) is None
+
+
+# ── Stage 3: field-level validation of AI suggestions ────────────────────────
+
+def test_suggestion_keeping_the_wrong_year_is_not_verified():
+    """Cross-review finding: format rules cannot see field values, so a rewrite
+    that kept the wrong year but tidied the punctuation passed every rule and
+    was returned with verified=True — the exact failure the validate/retry loop
+    exists to prevent."""
+    from app.services.suggestion_validator import validate_suggestion
+    citation = {"issues": [{"type": "field_mismatch", "field": "year",
+                            "reason": "Year mismatch",
+                            "expected": "2019", "actual": "2018"}]}
+    kept_wrong = "Smith, J. (2018). A study of things. Journal of Testing, 5(2), 1-10."
+    corrected = "Smith, J. (2019). A study of things. Journal of Testing, 5(2), 1-10."
+    assert validate_suggestion(citation, kept_wrong)
+    assert validate_suggestion(citation, corrected) == []
+
+
+def test_expected_value_cannot_be_satisfied_from_the_wrong_element():
+    """Second-round finding: searching the whole string let an expected year of
+    2019 be satisfied by a *title* reading "2019 annual review" while the date
+    stayed 2018, and an expected author surname "Li" be satisfied by the
+    substring inside "Publishing"."""
+    from app.services.suggestion_validator import validate_suggestion
+    year_issue = {"issues": [{"type": "field_mismatch", "field": "year",
+                              "reason": "Year mismatch", "expected": "2019"}]}
+    assert validate_suggestion(
+        year_issue,
+        "Smith, J. (2018). The 2019 annual review of testing. Journal of Testing, 5(2), 1-10.")
+
+    author_issue = {"issues": [{"type": "field_mismatch", "field": "author",
+                                "reason": "Author name mismatch", "expected": "Li"}]}
+    assert validate_suggestion(
+        author_issue,
+        "Zimmerman, B. J. (2006). Adolescents development. In F. Pajares (Ed.), "
+        "Self-efficacy beliefs (pp. 45-69). Information Age Publishing.")
+
+
+def test_advisory_year_mismatch_is_not_treated_as_authoritative():
+    """'Possible alternative publication year' tells the user to check which
+    edition they used. Demanding the rewrite adopt the record's year would push
+    a correct citation onto a different edition and then call it verified."""
+    from app.services.suggestion_validator import validate_suggestion
+    citation = {"issues": [{"type": "field_mismatch", "field": "year",
+                            "reason": "Possible alternative publication year",
+                            "expected": "2011", "actual": "2018"}]}
+    assert validate_suggestion(
+        citation, "Jiang, N. (2018). Second language processing. Routledge.") == []
+
+
+def test_sentence_case_rewrite_does_not_fail_the_title_check():
+    """Crossref stores titles in title case and APA wants sentence case, so a
+    correct rewrite changes capitalisation. Comparing raw strings would reject
+    exactly the rewrites the loop is asking for."""
+    from app.services.suggestion_validator import validate_suggestion
+    citation = {"issues": [{
+        "type": "field_mismatch", "field": "title",
+        "reason": "Title does not match authoritative record",
+        "expected": "To What Extent Do Native And Non-Native Writers Make Use Of Collocations?"}]}
+    assert validate_suggestion(
+        citation,
+        "Durrant, P., & Schmitt, N. (2009). To what extent do native and "
+        "non-native writers make use of collocations? IRAL, 47(2), 157-177.") == []

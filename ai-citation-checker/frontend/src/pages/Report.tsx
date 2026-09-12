@@ -33,6 +33,8 @@ interface Citation {
   verified_reference_id?: string
   suggestion?: string
   suggestion_explanation?: string
+  suggestion_verified?: boolean
+  suggestion_validation?: string[]
 }
 
 interface ReportData {

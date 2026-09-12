@@ -18,8 +18,21 @@ ALLOWED_ORIGIN = os.getenv("ALLOWED_ORIGIN", "http://localhost:5173")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 LLM_ENABLED = bool(ANTHROPIC_API_KEY)
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-haiku-4-5")
-# Cap concurrent Claude calls so a large document doesn't fan out unbounded.
+# Cap how many citations are in the fix loop at once. Each one holds the
+# slot for its embedding call and up to LLM_MAX_FIX_ATTEMPTS Claude calls,
+# so this bounds the whole pipeline, not just the Claude requests.
 LLM_CONCURRENCY = int(os.getenv("LLM_CONCURRENCY", "4"))
+# Attempts per citation in the validate/retry loop. 2 means at most one
+# retry: the first pass fixes most references, and a second failure
+# usually means the rules can't be satisfied from the text available.
+LLM_MAX_FIX_ATTEMPTS = int(os.getenv("LLM_MAX_FIX_ATTEMPTS", "2"))
+
+# langchain-core pulls in langsmith, whose tracing client uploads prompts
+# and completions to an external service when enabled. It is off unless
+# opted in; set it explicitly so references and their content cannot start
+# leaving the process because an upstream default changed.
+os.environ.setdefault("LANGSMITH_TRACING", "false")
+os.environ.setdefault("LANGCHAIN_TRACING_V2", "false")
 
 # RAG — APA rules index. The index is a read-only artifact committed to the
 # repo and copied into the image; these values MUST match what

@@ -24,6 +24,8 @@ interface CitationData {
   runs?: TextRun[] | null
   suggestion?: string
   suggestion_explanation?: string
+  suggestion_verified?: boolean
+  suggestion_validation?: string[]
 }
 
 interface Props {
@@ -139,22 +141,39 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
             </div>
           ))}
 
-          {/* AI fix suggestion (Stage 2 — populated after AI analysis) */}
-          {cit.suggestion && (
-            <div style={{ marginTop: 10, padding: '8px 10px', background: 'var(--accent-bg, var(--bg))', border: '1px solid var(--accent)', borderRadius: 6, fontSize: 12, lineHeight: 1.6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, color: 'var(--accent)', fontWeight: 600, fontSize: 11 }}>
-                ✨ {t.suggestedFix}
-              </div>
-              <div style={{ color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11.5, whiteSpace: 'pre-wrap' }}>
-                {cit.suggestion}
-              </div>
-              {cit.suggestion_explanation && (
-                <div style={{ marginTop: 4, color: 'var(--text-3)', fontSize: 11 }}>
-                  {cit.suggestion_explanation}
+          {/* AI fix suggestion. A rewrite that failed the checker's own rules
+              must never be shown in the verified style — it is a draft, and
+              saying otherwise is the one claim this tool cannot afford to get
+              wrong. */}
+          {cit.suggestion && (() => {
+            const verified = cit.suggestion_verified === true
+            const accent = verified ? 'var(--accent)' : 'var(--warn, #b45309)'
+            return (
+              <div style={{ marginTop: 10, padding: '8px 10px', background: verified ? 'var(--accent-bg, var(--bg))' : 'var(--bg)', border: `1px solid ${accent}`, borderRadius: 6, fontSize: 12, lineHeight: 1.6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, color: accent, fontWeight: 600, fontSize: 11 }}>
+                  {verified ? `✨ ${t.suggestedFix}` : `⚠️ ${t.unverifiedDraft}`}
                 </div>
-              )}
-            </div>
-          )}
+                <div style={{ color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11.5, whiteSpace: 'pre-wrap' }}>
+                  {cit.suggestion}
+                </div>
+                {cit.suggestion_explanation && (
+                  <div style={{ marginTop: 4, color: 'var(--text-3)', fontSize: 11 }}>
+                    {cit.suggestion_explanation}
+                  </div>
+                )}
+                {!verified && (
+                  <div style={{ marginTop: 6, color: 'var(--text-3)', fontSize: 11 }}>
+                    <div style={{ fontWeight: 600 }}>{t.stillFailing}</div>
+                    <ul style={{ margin: '2px 0 0', paddingLeft: 16 }}>
+                      {(cit.suggestion_validation ?? []).map((v, i) => (
+                        <li key={i}>{v}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>

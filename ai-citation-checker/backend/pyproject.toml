@@ -24,6 +24,9 @@ dependencies = [
     "sqlite-vec==0.1.9",
     "openai>=1.0",
     "pyyaml>=6.0",
+    # Stage 3: the fix generate/validate/retry loop. langgraph only —
+    # langchain-community would drag in sqlalchemy, numpy and aiohttp.
+    "langgraph>=1.2",
 ]
 
 [project.optional-dependencies]

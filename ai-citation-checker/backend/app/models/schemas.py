@@ -37,6 +37,15 @@ class Citation(BaseModel):
     # Stage 2 — populated only after the user runs LLM analysis on the report.
     suggestion: Optional[str] = None
     suggestion_explanation: Optional[str] = None
+    # False means the rewrite never passed the checker's own rules. Such a
+    # suggestion is still shown — it is usually closer than the original — but
+    # it must be presented as an unverified draft, never as a verified fix.
+    suggestion_verified: bool = False
+    # chunk_ids of the APA guidance the rewrite relied on. Filtered against
+    # what was actually retrieved, so a hallucinated id can never reach the UI.
+    suggestion_rule_basis: list[str] = []
+    # Rules the suggestion still violates; only populated when unverified.
+    suggestion_validation: list[str] = []
 
 
 class Report(BaseModel):

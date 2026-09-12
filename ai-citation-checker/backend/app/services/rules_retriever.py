@@ -13,8 +13,8 @@ import logging
 import re
 import sqlite3
 import threading
-from dataclasses import dataclass
 from pathlib import Path
+from dataclasses import dataclass
 from typing import Optional
 
 import openai
@@ -36,6 +36,14 @@ _FIXABLE_ISSUE_TYPES = frozenset({"format_violation", "field_mismatch"})
 # Any mismatch means the query vectors and the indexed vectors are not
 # comparable. `normalized` is the dangerous one: dimensions still line up, no
 # error is raised, and the ranking is silently wrong.
+#
+# corpus_sha256 was briefly dropped from this list on the reasoning that CI
+# already caught corpus drift. Cross-review disproved the premise: main has no
+# branch protection and railway.toml builds straight from the Dockerfile, so
+# the test gates nothing about what actually deploys. Editing a rule chunk
+# without rebuilding would have shipped stale guidance with no check anywhere.
+# The cost of keeping it — ~10ms once at boot, 30KB of YAML in the image — is
+# far below that.
 _FINGERPRINT_KEYS = (
     "embedding_provider",
     "embedding_model",
@@ -124,13 +132,18 @@ def build_query(citation: dict) -> str:
 
 
 def verify_rules_index(db: sqlite3.Connection, corpus_dir: str) -> None:
-    """Fail fast when the index cannot be trusted for the running config.
+    """Raise when the index cannot be trusted for the running config.
 
-    This is deliberately a hard error, not a degradation: a mismatch is a
-    deployment mistake (someone edited the corpus, or changed the embedding
-    model, without rebuilding), and serving confidently-ranked wrong rules is
-    worse than serving none. Callers that must stay up catch it and fall back
-    to no retrieval — see `search`.
+    Checks both the fingerprint and the index's structure. Fingerprint alone
+    was not enough: an index holding valid `index_meta` and zero rows passed,
+    logged "verified", and left RAG enabled, so every request paid for an
+    embedding before retrieval came back empty.
+
+    A mismatch means a deployment mistake — the embedding model was changed,
+    or the corpus edited without rebuilding — and serving confidently-ranked
+    wrong rules is worse than serving none. Callers decide what to do about
+    it: `search` degrades to no retrieval, and startup disables the feature
+    rather than refusing to boot (see `app.main`).
     """
     meta = dict(db.execute("SELECT key, value FROM index_meta").fetchall())
     runtime = {
@@ -152,7 +165,43 @@ def verify_rules_index(db: sqlite3.Connection, corpus_dir: str) -> None:
             f"[index built_at={meta.get('built_at')} "
             f"sqlite_vec={meta.get('sqlite_vec_version')}] " + " | ".join(mismatches)
         )
-    db.execute("SELECT vec_version()")  # prove the extension really loaded
+    _verify_index_contents(db)
+
+
+def _verify_index_contents(db: sqlite3.Connection) -> None:
+    """Prove the index actually holds usable data, not just correct metadata."""
+    chunks = db.execute("SELECT COUNT(*) FROM rule_chunks").fetchone()[0]
+    if not chunks:
+        raise RuntimeError("APA rules index holds no rule_chunks")
+
+    # Compared both ways round. A one-directional check (chunks missing a
+    # vector) passed an index holding more vectors than chunks, which ranks
+    # rows that have no text to return.
+    vectors = db.execute("SELECT COUNT(*) FROM rule_vectors").fetchone()[0]
+    if vectors != chunks:
+        raise RuntimeError(
+            f"APA rules index has {chunks} chunk(s) but {vectors} vector(s); "
+            "rebuild with `python -m app.scripts.build_rules_index`"
+        )
+    mismatched = db.execute(
+        "SELECT COUNT(*) FROM rule_chunks c "
+        "LEFT JOIN rule_vectors v ON v.rowid = c.rowid WHERE v.rowid IS NULL"
+    ).fetchone()[0]
+    if mismatched:
+        raise RuntimeError(
+            f"APA rules index has {mismatched} chunk(s) whose rowid has no "
+            "matching vector; rebuild with "
+            "`python -m app.scripts.build_rules_index`"
+        )
+
+    # One real KNN query: the only way to prove the vec0 extension loaded on
+    # this connection *and* that the stored vectors match the declared
+    # dimension. Both fail at request time otherwise.
+    probe = pack_vector([0.0] * cfg.EMBEDDING_DIM)
+    db.execute(
+        "SELECT rowid FROM rule_vectors WHERE embedding MATCH ? AND k = 1",
+        (probe,),
+    ).fetchall()
 
 
 _db: Optional[sqlite3.Connection] = None

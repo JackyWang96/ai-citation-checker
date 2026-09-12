@@ -62,6 +62,8 @@ const zh = {
   analyzeRetry: '重试 AI 分析',
   analyzeError: 'AI 分析失败',
   suggestedFix: '建议修正',
+  unverifiedDraft: 'AI 草稿 — 未通过自动校验',
+  stillFailing: '仍未解决:',
 }
 
 const en: typeof zh = {
@@ -114,6 +116,8 @@ const en: typeof zh = {
   analyzeRetry: 'Retry AI analysis',
   analyzeError: 'AI analysis failed',
   suggestedFix: 'Suggested fix',
+  unverifiedDraft: 'AI draft — did not pass the automated check',
+  stillFailing: 'Still failing:',
 }
 
 export type Translations = typeof zh

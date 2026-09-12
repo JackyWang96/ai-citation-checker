@@ -181,17 +181,6 @@ def test_verify_rejects_an_incompatible_index(fake_index, monkeypatch, attr, val
         rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
 
 
-def test_verify_rejects_a_corpus_edited_without_a_rebuild(fake_index, tmp_path):
-    """Editing the YAML without re-running build_rules_index would otherwise
-    serve stale rule text under a fresh-looking index."""
-    corpus = tmp_path / "apa_rules" / "rules.yaml"
-    corpus.write_text(_CORPUS_YAML.replace("Publisher.", "Publisher, City."),
-                      encoding="utf-8")
-    db = rr.open_rules_db(str(fake_index), read_only=True)
-    with pytest.raises(RuntimeError, match="corpus_sha256"):
-        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
-
-
 def test_verify_error_names_the_build_for_diagnosis(fake_index, monkeypatch):
     monkeypatch.setattr(cfg, "EMBEDDING_MODEL", "some-other-model")
     db = rr.open_rules_db(str(fake_index), read_only=True)
@@ -266,3 +255,52 @@ async def test_search_returns_top_k_chunks(fake_index, monkeypatch):
     hits = await rr.search(citation, top_k=2)
     assert len(hits) == 2
     assert hits[0].chunk_id == "apa7-author-name-format"
+
+
+def test_verify_rejects_a_corpus_edited_without_a_rebuild(fake_index, tmp_path):
+    """Editing the YAML without re-running build_rules_index would otherwise
+    serve stale rule text under a fresh-looking index. This check was briefly
+    removed on the reasoning that CI covered it; cross-review showed CI gates
+    nothing about what deploys (main unprotected, Railway builds straight from
+    the Dockerfile), so it is back."""
+    corpus = tmp_path / "apa_rules" / "rules.yaml"
+    corpus.write_text(_CORPUS_YAML.replace("Publisher.", "Publisher, City."),
+                      encoding="utf-8")
+    db = rr.open_rules_db(str(fake_index), read_only=True)
+    with pytest.raises(RuntimeError, match="corpus_sha256"):
+        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+
+
+def test_verify_rejects_an_index_with_correct_metadata_but_no_rows(fake_index, monkeypatch):
+    """An index holding valid index_meta and zero rows passed the fingerprint,
+    logged "verified", and left RAG enabled — so every request paid for an
+    embedding before retrieval came back empty."""
+    db = rr.open_rules_db(str(fake_index))
+    db.execute("DELETE FROM rule_chunks")
+    db.commit()
+    with pytest.raises(RuntimeError, match="no rule_chunks"):
+        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+    db.close()
+
+
+def test_verify_rejects_chunks_without_vectors(fake_index):
+    """The shape a truncated embedding response produces: chunks written,
+    vectors missing, metadata still describing the full corpus."""
+    db = rr.open_rules_db(str(fake_index))
+    db.execute("DELETE FROM rule_vectors WHERE rowid = 1")
+    db.commit()
+    with pytest.raises(RuntimeError, match="vector"):
+        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+    db.close()
+
+
+def test_verify_rejects_more_vectors_than_chunks(fake_index):
+    """The reverse orphan. A one-directional check (chunks missing a vector)
+    passed an index with more vectors than chunks — rows that rank in a KNN
+    query but have no text to return."""
+    db = rr.open_rules_db(str(fake_index))
+    db.execute("DELETE FROM rule_chunks WHERE rowid = 1")
+    db.commit()
+    with pytest.raises(RuntimeError, match="vector"):
+        rr.verify_rules_index(db, cfg.RULES_CORPUS_DIR)
+    db.close()
