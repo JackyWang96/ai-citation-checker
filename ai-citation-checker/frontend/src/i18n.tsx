@@ -64,6 +64,8 @@ const zh = {
   suggestedFix: '建议修正',
   unverifiedDraft: 'AI 草稿 — 未通过自动校验',
   stillFailing: '仍未解决:',
+  ruleBasis: '依据规则:',
+  noFixAvailable: 'AI 未能提供修正建议',
 }
 
 const en: typeof zh = {
@@ -118,6 +120,8 @@ const en: typeof zh = {
   suggestedFix: 'Suggested fix',
   unverifiedDraft: 'AI draft — did not pass the automated check',
   stillFailing: 'Still failing:',
+  ruleBasis: 'Based on:',
+  noFixAvailable: 'AI could not provide a fix for this reference',
 }
 
 export type Translations = typeof zh

@@ -24,7 +24,10 @@ def _fixable(citation: dict) -> bool:
     """A reference citation carrying at least one rewrite-fixable issue."""
     if citation.get("kind") != "reference":
         return False
-    if citation.get("suggestion"):   # already analysed — don't pay twice
+    # Already analysed — don't pay twice. `suggestion_status` covers the case
+    # where the loop ran and produced nothing: without it such a citation looks
+    # untouched and every click repeats the whole cost.
+    if citation.get("suggestion") or citation.get("suggestion_status"):
         return False
     return any(
         i.get("type") in _FIXABLE_ISSUE_TYPES

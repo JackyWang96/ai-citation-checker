@@ -36,6 +36,7 @@ async def analyze_report(report_id: str, response: Response):
                 c["suggestion_verified"] = fix["suggestion_verified"]
                 c["suggestion_rule_basis"] = fix["suggestion_rule_basis"]
                 c["suggestion_validation"] = fix["suggestion_validation"]
+                c["suggestion_status"] = fix["suggestion_status"]
         await update_report(cfg.DB_PATH, report_id, json.dumps(report))
 
     return report

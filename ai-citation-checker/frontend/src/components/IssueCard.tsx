@@ -15,6 +15,12 @@ interface Issue {
   rule_id?: string
 }
 
+interface RuleBasis {
+  chunk_id: string
+  title: string
+  source_url: string
+}
+
 interface CitationData {
   id: string
   kind: 'intext' | 'reference'
@@ -26,6 +32,8 @@ interface CitationData {
   suggestion_explanation?: string
   suggestion_verified?: boolean
   suggestion_validation?: string[]
+  suggestion_rule_basis?: RuleBasis[]
+  suggestion_status?: string | null
 }
 
 interface Props {
@@ -145,6 +153,15 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
               must never be shown in the verified style — it is a draft, and
               saying otherwise is the one claim this tool cannot afford to get
               wrong. */}
+          {/* The loop ran and produced nothing usable. Saying so beats showing
+              nothing: the user paid for the attempt and would otherwise see no
+              response to the button at all. */}
+          {!cit.suggestion && cit.suggestion_status === 'declined' && (
+            <div style={{ marginTop: 10, padding: '8px 10px', background: 'var(--bg)', border: '1px dashed var(--border)', borderRadius: 6, fontSize: 11.5, color: 'var(--text-3)' }}>
+              {t.noFixAvailable}
+            </div>
+          )}
+
           {cit.suggestion && (() => {
             const verified = cit.suggestion_verified === true
             const accent = verified ? 'var(--accent)' : 'var(--warn, #b45309)'
@@ -167,6 +184,25 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
                     <ul style={{ margin: '2px 0 0', paddingLeft: 16 }}>
                       {(cit.suggestion_validation ?? []).map((v, i) => (
                         <li key={i}>{v}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(cit.suggestion_rule_basis ?? []).length > 0 && (
+                  <div style={{ marginTop: 6, color: 'var(--text-3)', fontSize: 11 }}>
+                    <div style={{ fontWeight: 600 }}>{t.ruleBasis}</div>
+                    <ul style={{ margin: '2px 0 0', paddingLeft: 16 }}>
+                      {(cit.suggestion_rule_basis ?? []).map((r) => (
+                        <li key={r.chunk_id}>
+                          <a
+                            href={r.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            {r.title}
+                          </a>
+                        </li>
                       ))}
                     </ul>
                   </div>

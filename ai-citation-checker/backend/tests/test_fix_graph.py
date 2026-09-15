@@ -124,7 +124,11 @@ async def test_hallucinated_rule_basis_is_dropped(with_rules):
         "rule_basis": ["apa7-author-separators", "apa7-invented-by-the-model"],
     }])
     result = await fix_graph.run_fix(CITATION, client)
-    assert result["suggestion_rule_basis"] == ["apa7-author-separators"]
+    assert [b["chunk_id"] for b in result["suggestion_rule_basis"]] == \
+        ["apa7-author-separators"]
+    # Title and URL come from the retrieved chunk, never from the model.
+    assert result["suggestion_rule_basis"][0]["title"] == CHUNK.title
+    assert result["suggestion_rule_basis"][0]["source_url"] == CHUNK.source_url
 
 
 async def test_no_op_rewrite_is_dropped(with_rules):
@@ -133,7 +137,12 @@ async def test_no_op_rewrite_is_dropped(with_rules):
     back — but the unchanged result is dropped rather than shown."""
     echo = {"corrected_reference": BAD, "explanation": "already fine"}
     client = _FakeClient([echo, echo])
-    assert await fix_graph.run_fix(CITATION, client) is None
+    result = await fix_graph.run_fix(CITATION, client)
+    assert result["suggestion"] is None, "an unchanged rewrite is not a fix"
+    assert result["suggestion_status"] == "declined", (
+        "the attempt must be recorded, or the citation looks unanalysed and "
+        "the next click pays for it again"
+    )
     assert len(client.prompts) == 2
 
 
@@ -152,7 +161,10 @@ async def test_generation_failure_does_not_retry(with_rules, monkeypatch):
 
     boom = Boom()
     boom.messages = boom
-    assert await fix_graph.run_fix(CITATION, boom) is None
+    assert await fix_graph.run_fix(CITATION, boom) is None, (
+        "a transport failure must stay unrecorded so the citation can be "
+        "retried once the outage passes"
+    )
     assert calls == 1
 
 

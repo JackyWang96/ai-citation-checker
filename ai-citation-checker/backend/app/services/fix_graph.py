@@ -152,8 +152,15 @@ async def generate_fix(state: FixState) -> FixState:
     # rule_basis comes from the model and may name chunks that were never
     # retrieved. Showing a hallucinated rule as the justification for a fix
     # would be its own fabricated citation, in a tool built to catch those.
-    retrieved = {c.chunk_id for c in state.get("rules") or []}
-    basis = [c for c in (data.get("rule_basis") or []) if c in retrieved]
+    # Resolve against the chunks we actually retrieved, and take the title and
+    # URL from those rows. The model supplies ids only; anything it invents is
+    # dropped, and it never gets to name a source link.
+    retrieved = {c.chunk_id: c for c in state.get("rules") or []}
+    basis = [
+        {"chunk_id": c.chunk_id, "title": c.title, "source_url": c.source_url}
+        for cid in (data.get("rule_basis") or [])
+        if (c := retrieved.get(cid)) is not None
+    ]
 
     return {
         "attempts": attempts,
@@ -203,23 +210,43 @@ _graph = _build_graph()
 async def run_fix(
     citation: dict, client: anthropic.AsyncAnthropic
 ) -> Optional[dict]:
-    """Return the suggestion for one citation, or None if nothing usable came
-    back. A suggestion that never passed validation is still returned, marked
-    unverified — the caller decides how to present it."""
+    """Return the outcome for one citation.
+
+    Always returns a payload, never None: a citation the model declined to
+    change still has to be recorded, or it stays indistinguishable from one
+    that was never analysed. A suggestion that failed validation is returned
+    too, marked unverified — the caller decides how to present it."""
     final = await _graph.ainvoke({"citation": citation, "client": client,
                                   "attempts": 0})
     suggestion = final.get("suggestion") or ""
     if not suggestion:
+        # Generation failed — a transport error or unparseable response. This
+        # must NOT be recorded as an outcome: the citation stays unanalysed so
+        # the user can retry once the outage passes. Marking it would make a
+        # transient failure permanent.
         return None
+
     # The model sometimes concludes no change is needed but still echoes the
     # reference back. Rendering that as a suggestion shows the user an "AI fix"
     # identical to what they wrote.
     if _normalise(suggestion) == _normalise(citation.get("raw_text", "")):
-        return None
+        # Recorded, unlike the failure above: the model gave a considered
+        # answer, and asking again costs another embedding and Claude call to
+        # get the same one. Without the marker the citation looks unanalysed
+        # and every click repeats that cost.
+        return {
+            "suggestion": None,
+            "suggestion_explanation": "",
+            "suggestion_verified": False,
+            "suggestion_rule_basis": [],
+            "suggestion_validation": [],
+            "suggestion_status": "declined",
+        }
     return {
         "suggestion": suggestion,
         "suggestion_explanation": final.get("explanation", ""),
         "suggestion_verified": bool(final.get("verified")),
         "suggestion_rule_basis": final.get("rule_basis") or [],
         "suggestion_validation": final.get("validation") or [],
+        "suggestion_status": None,
     }

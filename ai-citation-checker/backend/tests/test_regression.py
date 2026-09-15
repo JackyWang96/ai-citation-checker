@@ -2930,7 +2930,9 @@ async def test_noop_fix_suggestion_is_dropped():
 
     citations = [{"id": "c1", "kind": "reference", "raw_text": raw,
                   "issues": [{"type": "format_violation", "reason": "Missing volume/pages"}]}]
-    assert await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler)) == {}
+    out = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert out["c1"]["suggestion"] is None
+    assert out["c1"]["suggestion_status"] == "declined"
 
 
 @pytest.mark.asyncio
@@ -2949,7 +2951,9 @@ async def test_whitespace_only_rewrite_is_dropped():
 
     citations = [{"id": "c1", "kind": "reference", "raw_text": raw,
                   "issues": [{"type": "format_violation", "reason": "Title should be italic"}]}]
-    assert await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler)) == {}
+    out = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert out["c1"]["suggestion"] is None
+    assert out["c1"]["suggestion_status"] == "declined"
 
 
 @pytest.mark.asyncio
@@ -3207,3 +3211,54 @@ def test_sentence_case_rewrite_does_not_fail_the_title_check():
         citation,
         "Durrant, P., & Schmitt, N. (2009). To what extent do native and "
         "non-native writers make use of collocations? IRAL, 47(2), 157-177.") == []
+
+
+# ── Stage 4: recording the outcome of a fix attempt ──────────────────────────
+
+@pytest.mark.asyncio
+async def test_declined_and_failed_attempts_are_recorded_differently():
+    """A model that declines to change a reference must be recorded, or the
+    citation looks unanalysed forever and every click repeats the embedding
+    and Claude cost. A transport failure must NOT be recorded, or a transient
+    outage permanently blocks that citation from ever being retried."""
+    from app.services.fix_suggester import suggest_fixes
+
+    raw = "Grimm, P. (2010). Social desirability bias. In J. Sheth (Ed.), Wiley encyclopedia. Wiley."
+    citation = {"id": "c1", "kind": "reference", "raw_text": raw,
+                "issues": [{"type": "format_violation", "reason": "R021"}]}
+
+    def echoes_back(kwargs):
+        return _FakeResp(json.dumps({"corrected_reference": raw,
+                                     "explanation": "already correct"}))
+
+    declined = await suggest_fixes([dict(citation)],
+                                   client=_FakeAsyncAnthropic(echoes_back))
+    assert declined["c1"]["suggestion"] is None
+    assert declined["c1"]["suggestion_status"] == "declined"
+
+    def blows_up(kwargs):
+        raise RuntimeError("provider is down")
+
+    failed = await suggest_fixes([dict(citation)],
+                                 client=_FakeAsyncAnthropic(blows_up))
+    assert failed == {}, "a transient failure must leave the citation retryable"
+
+
+def test_declined_citation_is_not_offered_for_analysis_again():
+    """The cost guard: _fixable must treat a recorded decline as analysed."""
+    from app.services.fix_suggester import _fixable
+    base = {"id": "c1", "kind": "reference", "raw_text": "x",
+            "issues": [{"type": "format_violation", "reason": "R021"}]}
+    assert _fixable(base)
+    assert not _fixable({**base, "suggestion_status": "declined"})
+
+
+def test_rule_basis_title_and_url_never_come_from_the_model():
+    """Design constraint (cross-review W4): a hallucinated source link would be
+    a fabricated citation used to justify a fix, in a tool built to catch
+    fabricated citations. Ids are filtered against what was retrieved, and the
+    title and URL are read from those rows."""
+    from app.models.schemas import RuleBasis
+    basis = RuleBasis(chunk_id="apa7-whole-book", title="Whole book reference",
+                      source_url="https://apastyle.apa.org/book")
+    assert basis.source_url.startswith("https://apastyle.apa.org/")

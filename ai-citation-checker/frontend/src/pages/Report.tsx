@@ -22,6 +22,12 @@ interface CitationIssue {
   rule_id?: string
 }
 
+interface RuleBasis {
+  chunk_id: string
+  title: string
+  source_url: string
+}
+
 interface Citation {
   id: string
   kind: 'intext' | 'reference'
@@ -35,6 +41,8 @@ interface Citation {
   suggestion_explanation?: string
   suggestion_verified?: boolean
   suggestion_validation?: string[]
+  suggestion_rule_basis?: RuleBasis[]
+  suggestion_status?: string | null
 }
 
 interface ReportData {
@@ -151,6 +159,9 @@ export default function Report() {
     (c) =>
       c.kind === 'reference' &&
       !c.suggestion &&
+      // A recorded decline counts as analysed. Without this the button stays
+      // lit and each click pays for the same work again.
+      !c.suggestion_status &&
       c.issues.some((iss) => iss.type === 'format_violation' || iss.type === 'field_mismatch'),
   )
 
