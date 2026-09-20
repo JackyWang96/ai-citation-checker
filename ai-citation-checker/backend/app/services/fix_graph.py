@@ -62,6 +62,7 @@ class FixState(TypedDict, total=False):
     citation: dict
     client: Any            # AsyncAnthropic; never serialised (no checkpointer)
     rules: list[Any]       # RuleChunk
+    retrieval_ok: bool
     suggestion: str
     explanation: str
     rule_basis: list[str]
@@ -128,7 +129,8 @@ async def retrieve_rules(state: FixState) -> FixState:
     """Never raises: `search` already degrades to [] on any failure, and an
     empty rules list simply drops the guidance section from the prompt,
     leaving the model at its pre-RAG quality."""
-    return {"rules": await rules_retriever.search(state["citation"])}
+    result = await rules_retriever.search(state["citation"])
+    return {"rules": result.chunks, "retrieval_ok": result.ok}
 
 
 async def generate_fix(state: FixState) -> FixState:
@@ -156,11 +158,20 @@ async def generate_fix(state: FixState) -> FixState:
     # URL from those rows. The model supplies ids only; anything it invents is
     # dropped, and it never gets to name a source link.
     retrieved = {c.chunk_id: c for c in state.get("rules") or []}
-    basis = [
-        {"chunk_id": c.chunk_id, "title": c.title, "source_url": c.source_url}
-        for cid in (data.get("rule_basis") or [])
-        if (c := retrieved.get(cid)) is not None
-    ]
+    # Deduplicated, first occurrence wins. Filtering on membership alone let
+    # the model repeat one valid id as often as it liked — 100 ids produced 50
+    # entries — which floods the card and gives React duplicate keys. The
+    # retrieved set is the natural cap: nothing else can legitimately appear.
+    seen: set[str] = set()
+    basis = []
+    for cid in data.get("rule_basis") or []:
+        c = retrieved.get(cid)
+        if c is None or cid in seen:
+            continue
+        seen.add(cid)
+        basis.append(
+            {"chunk_id": c.chunk_id, "title": c.title, "source_url": c.source_url}
+        )
 
     return {
         "attempts": attempts,
@@ -230,6 +241,12 @@ async def run_fix(
     # reference back. Rendering that as a suggestion shows the user an "AI fix"
     # identical to what they wrote.
     if _normalise(suggestion) == _normalise(citation.get("raw_text", "")):
+        if not final.get("retrieval_ok", True):
+            # Retrieval was down, so the model judged this with no rules in
+            # front of it. Recording that as a considered decline would make an
+            # outage permanent — the same leak the failure branch above avoids,
+            # reached through the retrieval path instead of the Claude one.
+            return None
         # Recorded, unlike the failure above: the model gave a considered
         # answer, and asking again costs another embedding and Claude call to
         # get the same one. Without the marker the citation looks unanalysed

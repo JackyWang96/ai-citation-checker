@@ -11,7 +11,7 @@ import pytest
 
 import app.config as cfg
 from app.services import fix_graph
-from app.services.rules_retriever import RuleChunk
+from app.services.rules_retriever import Retrieval, RuleChunk
 
 GOOD = ("Zimmerman, B. J., & Cleary, T. J. (2006). Adolescents development. In "
         "F. Pajares & T. Urdan (Eds.), Self-efficacy beliefs of adolescents "
@@ -66,7 +66,7 @@ class _FakeClient:
 @pytest.fixture
 def with_rules(monkeypatch):
     async def fake_search(citation, **kw):
-        return [CHUNK]
+        return Retrieval([CHUNK], True)
     monkeypatch.setattr(fix_graph.rules_retriever, "search", fake_search)
 
 
@@ -172,7 +172,7 @@ async def test_loop_runs_without_retrieval(monkeypatch):
     """Retrieval failing open must leave the loop working — the prompt simply
     carries no guidance section, which is the pre-RAG behaviour."""
     async def empty(citation, **kw):
-        return []
+        return Retrieval([], True)
     monkeypatch.setattr(fix_graph.rules_retriever, "search", empty)
     client = _FakeClient([{"corrected_reference": GOOD, "explanation": "fixed"}])
     result = await fix_graph.run_fix(CITATION, client)

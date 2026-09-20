@@ -32,8 +32,8 @@ interface CitationData {
   suggestion_explanation?: string
   suggestion_verified?: boolean
   suggestion_validation?: string[]
-  suggestion_rule_basis?: RuleBasis[]
-  suggestion_status?: string | null
+  suggestion_rule_basis?: (RuleBasis | string)[]
+  suggestion_status?: 'declined' | null
 }
 
 interface Props {
@@ -164,6 +164,14 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
 
           {cit.suggestion && (() => {
             const verified = cit.suggestion_verified === true
+            // Reports written before rule_basis became structured hold plain
+            // chunk_id strings. Reading .title off one yields undefined, which
+            // renders as an empty link with an undefined href. Reports expire
+            // in 24h so this only spans a rolling deploy, but an empty link is
+            // worse than none.
+            const ruleBasis = (cit.suggestion_rule_basis ?? []).filter(
+              (r): r is RuleBasis => typeof r === 'object' && r !== null && !!r.source_url,
+            )
             const accent = verified ? 'var(--accent)' : 'var(--warn, #b45309)'
             return (
               <div style={{ marginTop: 10, padding: '8px 10px', background: verified ? 'var(--accent-bg, var(--bg))' : 'var(--bg)', border: `1px solid ${accent}`, borderRadius: 6, fontSize: 12, lineHeight: 1.6 }}>
@@ -188,12 +196,12 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
                     </ul>
                   </div>
                 )}
-                {(cit.suggestion_rule_basis ?? []).length > 0 && (
+                {ruleBasis.length > 0 && (
                   <div style={{ marginTop: 6, color: 'var(--text-3)', fontSize: 11 }}>
                     <div style={{ fontWeight: 600 }}>{t.ruleBasis}</div>
                     <ul style={{ margin: '2px 0 0', paddingLeft: 16 }}>
-                      {(cit.suggestion_rule_basis ?? []).map((r) => (
-                        <li key={r.chunk_id}>
+                      {ruleBasis.map((r, i) => (
+                        <li key={`${r.chunk_id}-${i}`}>
                           <a
                             href={r.source_url}
                             target="_blank"

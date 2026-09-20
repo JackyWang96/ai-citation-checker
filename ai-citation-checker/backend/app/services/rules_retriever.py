@@ -15,6 +15,7 @@ import sqlite3
 import threading
 from pathlib import Path
 from dataclasses import dataclass
+from typing import NamedTuple
 from typing import Optional
 
 import openai
@@ -67,6 +68,16 @@ _SEARCH_SQL = """
     WHERE v.embedding MATCH ? AND k = ?
     ORDER BY v.distance
 """
+
+
+class Retrieval(NamedTuple):
+    """`chunks` alone cannot say why it is empty.
+
+    An outage and a genuine miss look identical to the caller, and they demand
+    opposite handling: a miss is an answer, an outage must stay retryable.
+    """
+    chunks: list["RuleChunk"]
+    ok: bool
 
 
 @dataclass(frozen=True)
@@ -235,22 +246,26 @@ async def search(
     *,
     top_k: Optional[int] = None,
     client: Optional[openai.AsyncOpenAI] = None,
-) -> list[RuleChunk]:
+) -> Retrieval:
     """Top-k rule chunks for one flagged citation, or [] if retrieval fails.
 
     Fails open by design: a missing key, a broken index, or an embedding
     outage must degrade the suggestion to its current non-RAG quality rather
-    than take the feature down. The caller cannot distinguish "no rules
-    found" from "retrieval broke", and does not need to — both mean "build
-    the prompt without a rules section".
+    than take the feature down. `ok` reports which happened — the prompt is
+    built the same way either way, but a caller about to record a permanent
+    outcome needs to know the model was reasoning without its rules.
     """
     if not cfg.RAG_ENABLED:
-        return []
+        # Not a failure: retrieval was never going to run, so a suggestion
+        # produced without rules is the expected quality, not a degraded one.
+        return Retrieval([], True)
     try:
         vector = await embed_query(build_query(citation), client=client)
-        return search_vector(open_index(), vector, top_k or cfg.RAG_TOP_K)
+        return Retrieval(
+            search_vector(open_index(), vector, top_k or cfg.RAG_TOP_K), True
+        )
     except Exception:
         logger.warning(
             "rules retrieval failed; degrading to non-RAG suggestion", exc_info=True
         )
-        return []
+        return Retrieval([], False)

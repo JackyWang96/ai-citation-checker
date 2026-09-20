@@ -57,7 +57,7 @@ class Citation(BaseModel):
     # "declined" means the loop ran and produced nothing usable. Without it the
     # citation looks unanalysed forever, so the button stays lit and every
     # click pays for the same work again.
-    suggestion_status: Optional[str] = None
+    suggestion_status: Optional[Literal["declined"]] = None
 
 
 class Report(BaseModel):

@@ -1,3 +1,5 @@
+import json
+
 import aiosqlite
 from datetime import datetime, timezone, timedelta
 
@@ -47,15 +49,42 @@ async def save_report(db_path: str, report_id: str, report_json: str, filename: 
         await db.commit()
 
 
-async def update_report(db_path: str, report_id: str, report_json: str) -> None:
-    """Overwrite a report's JSON blob in place (e.g. after attaching LLM fix
-    suggestions). Leaves created_at/expires_at unchanged."""
+async def merge_citation_fields(
+    db_path: str, report_id: str, updates: dict[str, dict]
+) -> dict | None:
+    """Apply per-citation fields to a stored report, inside one transaction.
+
+    Read-modify-write over the whole blob loses data: two analyse requests both
+    read the unanalysed report, and whichever writes last replaces the other's
+    results. The overwritten citation goes back to looking unanalysed, so it
+    gets paid for again. Re-reading under the write lock means a concurrent
+    writer's fields survive.
+
+    Returns the merged report, or None if it expired meanwhile.
+    """
     async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        await db.execute("BEGIN IMMEDIATE")
+        cur = await db.execute(
+            "SELECT report_json FROM reports WHERE id=?", (report_id,)
+        )
+        row = await cur.fetchone()
+        if row is None:
+            await db.rollback()
+            return None
+
+        report = json.loads(row["report_json"])
+        for citation in report.get("citations", []):
+            fields = updates.get(citation["id"])
+            if fields:
+                citation.update(fields)
+
         await db.execute(
             "UPDATE reports SET report_json=? WHERE id=?",
-            (report_json, report_id),
+            (json.dumps(report), report_id),
         )
         await db.commit()
+        return report
 
 
 async def get_report(db_path: str, report_id: str) -> dict | None:
