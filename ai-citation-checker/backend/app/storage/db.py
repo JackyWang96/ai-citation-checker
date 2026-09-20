@@ -60,7 +60,13 @@ async def merge_citation_fields(
     gets paid for again. Re-reading under the write lock means a concurrent
     writer's fields survive.
 
-    Returns the merged report, or None if it expired meanwhile.
+    Merging is monotonic per citation: a stored suggestion is never replaced by
+    a weaker outcome. Serialising the writers is not enough on its own — two
+    requests analysing the *same* citation can disagree, and if the one that
+    produced no fix commits second it would erase a suggestion that was already
+    paid for.
+
+    Returns the merged report, or None if the report is gone.
     """
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
@@ -76,8 +82,11 @@ async def merge_citation_fields(
         report = json.loads(row["report_json"])
         for citation in report.get("citations", []):
             fields = updates.get(citation["id"])
-            if fields:
-                citation.update(fields)
+            if not fields:
+                continue
+            if citation.get("suggestion") and not fields.get("suggestion"):
+                continue   # a decline must not overwrite an existing fix
+            citation.update(fields)
 
         await db.execute(
             "UPDATE reports SET report_json=? WHERE id=?",

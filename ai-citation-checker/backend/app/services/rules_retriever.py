@@ -247,7 +247,7 @@ async def search(
     top_k: Optional[int] = None,
     client: Optional[openai.AsyncOpenAI] = None,
 ) -> Retrieval:
-    """Top-k rule chunks for one flagged citation, or [] if retrieval fails.
+    """Top-k rule chunks for one flagged citation, plus whether retrieval ran.
 
     Fails open by design: a missing key, a broken index, or an embedding
     outage must degrade the suggestion to its current non-RAG quality rather

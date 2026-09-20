@@ -3357,3 +3357,43 @@ async def test_concurrent_writes_do_not_erase_a_paid_result():
     stored = json.loads((await get_report(db_path, "rid"))["report_json"])
     got = {c["id"]: c.get("suggestion") for c in stored["citations"]}
     assert got == {"c1": "FIXED c1", "c2": "FIXED c2"}
+
+
+@pytest.mark.asyncio
+async def test_a_decline_never_overwrites_an_existing_suggestion():
+    """Second-round cross-review finding: serialising the writers fixed the
+    case of two *different* citations, but two requests analysing the *same*
+    one can disagree. If the request that produced no fix committed last, it
+    erased a suggestion that had already been paid for. Merging is monotonic:
+    a stored suggestion is never replaced by a weaker outcome."""
+    import tempfile
+    from pathlib import Path
+    from app.storage.db import init_db, save_report, get_report, merge_citation_fields
+
+    db_path = str(Path(tempfile.mkdtemp()) / "reports.db")
+    await init_db(db_path)
+    await save_report(db_path, "rid",
+                      json.dumps({"citations": [{"id": "c1", "raw_text": "A"}]}),
+                      "f.docx")
+
+    await merge_citation_fields(db_path, "rid", {"c1": {
+        "suggestion": "FIXED", "suggestion_verified": True,
+        "suggestion_status": None}})
+    await merge_citation_fields(db_path, "rid", {"c1": {
+        "suggestion": None, "suggestion_verified": False,
+        "suggestion_status": "declined"}})
+
+    stored = json.loads((await get_report(db_path, "rid"))["report_json"])
+    assert stored["citations"][0]["suggestion"] == "FIXED"
+    assert stored["citations"][0]["suggestion_status"] is None
+
+    # The reverse direction is an upgrade and must still apply.
+    await save_report(db_path, "rid2",
+                      json.dumps({"citations": [{"id": "c1", "raw_text": "A"}]}),
+                      "f.docx")
+    await merge_citation_fields(db_path, "rid2", {"c1": {
+        "suggestion": None, "suggestion_status": "declined"}})
+    await merge_citation_fields(db_path, "rid2", {"c1": {
+        "suggestion": "FIXED LATER", "suggestion_status": None}})
+    stored2 = json.loads((await get_report(db_path, "rid2"))["report_json"])
+    assert stored2["citations"][0]["suggestion"] == "FIXED LATER"

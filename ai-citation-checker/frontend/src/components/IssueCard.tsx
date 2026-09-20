@@ -169,9 +169,12 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
             // renders as an empty link with an undefined href. Reports expire
             // in 24h so this only spans a rolling deploy, but an empty link is
             // worse than none.
-            const ruleBasis = (cit.suggestion_rule_basis ?? []).filter(
-              (r): r is RuleBasis => typeof r === 'object' && r !== null && !!r.source_url,
-            )
+            // Reports stored before the backend deduplicated rule_basis can
+            // still hold repeats, and /api/report returns stored JSON as-is,
+            // so the backend fix does not reach them. Deduplicate here too.
+            const ruleBasis = (cit.suggestion_rule_basis ?? [])
+              .filter((r): r is RuleBasis => typeof r === 'object' && r !== null && !!r.source_url)
+              .filter((r, i, all) => all.findIndex((o) => o.chunk_id === r.chunk_id) === i)
             const accent = verified ? 'var(--accent)' : 'var(--warn, #b45309)'
             return (
               <div style={{ marginTop: 10, padding: '8px 10px', background: verified ? 'var(--accent-bg, var(--bg))' : 'var(--bg)', border: `1px solid ${accent}`, borderRadius: 6, fontSize: 12, lineHeight: 1.6 }}>
@@ -200,8 +203,8 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
                   <div style={{ marginTop: 6, color: 'var(--text-3)', fontSize: 11 }}>
                     <div style={{ fontWeight: 600 }}>{t.ruleBasis}</div>
                     <ul style={{ margin: '2px 0 0', paddingLeft: 16 }}>
-                      {ruleBasis.map((r, i) => (
-                        <li key={`${r.chunk_id}-${i}`}>
+                      {ruleBasis.map((r) => (
+                        <li key={r.chunk_id}>
                           <a
                             href={r.source_url}
                             target="_blank"

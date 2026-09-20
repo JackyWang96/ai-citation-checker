@@ -65,7 +65,7 @@ class FixState(TypedDict, total=False):
     retrieval_ok: bool
     suggestion: str
     explanation: str
-    rule_basis: list[str]
+    rule_basis: list[dict]
     validation: list[str]
     attempts: int
     verified: bool
@@ -221,12 +221,14 @@ _graph = _build_graph()
 async def run_fix(
     citation: dict, client: anthropic.AsyncAnthropic
 ) -> Optional[dict]:
-    """Return the outcome for one citation.
+    """Return the outcome for one citation, or None if it should stay retryable.
 
-    Always returns a payload, never None: a citation the model declined to
-    change still has to be recorded, or it stays indistinguishable from one
-    that was never analysed. A suggestion that failed validation is returned
-    too, marked unverified — the caller decides how to present it."""
+    Three outcomes. A usable rewrite is returned, marked verified or not. A
+    considered decline — the model saw the rules and judged the reference
+    correct — is returned with `suggestion=None` and status "declined", so it
+    is not re-analysed and re-charged. Anything that went wrong (generation
+    failed, or the model declined while retrieval was down) returns None: the
+    citation stays unanalysed and the user can try again."""
     final = await _graph.ainvoke({"citation": citation, "client": client,
                                   "attempts": 0})
     suggestion = final.get("suggestion") or ""
