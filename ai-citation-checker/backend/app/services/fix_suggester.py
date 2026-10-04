@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 _FIXABLE_ISSUE_TYPES = frozenset({"format_violation", "field_mismatch"})
 
 
+def fixable_citations(citations: list[dict]) -> list[dict]:
+    """The citations a rewrite could help, in report order.
+
+    Public because the caller has to know what it is about to pay for *before*
+    paying — it claims those ids first, so a second concurrent request cannot
+    buy the same work.
+    """
+    return [c for c in citations if _fixable(c)]
+
+
 def _fixable(citation: dict) -> bool:
     """A reference citation carrying at least one rewrite-fixable issue."""
     if citation.get("kind") != "reference":

@@ -26,6 +26,10 @@ LLM_CONCURRENCY = int(os.getenv("LLM_CONCURRENCY", "4"))
 # retry: the first pass fixes most references, and a second failure
 # usually means the rules can't be satisfied from the text available.
 LLM_MAX_FIX_ATTEMPTS = int(os.getenv("LLM_MAX_FIX_ATTEMPTS", "2"))
+# How long a citation stays claimed while being analysed. Long enough to cover
+# the slowest realistic run (retrieval + two Claude calls under concurrency
+# limits), short enough that a crashed worker's citations free up soon after.
+ANALYSIS_LEASE_SECONDS = int(os.getenv("ANALYSIS_LEASE_SECONDS", "180"))
 
 # langchain-core pulls in langsmith, whose tracing client uploads prompts
 # and completions to an external service when enabled. It is off unless

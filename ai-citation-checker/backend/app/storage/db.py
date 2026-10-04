@@ -15,6 +15,20 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 CREATE INDEX IF NOT EXISTS idx_reports_expires_at ON reports(expires_at);
 
+-- Short leases taken before a citation is sent to the LLM. Two browser tabs
+-- hitting /api/analyze at once would otherwise both read it as unanalysed and
+-- both pay. The primary key is what makes the claim atomic; `owner` lets a
+-- finalising writer prove the lease is still its own, so an owner whose lease
+-- expired and was taken over cannot overwrite the newer result.
+CREATE TABLE IF NOT EXISTS citation_claims (
+    report_id   TEXT NOT NULL,
+    citation_id TEXT NOT NULL,
+    owner       TEXT NOT NULL,
+    expires_at  TIMESTAMP NOT NULL,
+    PRIMARY KEY (report_id, citation_id)
+);
+CREATE INDEX IF NOT EXISTS idx_claims_expires_at ON citation_claims(expires_at);
+
 CREATE TABLE IF NOT EXISTS verified_references (
     id                      TEXT PRIMARY KEY,
     doi                     TEXT UNIQUE,
@@ -49,8 +63,59 @@ async def save_report(db_path: str, report_id: str, report_json: str, filename: 
         await db.commit()
 
 
+async def claim_citations(
+    db_path: str,
+    report_id: str,
+    citation_ids: list[str],
+    owner: str,
+    ttl_seconds: int,
+) -> set[str]:
+    """Take a lease on each citation, returning only the ones this caller won.
+
+    The caller must analyse nothing it did not win — that is the whole point.
+    Leases expire rather than being held forever, so a worker that crashes
+    mid-analysis does not strand its citations: the next request takes them
+    over once the TTL passes.
+    """
+    now = datetime.now(timezone.utc)
+    expires = (now + timedelta(seconds=ttl_seconds)).isoformat()
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("BEGIN IMMEDIATE")
+        await db.execute(
+            "DELETE FROM citation_claims WHERE report_id=? AND expires_at<=?",
+            (report_id, now.isoformat()),
+        )
+        for citation_id in citation_ids:
+            await db.execute(
+                "INSERT OR IGNORE INTO citation_claims "
+                "(report_id, citation_id, owner, expires_at) VALUES (?,?,?,?)",
+                (report_id, citation_id, owner, expires),
+            )
+        cur = await db.execute(
+            "SELECT citation_id FROM citation_claims WHERE report_id=? AND owner=?",
+            (report_id, owner),
+        )
+        won = {row[0] for row in await cur.fetchall()}
+        await db.commit()
+    return won
+
+
+async def release_claims(db_path: str, report_id: str, owner: str) -> None:
+    """Drop this owner's leases so a failed attempt can be retried at once
+    instead of waiting out the TTL."""
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            "DELETE FROM citation_claims WHERE report_id=? AND owner=?",
+            (report_id, owner),
+        )
+        await db.commit()
+
+
 async def merge_citation_fields(
-    db_path: str, report_id: str, updates: dict[str, dict]
+    db_path: str,
+    report_id: str,
+    updates: dict[str, dict],
+    owner: str | None = None,
 ) -> dict | None:
     """Apply per-citation fields to a stored report, inside one transaction.
 
@@ -66,6 +131,13 @@ async def merge_citation_fields(
     produced no fix commits second it would erase a suggestion that was already
     paid for.
 
+    When `owner` is given, a citation is skipped only if *someone else* holds
+    its lease. The rule is "don't overwrite another worker's result", not
+    "must still hold the lease": an analysis that outlived its own lease with
+    nobody taking over has still been paid for, and discarding it would leave
+    the citation looking unanalysed — to be paid for a second time, which is
+    the very thing the lease exists to prevent.
+
     Returns the merged report, or None if the report is gone.
     """
     async with aiosqlite.connect(db_path) as db:
@@ -78,6 +150,15 @@ async def merge_citation_fields(
         if row is None:
             await db.rollback()
             return None
+
+        if owner is not None:
+            cur = await db.execute(
+                "SELECT citation_id FROM citation_claims "
+                "WHERE report_id=? AND owner<>? AND expires_at>?",
+                (report_id, owner, datetime.now(timezone.utc).isoformat()),
+            )
+            taken_over = {r[0] for r in await cur.fetchall()}
+            updates = {k: v for k, v in updates.items() if k not in taken_over}
 
         report = json.loads(row["report_json"])
         for citation in report.get("citations", []):
@@ -92,6 +173,11 @@ async def merge_citation_fields(
             "UPDATE reports SET report_json=? WHERE id=?",
             (json.dumps(report), report_id),
         )
+        if owner is not None:
+            await db.execute(
+                "DELETE FROM citation_claims WHERE report_id=? AND owner=?",
+                (report_id, owner),
+            )
         await db.commit()
         return report
 
