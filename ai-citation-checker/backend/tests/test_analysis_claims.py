@@ -6,7 +6,6 @@ guarantee here has to hold through the database.
 from __future__ import annotations
 
 import json
-import re
 import tempfile
 import uuid
 from pathlib import Path
@@ -29,6 +28,17 @@ REPORT = {"citations": [
     {"id": "c2", "kind": "reference", "raw_text": "B",
      "issues": [{"type": "format_violation", "reason": "y"}]},
 ]}
+
+
+def _migrate_in_child(path, barrier, results):
+    """Module-level so multiprocessing can pickle it."""
+    import asyncio as _asyncio
+    barrier.wait()
+    try:
+        _asyncio.run(init_db(path))
+        results.put("ok")
+    except Exception as exc:   # noqa: BLE001 — report every failure to the parent
+        results.put(repr(exc))
 
 
 async def _expire(db_path: str, report_id: str, owner: str) -> None:
@@ -214,41 +224,70 @@ async def test_non_positive_lease_is_refused(db_path):
         await claim_citations(db_path, "rid", ["c1"], "o", 0)
 
 
-async def test_lease_covers_the_worst_case_of_the_work_it_guards():
-    """Cross-review finding: the lease was sized by a guessed 60s per round
-    while the SDKs defaulted to a 600s read timeout with two retries — an order
-    of magnitude more. It is now derived from explicit per-call limits."""
-    per_claude = cfg._call_upper_bound(cfg.CLAUDE_TIMEOUT_SECONDS,
-                                       cfg.ANTHROPIC_MAX_RETRY_AFTER_SECONDS)
-    per_embed = cfg._call_upper_bound(cfg.EMBEDDING_TIMEOUT_SECONDS,
-                                      cfg.OPENAI_MAX_RETRY_AFTER_SECONDS)
-    per_citation = per_embed + cfg.LLM_MAX_FIX_ATTEMPTS * per_claude
-
+async def test_lease_covers_every_round_of_capped_work():
+    """Each citation is cancelled at ANALYSIS_CITATION_DEADLINE_SECONDS and the
+    slots run in ceil(n / concurrency) rounds, so the lease must cover that."""
     for n in (1, cfg.LLM_CONCURRENCY, cfg.LLM_CONCURRENCY + 1, 50):
         rounds = -(-n // cfg.LLM_CONCURRENCY)
-        assert cfg.analysis_lease_seconds(n) >= rounds * per_citation, n
+        assert cfg.analysis_lease_seconds(n) >= \
+            rounds * cfg.ANALYSIS_CITATION_DEADLINE_SECONDS, n
 
 
-def test_retry_after_caps_match_the_installed_sdks():
-    """The lease bound assumes the longest Retry-After each SDK will honour.
-    If a release raises either cap, the bound silently becomes a guess again —
-    so read the real values out of the installed SDKs and fail the build."""
-    import inspect
-    import anthropic._base_client as anthropic_client
-    import openai._base_client as openai_client
+async def test_lease_rounds_up_a_fractional_deadline(monkeypatch):
+    """Cross-review round 3: int() truncated a fractional deadline, making the
+    lease shorter than the work it guards."""
+    monkeypatch.setattr(cfg, "ANALYSIS_CITATION_DEADLINE_SECONDS", 10.4)
+    monkeypatch.setattr(cfg, "ANALYSIS_LEASE_MARGIN_SECONDS", 0)
+    assert cfg.analysis_lease_seconds(1) == 11
 
-    anthropic_src = inspect.getsource(
-        anthropic_client.BaseClient._calculate_retry_timeout)
-    honoured = re.search(r"retry_after\s*<=\s*(\d+)", anthropic_src)
-    assert honoured, "anthropic changed how it caps Retry-After; re-derive the bound"
-    assert int(honoured.group(1)) <= cfg.ANTHROPIC_MAX_RETRY_AFTER_SECONDS
 
-    assert openai_client.MAX_RETRY_AFTER_DELAY <= cfg.OPENAI_MAX_RETRY_AFTER_SECONDS
+async def test_a_call_that_never_ends_is_cancelled_at_the_deadline(monkeypatch):
+    """The lease is sized from this deadline, so it has to be real.
+
+    SDK timeouts cannot provide it: httpx applies them per phase, and a 1s
+    timeout against a server dripping a byte every 0.5s was measured to return
+    successfully after 4s. A call like that would run straight past any lease
+    derived from the SDK settings. asyncio.wait_for cancels it instead, and the
+    citation stays unanalysed so it can be retried."""
+    import asyncio
+    import time
+    from app.services.fix_suggester import suggest_fixes
+
+    monkeypatch.setattr(cfg, "ANALYSIS_CITATION_DEADLINE_SECONDS", 0.5)
+
+    class NeverAnswers:
+        def __init__(self):
+            self.messages = self
+
+        async def create(self, **kwargs):
+            await asyncio.sleep(3600)
+
+        async def close(self):
+            pass
+
+    citation = {"id": "c1", "kind": "reference", "raw_text": "A",
+                "issues": [{"type": "format_violation", "reason": "x"}]}
+    started = time.monotonic()
+    out = await suggest_fixes([citation], client=NeverAnswers())
+    assert time.monotonic() - started < 2, "the deadline did not cancel the call"
+    assert out == {}, "a cut-off citation must not be recorded"
+
+
+async def test_tombstones_only_cover_results_that_landed(db_path):
+    """Cross-review round 3: tombstones were created from `updates` rather
+    than from what was actually written, so an empty or unknown entry left a
+    done=1 row with nothing behind it — a citation blocked from retry for as
+    long as the report lived."""
+    await claim_citations(db_path, "rid", ["c1", "c2"], "o", 180)
+    await merge_citation_fields(db_path, "rid",
+                                {"c1": {}, "ghost": {"suggestion": "X"}}, owner="o")
+    assert await claim_citations(db_path, "rid", ["c1"], "retry", 180) == {"c1"}
 
 
 def test_paid_clients_are_built_with_the_limits_the_lease_assumes(monkeypatch):
-    """The bound is only true if the clients actually use these limits; the
-    SDK defaults would silently undo it.
+    """Explicit limits keep a call from running for the SDK default of half an
+    hour before the deadline cuts it. They no longer bound the lease — the
+    deadline does — but a client built without them wastes the slot.
 
     Records the constructor arguments and stops there. An earlier version let
     the call proceed, which made a real, billed Anthropic request from the unit
@@ -371,3 +410,37 @@ async def test_existing_database_gains_the_tombstone_column(tmp_path):
     await init_db(path)
     await init_db(path)   # idempotent
     assert await claim_citations(path, "r", ["c1"], "o", 60) == {"c1"}
+
+
+def test_concurrent_workers_can_migrate_the_same_database():
+    """Railway boots four workers and each runs init_db. With the column check
+    outside a write lock, two could both see `done` missing and the second
+    ALTER failed with "duplicate column" — 7 failures in 100 starts across real
+    processes. An in-process asyncio version of this test passed 4/4 and would
+    have hidden it: the race needs separate processes."""
+    import multiprocessing as mp
+    import sqlite3
+    import tempfile
+    from pathlib import Path
+
+    def run_trial() -> list[str]:
+        path = str(Path(tempfile.mkdtemp()) / "old.db")
+        conn = sqlite3.connect(path)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute(
+            "CREATE TABLE citation_claims (report_id TEXT NOT NULL, "
+            "citation_id TEXT NOT NULL, owner TEXT NOT NULL, "
+            "expires_at TIMESTAMP NOT NULL, PRIMARY KEY (report_id, citation_id))")
+        conn.commit()
+        conn.close()
+        barrier, results = mp.Barrier(4), mp.Queue()
+        procs = [mp.Process(target=_migrate_in_child, args=(path, barrier, results))
+                 for _ in range(4)]
+        for proc in procs:
+            proc.start()
+        for proc in procs:
+            proc.join(timeout=30)
+        return [results.get(timeout=5) for _ in procs]
+
+    failures = [r for _ in range(10) for r in run_trial() if r != "ok"]
+    assert failures == [], failures

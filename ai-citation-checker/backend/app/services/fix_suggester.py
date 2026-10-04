@@ -70,7 +70,13 @@ async def _suggest_one(client: anthropic.AsyncAnthropic, citation: dict,
     """
     async with sem:
         try:
-            return await run_fix(citation, client)
+            # The hard bound the analysis lease is sized from. SDK timeouts
+            # are per phase and cannot be relied on to end a call; this cancels
+            # it. A citation that runs out stays unanalysed and retryable.
+            return await asyncio.wait_for(
+                run_fix(citation, client),
+                timeout=cfg.ANALYSIS_CITATION_DEADLINE_SECONDS,
+            )
         except Exception:
             logger.warning("fix loop failed for one citation", exc_info=True)
             return None

@@ -56,6 +56,13 @@ async def init_db(db_path: str) -> None:
         # CREATE TABLE IF NOT EXISTS never adds a column to a table that is
         # already there, so a database created before the tombstone existed
         # would keep running without it — and every claim would then fail.
+        #
+        # Under a write lock, because Railway starts four workers and each runs
+        # this at boot. Checked outside a lock, two could both see the column
+        # missing and the second ALTER would fail with "duplicate column" —
+        # measured at 7 failures in 100 worker starts with real processes.
+        # The worker that gets the lock second re-reads the schema and skips.
+        await db.execute("BEGIN IMMEDIATE")
         cur = await db.execute("PRAGMA table_info(citation_claims)")
         columns = {row[1] for row in await cur.fetchall()}
         if "done" not in columns:
@@ -221,6 +228,10 @@ async def merge_citation_fields(
             updates = {k: v for k, v in updates.items() if k not in someone_else}
 
         report = json.loads(row["report_json"])
+        # Tombstones go only to citations whose result actually landed. Taking
+        # them from `updates` meant an empty or unknown entry left a done=1 row
+        # with nothing written — a citation blocked from ever being retried.
+        applied: list[str] = []
         for citation in report.get("citations", []):
             fields = updates.get(citation["id"])
             if not fields:
@@ -228,6 +239,7 @@ async def merge_citation_fields(
             if citation.get("suggestion") and not fields.get("suggestion"):
                 continue   # a decline must not overwrite an existing fix
             citation.update(fields)
+            applied.append(citation["id"])
 
         await db.execute(
             "UPDATE reports SET report_json=? WHERE id=?",
@@ -241,7 +253,7 @@ async def merge_citation_fields(
                 "ON CONFLICT(report_id, citation_id) DO UPDATE SET done=1 "
                 "WHERE owner=excluded.owner",
                 [(report_id, cid, owner, "9999-12-31T00:00:00+00:00")
-                 for cid in updates],
+                 for cid in applied],
             )
             await db.execute(
                 "DELETE FROM citation_claims "

@@ -1,3 +1,4 @@
+import math
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -26,28 +27,29 @@ LLM_CONCURRENCY = int(os.getenv("LLM_CONCURRENCY", "4"))
 # retry: the first pass fixes most references, and a second failure
 # usually means the rules can't be satisfied from the text available.
 LLM_MAX_FIX_ATTEMPTS = int(os.getenv("LLM_MAX_FIX_ATTEMPTS", "2"))
-# Explicit per-call limits for the two paid APIs. Left to the SDK defaults —
-# 600s read timeout, two retries — a single Claude call could legitimately run
-# for half an hour, and the analysis lease below had nothing real to be sized
-# against.
-CLAUDE_TIMEOUT_SECONDS = float(os.getenv("CLAUDE_TIMEOUT_SECONDS", "60"))
-EMBEDDING_TIMEOUT_SECONDS = float(os.getenv("EMBEDDING_TIMEOUT_SECONDS", "30"))
+# Per-call limits for the two paid APIs. Left to the SDK defaults — 600s read
+# timeout, two retries — a single Claude call could run for half an hour.
+# These are tuning only; they do NOT bound how long a call takes. httpx applies
+# them per phase (connect, write, each socket read), so a server that keeps
+# sending a byte inside the timeout keeps the call alive indefinitely. Measured:
+# a 1s timeout against a slow-dripping server returned successfully after 4s.
+CLAUDE_TIMEOUT_SECONDS = float(os.getenv("CLAUDE_TIMEOUT_SECONDS", "30"))
+EMBEDDING_TIMEOUT_SECONDS = float(os.getenv("EMBEDDING_TIMEOUT_SECONDS", "20"))
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "2"))
 
-# The longest each SDK will wait between retries when the server sends a
-# Retry-After header. Both honour it in preference to their own 8s backoff
-# cap, and they differ: anthropic accepts up to 60s, openai up to 120s.
-# tests/test_analysis_claims.py checks these against the installed SDKs, so a
-# release that raises either cap fails the build instead of silently making
-# the lease too short.
-ANTHROPIC_MAX_RETRY_AFTER_SECONDS = 60
-OPENAI_MAX_RETRY_AFTER_SECONDS = 120
-
+# The real bound: wall-clock time one citation may spend in its concurrency
+# slot — retrieval, every Claude attempt, every SDK retry — enforced with
+# asyncio.wait_for, which cancels the work when it runs out. The analysis lease
+# is computed from this, so it is a bound rather than a derivation from SDK
+# internals that turned out not to hold.
+ANALYSIS_CITATION_DEADLINE_SECONDS = float(
+    os.getenv("ANALYSIS_CITATION_DEADLINE_SECONDS", "300")
+)
 ANALYSIS_LEASE_MARGIN_SECONDS = int(os.getenv("ANALYSIS_LEASE_MARGIN_SECONDS", "60"))
 
 for _name in ("CLAUDE_TIMEOUT_SECONDS", "EMBEDDING_TIMEOUT_SECONDS",
-              "ANALYSIS_LEASE_MARGIN_SECONDS", "LLM_CONCURRENCY",
-              "LLM_MAX_FIX_ATTEMPTS"):
+              "ANALYSIS_CITATION_DEADLINE_SECONDS", "ANALYSIS_LEASE_MARGIN_SECONDS",
+              "LLM_CONCURRENCY", "LLM_MAX_FIX_ATTEMPTS"):
     if globals()[_name] <= 0:
         # Zero or negative would hand out leases that are already expired, so
         # workers would start paying with no protection at all.
@@ -56,36 +58,28 @@ if LLM_MAX_RETRIES < 0:
     raise ValueError(f"LLM_MAX_RETRIES must be >= 0, got {LLM_MAX_RETRIES}")
 
 
-def _call_upper_bound(timeout: float, retry_after_cap: float) -> float:
-    """Worst case for one SDK call: every attempt times out, and every gap
-    between attempts waits the longest Retry-After the SDK will honour."""
-    return timeout * (LLM_MAX_RETRIES + 1) + retry_after_cap * LLM_MAX_RETRIES
-
-
 def analysis_lease_seconds(citation_count: int) -> int:
     """How long to lease `citation_count` citations for.
 
-    Derived from the per-call limits rather than guessed. One citation does an
-    embedding and up to LLM_MAX_FIX_ATTEMPTS Claude calls, all inside a single
-    concurrency slot; the slots run in ceil(n / LLM_CONCURRENCY) rounds.
+    Each citation holds a concurrency slot for at most
+    ANALYSIS_CITATION_DEADLINE_SECONDS, enforced by cancellation, and the slots
+    run in ceil(n / LLM_CONCURRENCY) rounds. Rounded up: truncating a
+    fractional deadline would make the lease shorter than the work.
 
-    The result is long — about 16 minutes for one round at the defaults. That
-    is the honest bound, and its only cost is slower recovery after a crash.
-    A shorter lease can expire while a worker is still paying, which lets a
-    second request take over and pay again.
+    At the defaults one round is 6 minutes and 50 citations about 66. That is
+    how long a citation stays blocked if its worker dies — including one that
+    dies before paying for anything. It is a deliberate trade against lease
+    renewal, which would recover in minutes but needs a heartbeat running
+    alongside the work.
 
-    This bounds the work, not the process: a worker paused by the OS beyond
-    the bound can still outlive its lease. The tombstones in citation_claims
-    stop such a worker overwriting a successor's result; they cannot refund
-    the second payment.
+    This bounds the work, not the process: a worker the OS suspends past the
+    lease can still outlive it. Tombstones in citation_claims stop it
+    overwriting a successor's result; they cannot refund a second payment.
     """
-    per_citation = (
-        _call_upper_bound(EMBEDDING_TIMEOUT_SECONDS, OPENAI_MAX_RETRY_AFTER_SECONDS)
-        + LLM_MAX_FIX_ATTEMPTS
-        * _call_upper_bound(CLAUDE_TIMEOUT_SECONDS, ANTHROPIC_MAX_RETRY_AFTER_SECONDS)
-    )
     rounds = -(-citation_count // LLM_CONCURRENCY)   # ceil division
-    return int(ANALYSIS_LEASE_MARGIN_SECONDS + rounds * per_citation)
+    return math.ceil(
+        ANALYSIS_LEASE_MARGIN_SECONDS + rounds * ANALYSIS_CITATION_DEADLINE_SECONDS
+    )
 
 # langchain-core pulls in langsmith, whose tracing client uploads prompts
 # and completions to an external service when enabled. It is off unless
