@@ -211,7 +211,9 @@ async def test_search_fails_open_when_embedding_breaks(fake_index, monkeypatch):
     monkeypatch.setattr(rr, "embed_query", boom)
     citation = {"raw_text": "Meichenbaum, D. (1977). Title. Publisher.",
                 "issues": [{"type": "format_violation", "reason": "Title should be italic"}]}
-    assert await rr.search(citation) == []
+    result = await rr.search(citation)
+    assert result.chunks == []
+    assert result.ok is False, "an outage must be distinguishable from a miss"
 
 
 async def test_search_fails_open_when_the_index_is_unusable(tmp_path, monkeypatch):
@@ -224,7 +226,9 @@ async def test_search_fails_open_when_the_index_is_unusable(tmp_path, monkeypatc
     monkeypatch.setattr(rr, "embed_query", fake_embed)
     citation = {"raw_text": "Anon. (2020). Title. Publisher.",
                 "issues": [{"type": "format_violation", "reason": "Title should be italic"}]}
-    assert await rr.search(citation) == []
+    result = await rr.search(citation)
+    assert result.chunks == []
+    assert result.ok is False, "an outage must be distinguishable from a miss"
 
 
 async def test_search_is_inert_without_an_embedding_key(monkeypatch):
@@ -238,7 +242,9 @@ async def test_search_is_inert_without_an_embedding_key(monkeypatch):
         called = True
         return [0.0] * DIM
     monkeypatch.setattr(rr, "embed_query", tracker)
-    assert await rr.search({"raw_text": "x", "issues": []}) == []
+    result = await rr.search({"raw_text": "x", "issues": []})
+    assert result.chunks == []
+    assert result.ok is True, "no key is not a failure — retrieval was never going to run"
     assert not called
 
 
@@ -252,7 +258,7 @@ async def test_search_returns_top_k_chunks(fake_index, monkeypatch):
                      "Studies in Second Language Acquisition, 44(3), 685-707."),
         "issues": [{"type": "field_mismatch", "reason": "Author name mismatch"}],
     }
-    hits = await rr.search(citation, top_k=2)
+    hits = (await rr.search(citation, top_k=2)).chunks
     assert len(hits) == 2
     assert hits[0].chunk_id == "apa7-author-name-format"
 

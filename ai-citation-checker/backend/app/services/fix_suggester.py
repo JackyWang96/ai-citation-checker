@@ -24,7 +24,12 @@ def _fixable(citation: dict) -> bool:
     """A reference citation carrying at least one rewrite-fixable issue."""
     if citation.get("kind") != "reference":
         return False
-    if citation.get("suggestion"):   # already analysed — don't pay twice
+    # Already analysed — don't pay twice. The "declined" case covers a loop
+    # that ran and produced nothing usable: without it such a citation looks
+    # untouched and every click repeats the whole cost. Compared explicitly, so
+    # a future status like "failed" cannot silently count as finished — it must
+    # leave the citation retryable, and an open-ended truthy test would not.
+    if citation.get("suggestion") or citation.get("suggestion_status") == "declined":
         return False
     return any(
         i.get("type") in _FIXABLE_ISSUE_TYPES

@@ -7,7 +7,7 @@ report so a shared link keeps them and a re-run doesn't pay twice.
 import json
 import app.config as cfg
 from fastapi import APIRouter, Response
-from app.storage.db import get_report, update_report
+from app.storage.db import get_report, merge_citation_fields
 from app.services.fix_suggester import suggest_fixes
 
 router = APIRouter()
@@ -28,14 +28,11 @@ async def analyze_report(report_id: str, response: Response):
     suggestions = await suggest_fixes(report.get("citations", []))
 
     if suggestions:
-        for c in report["citations"]:
-            fix = suggestions.get(c["id"])
-            if fix:
-                c["suggestion"] = fix["suggestion"]
-                c["suggestion_explanation"] = fix["suggestion_explanation"]
-                c["suggestion_verified"] = fix["suggestion_verified"]
-                c["suggestion_rule_basis"] = fix["suggestion_rule_basis"]
-                c["suggestion_validation"] = fix["suggestion_validation"]
-        await update_report(cfg.DB_PATH, report_id, json.dumps(report))
+        # Merged under the write lock rather than overwriting the snapshot this
+        # request read, so a concurrent analyse of the same report cannot erase
+        # results that were already paid for.
+        merged = await merge_citation_fields(cfg.DB_PATH, report_id, suggestions)
+        if merged is not None:
+            return merged
 
     return report

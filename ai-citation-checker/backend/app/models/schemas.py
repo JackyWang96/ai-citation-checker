@@ -24,6 +24,12 @@ class TextRun(BaseModel):
     italic: bool
 
 
+class RuleBasis(BaseModel):
+    chunk_id: str
+    title: str
+    source_url: str
+
+
 class Citation(BaseModel):
     id: str
     kind: Literal["intext", "reference"]
@@ -41,11 +47,17 @@ class Citation(BaseModel):
     # suggestion is still shown — it is usually closer than the original — but
     # it must be presented as an unverified draft, never as a verified fix.
     suggestion_verified: bool = False
-    # chunk_ids of the APA guidance the rewrite relied on. Filtered against
-    # what was actually retrieved, so a hallucinated id can never reach the UI.
-    suggestion_rule_basis: list[str] = []
+    # The APA guidance the rewrite relied on. Title and URL are read from the
+    # retrieved chunks, never from the model's output — a hallucinated source
+    # link would be a fabricated citation used to justify a fix, in a tool
+    # built to catch fabricated citations.
+    suggestion_rule_basis: list[RuleBasis] = []
     # Rules the suggestion still violates; only populated when unverified.
     suggestion_validation: list[str] = []
+    # "declined" means the loop ran and produced nothing usable. Without it the
+    # citation looks unanalysed forever, so the button stays lit and every
+    # click pays for the same work again.
+    suggestion_status: Optional[Literal["declined"]] = None
 
 
 class Report(BaseModel):

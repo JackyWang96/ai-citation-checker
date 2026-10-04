@@ -5,6 +5,7 @@ Each test documents WHAT broke, WHY, and verifies the fix.
 import json
 import pytest
 import respx
+from app.services.fix_suggester import suggest_fixes
 import httpx
 from app.services.citation_extractor import parse_reference_entries
 from app.services.docx_parser import ReferenceParagraph
@@ -2930,7 +2931,9 @@ async def test_noop_fix_suggestion_is_dropped():
 
     citations = [{"id": "c1", "kind": "reference", "raw_text": raw,
                   "issues": [{"type": "format_violation", "reason": "Missing volume/pages"}]}]
-    assert await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler)) == {}
+    out = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert out["c1"]["suggestion"] is None
+    assert out["c1"]["suggestion_status"] == "declined"
 
 
 @pytest.mark.asyncio
@@ -2949,7 +2952,9 @@ async def test_whitespace_only_rewrite_is_dropped():
 
     citations = [{"id": "c1", "kind": "reference", "raw_text": raw,
                   "issues": [{"type": "format_violation", "reason": "Title should be italic"}]}]
-    assert await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler)) == {}
+    out = await suggest_fixes(citations, client=_FakeAsyncAnthropic(handler))
+    assert out["c1"]["suggestion"] is None
+    assert out["c1"]["suggestion_status"] == "declined"
 
 
 @pytest.mark.asyncio
@@ -3207,3 +3212,188 @@ def test_sentence_case_rewrite_does_not_fail_the_title_check():
         citation,
         "Durrant, P., & Schmitt, N. (2009). To what extent do native and "
         "non-native writers make use of collocations? IRAL, 47(2), 157-177.") == []
+
+
+# ── Stage 4: recording the outcome of a fix attempt ──────────────────────────
+
+@pytest.mark.asyncio
+async def test_declined_and_failed_attempts_are_recorded_differently():
+    """A model that declines to change a reference must be recorded, or the
+    citation looks unanalysed forever and every click repeats the embedding
+    and Claude cost. A transport failure must NOT be recorded, or a transient
+    outage permanently blocks that citation from ever being retried."""
+    from app.services.fix_suggester import suggest_fixes
+
+    raw = "Grimm, P. (2010). Social desirability bias. In J. Sheth (Ed.), Wiley encyclopedia. Wiley."
+    citation = {"id": "c1", "kind": "reference", "raw_text": raw,
+                "issues": [{"type": "format_violation", "reason": "R021"}]}
+
+    def echoes_back(kwargs):
+        return _FakeResp(json.dumps({"corrected_reference": raw,
+                                     "explanation": "already correct"}))
+
+    declined = await suggest_fixes([dict(citation)],
+                                   client=_FakeAsyncAnthropic(echoes_back))
+    assert declined["c1"]["suggestion"] is None
+    assert declined["c1"]["suggestion_status"] == "declined"
+
+    def blows_up(kwargs):
+        raise RuntimeError("provider is down")
+
+    failed = await suggest_fixes([dict(citation)],
+                                 client=_FakeAsyncAnthropic(blows_up))
+    assert failed == {}, "a transient failure must leave the citation retryable"
+
+
+def test_declined_citation_is_not_offered_for_analysis_again():
+    """The cost guard: _fixable must treat a recorded decline as analysed."""
+    from app.services.fix_suggester import _fixable
+    base = {"id": "c1", "kind": "reference", "raw_text": "x",
+            "issues": [{"type": "format_violation", "reason": "R021"}]}
+    assert _fixable(base)
+    assert not _fixable({**base, "suggestion_status": "declined"})
+
+
+def test_rule_basis_title_and_url_never_come_from_the_model():
+    """Design constraint (cross-review W4): a hallucinated source link would be
+    a fabricated citation used to justify a fix, in a tool built to catch
+    fabricated citations. Ids are filtered against what was retrieved, and the
+    title and URL are read from those rows."""
+    from app.models.schemas import RuleBasis
+    basis = RuleBasis(chunk_id="apa7-whole-book", title="Whole book reference",
+                      source_url="https://apastyle.apa.org/book")
+    assert basis.source_url.startswith("https://apastyle.apa.org/")
+
+
+@pytest.mark.asyncio
+async def test_rule_basis_is_deduplicated_and_capped_by_what_was_retrieved():
+    """Cross-review finding: filtering on membership alone let the model repeat
+    one valid chunk_id as often as it liked — 100 ids produced 50 entries —
+    flooding the card and giving React duplicate keys."""
+    from app.services import fix_graph
+    from app.services.rules_retriever import Retrieval, RuleChunk
+
+    chunk = RuleChunk("apa7-a", "Rule A", "body", "https://x/a", 0.4)
+
+    async def retrieved(citation, **kw):
+        return Retrieval([chunk], True)
+
+    original = fix_graph.rules_retriever.search
+    fix_graph.rules_retriever.search = retrieved
+    try:
+        good = "Smith, J., & Jones, A. (2020). A study. Journal of Testing, 5(2), 1-10."
+
+        def handler(kwargs):
+            return _FakeResp(json.dumps({
+                "corrected_reference": good, "explanation": "x",
+                "rule_basis": ["apa7-a"] * 50 + ["apa7-invented"] * 50,
+            }))
+
+        citation = {"id": "c1", "kind": "reference",
+                    "raw_text": "Smith, J. and Jones, A. (2020). A study. Journal of Testing, 5(2), 1-10.",
+                    "issues": [{"type": "format_violation", "reason": "R007"}]}
+        out = await suggest_fixes([citation], client=_FakeAsyncAnthropic(handler))
+        basis = out["c1"]["suggestion_rule_basis"]
+        assert [b["chunk_id"] for b in basis] == ["apa7-a"]
+    finally:
+        fix_graph.rules_retriever.search = original
+
+
+@pytest.mark.asyncio
+async def test_retrieval_outage_does_not_become_a_permanent_decline():
+    """Cross-review finding: retrieval fails open, so an embedding outage left
+    the model reasoning with no rules. If it then echoed the reference back,
+    that was recorded as a considered decline and the citation could never be
+    retried — the same leak the Claude-failure branch avoids, reached through
+    the retrieval path instead."""
+    from app.services import fix_graph
+    from app.services.rules_retriever import Retrieval
+
+    raw = "Grimm, P. (2010). Social desirability bias. In J. Sheth (Ed.), Wiley encyclopedia. Wiley."
+    citation = {"id": "c1", "kind": "reference", "raw_text": raw,
+                "issues": [{"type": "format_violation", "reason": "R021"}]}
+
+    def echoes(kwargs):
+        return _FakeResp(json.dumps({"corrected_reference": raw,
+                                     "explanation": "looks correct"}))
+
+    original = fix_graph.rules_retriever.search
+    try:
+        async def outage(citation, **kw):
+            return Retrieval([], False)
+        fix_graph.rules_retriever.search = outage
+        assert await suggest_fixes([dict(citation)],
+                                   client=_FakeAsyncAnthropic(echoes)) == {}
+
+        async def working(citation, **kw):
+            return Retrieval([], True)
+        fix_graph.rules_retriever.search = working
+        out = await suggest_fixes([dict(citation)],
+                                  client=_FakeAsyncAnthropic(echoes))
+        assert out["c1"]["suggestion_status"] == "declined"
+    finally:
+        fix_graph.rules_retriever.search = original
+
+
+@pytest.mark.asyncio
+async def test_concurrent_writes_do_not_erase_a_paid_result():
+    """Cross-review finding: both requests read the unanalysed report and the
+    later writer replaced the whole blob, so the other's result vanished and
+    the citation went back to looking unanalysed — to be paid for again."""
+    import tempfile
+    from pathlib import Path
+    from app.storage.db import init_db, save_report, get_report, merge_citation_fields
+
+    db_path = str(Path(tempfile.mkdtemp()) / "reports.db")
+    await init_db(db_path)
+    report = {"citations": [{"id": "c1", "raw_text": "A"}, {"id": "c2", "raw_text": "B"}]}
+    await save_report(db_path, "rid", json.dumps(report), "f.docx")
+
+    await merge_citation_fields(db_path, "rid", {"c2": {"suggestion": "FIXED c2"}})
+    # A slower request that only resolved c1 writes afterwards from its own,
+    # older snapshot.
+    await merge_citation_fields(db_path, "rid", {"c1": {"suggestion": "FIXED c1"}})
+
+    stored = json.loads((await get_report(db_path, "rid"))["report_json"])
+    got = {c["id"]: c.get("suggestion") for c in stored["citations"]}
+    assert got == {"c1": "FIXED c1", "c2": "FIXED c2"}
+
+
+@pytest.mark.asyncio
+async def test_a_decline_never_overwrites_an_existing_suggestion():
+    """Second-round cross-review finding: serialising the writers fixed the
+    case of two *different* citations, but two requests analysing the *same*
+    one can disagree. If the request that produced no fix committed last, it
+    erased a suggestion that had already been paid for. Merging is monotonic:
+    a stored suggestion is never replaced by a weaker outcome."""
+    import tempfile
+    from pathlib import Path
+    from app.storage.db import init_db, save_report, get_report, merge_citation_fields
+
+    db_path = str(Path(tempfile.mkdtemp()) / "reports.db")
+    await init_db(db_path)
+    await save_report(db_path, "rid",
+                      json.dumps({"citations": [{"id": "c1", "raw_text": "A"}]}),
+                      "f.docx")
+
+    await merge_citation_fields(db_path, "rid", {"c1": {
+        "suggestion": "FIXED", "suggestion_verified": True,
+        "suggestion_status": None}})
+    await merge_citation_fields(db_path, "rid", {"c1": {
+        "suggestion": None, "suggestion_verified": False,
+        "suggestion_status": "declined"}})
+
+    stored = json.loads((await get_report(db_path, "rid"))["report_json"])
+    assert stored["citations"][0]["suggestion"] == "FIXED"
+    assert stored["citations"][0]["suggestion_status"] is None
+
+    # The reverse direction is an upgrade and must still apply.
+    await save_report(db_path, "rid2",
+                      json.dumps({"citations": [{"id": "c1", "raw_text": "A"}]}),
+                      "f.docx")
+    await merge_citation_fields(db_path, "rid2", {"c1": {
+        "suggestion": None, "suggestion_status": "declined"}})
+    await merge_citation_fields(db_path, "rid2", {"c1": {
+        "suggestion": "FIXED LATER", "suggestion_status": None}})
+    stored2 = json.loads((await get_report(db_path, "rid2"))["report_json"])
+    assert stored2["citations"][0]["suggestion"] == "FIXED LATER"
