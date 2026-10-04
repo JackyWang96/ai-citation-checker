@@ -6,6 +6,7 @@ guarantee here has to hold through the database.
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 import uuid
 from pathlib import Path
@@ -51,8 +52,9 @@ async def db_path():
 
 
 async def test_only_one_owner_wins_a_citation(db_path):
-    """The core guarantee: whoever loses the claim must not analyse, so the
-    same rewrite is never bought twice."""
+    """Whoever loses the claim must not analyse. This shows a live lease
+    blocking a second claim; it is sequential, not a race between processes,
+    and says nothing about a lease that has expired."""
     a = await claim_citations(db_path, "rid", ["c1", "c2"], "owner-a", 180)
     b = await claim_citations(db_path, "rid", ["c1", "c2"], "owner-b", 180)
     assert a == {"c1", "c2"}
@@ -113,11 +115,14 @@ async def test_releasing_a_claim_allows_an_immediate_retry(db_path):
     assert await claim_citations(db_path, "rid", ["c1"], "retry", 180) == {"c1"}
 
 
-async def test_finalising_frees_the_lease(db_path):
-    await claim_citations(db_path, "rid", ["c1"], "first", 180)
+async def test_finalising_leaves_a_tombstone_and_frees_the_rest(db_path):
+    """A written citation keeps its row as a tombstone and can never be claimed
+    again; a claimed citation that produced nothing is released so it stays
+    retryable."""
+    await claim_citations(db_path, "rid", ["c1", "c2"], "first", 180)
     await merge_citation_fields(db_path, "rid", {"c1": {"suggestion": "DONE"}},
                                 owner="first")
-    assert await claim_citations(db_path, "rid", ["c1"], "second", 180) == {"c1"}
+    assert await claim_citations(db_path, "rid", ["c1", "c2"], "second", 180) == {"c2"}
 
 
 async def test_endpoint_charges_once_under_concurrent_requests(db_path, monkeypatch):
@@ -209,15 +214,75 @@ async def test_non_positive_lease_is_refused(db_path):
         await claim_citations(db_path, "rid", ["c1"], "o", 0)
 
 
-async def test_lease_scales_with_the_work():
-    """A fixed lease was a guess. Large reports queue behind the concurrency
-    limit, and once their lease ran out a second tab could take over and pay
-    again."""
-    small = cfg.analysis_lease_seconds(1)
-    large = cfg.analysis_lease_seconds(50)
-    assert large > small
-    rounds = -(-50 // cfg.LLM_CONCURRENCY)
-    assert large >= rounds * cfg.ANALYSIS_LEASE_PER_ROUND_SECONDS
+async def test_lease_covers_the_worst_case_of_the_work_it_guards():
+    """Cross-review finding: the lease was sized by a guessed 60s per round
+    while the SDKs defaulted to a 600s read timeout with two retries — an order
+    of magnitude more. It is now derived from explicit per-call limits."""
+    per_claude = cfg._call_upper_bound(cfg.CLAUDE_TIMEOUT_SECONDS,
+                                       cfg.ANTHROPIC_MAX_RETRY_AFTER_SECONDS)
+    per_embed = cfg._call_upper_bound(cfg.EMBEDDING_TIMEOUT_SECONDS,
+                                      cfg.OPENAI_MAX_RETRY_AFTER_SECONDS)
+    per_citation = per_embed + cfg.LLM_MAX_FIX_ATTEMPTS * per_claude
+
+    for n in (1, cfg.LLM_CONCURRENCY, cfg.LLM_CONCURRENCY + 1, 50):
+        rounds = -(-n // cfg.LLM_CONCURRENCY)
+        assert cfg.analysis_lease_seconds(n) >= rounds * per_citation, n
+
+
+def test_retry_after_caps_match_the_installed_sdks():
+    """The lease bound assumes the longest Retry-After each SDK will honour.
+    If a release raises either cap, the bound silently becomes a guess again —
+    so read the real values out of the installed SDKs and fail the build."""
+    import inspect
+    import anthropic._base_client as anthropic_client
+    import openai._base_client as openai_client
+
+    anthropic_src = inspect.getsource(
+        anthropic_client.BaseClient._calculate_retry_timeout)
+    honoured = re.search(r"retry_after\s*<=\s*(\d+)", anthropic_src)
+    assert honoured, "anthropic changed how it caps Retry-After; re-derive the bound"
+    assert int(honoured.group(1)) <= cfg.ANTHROPIC_MAX_RETRY_AFTER_SECONDS
+
+    assert openai_client.MAX_RETRY_AFTER_DELAY <= cfg.OPENAI_MAX_RETRY_AFTER_SECONDS
+
+
+def test_paid_clients_are_built_with_the_limits_the_lease_assumes(monkeypatch):
+    """The bound is only true if the clients actually use these limits; the
+    SDK defaults would silently undo it.
+
+    Records the constructor arguments and stops there. An earlier version let
+    the call proceed, which made a real, billed Anthropic request from the unit
+    suite on any machine with a key configured."""
+    import asyncio
+    import anthropic
+    import openai
+    from app.services import embeddings, fix_suggester
+
+    class _Stop(Exception):
+        pass
+
+    seen = {}
+
+    def recorder(name):
+        def build(*args, **kwargs):
+            seen[name] = kwargs
+            raise _Stop          # never reach the network
+        return build
+
+    monkeypatch.setattr(anthropic, "AsyncAnthropic", recorder("claude"))
+    monkeypatch.setattr(openai, "AsyncOpenAI", recorder("embed"))
+
+    citation = {"id": "c1", "kind": "reference", "raw_text": "A",
+                "issues": [{"type": "format_violation", "reason": "x"}]}
+    with pytest.raises(_Stop):
+        asyncio.run(fix_suggester.suggest_fixes([citation]))
+    with pytest.raises(_Stop):
+        asyncio.run(embeddings.embed_query("x"))
+
+    assert seen["claude"]["timeout"] == cfg.CLAUDE_TIMEOUT_SECONDS
+    assert seen["claude"]["max_retries"] == cfg.LLM_MAX_RETRIES
+    assert seen["embed"]["timeout"] == cfg.EMBEDDING_TIMEOUT_SECONDS
+    assert seen["embed"]["max_retries"] == cfg.LLM_MAX_RETRIES
 
 
 async def test_report_removed_mid_analysis_answers_410(db_path, monkeypatch):
@@ -264,3 +329,45 @@ async def test_cleanup_removes_expired_and_orphaned_claims(db_path):
     async with aiosqlite.connect(db_path) as db:
         cur = await db.execute("SELECT COUNT(*) FROM citation_claims")
         assert (await cur.fetchone())[0] == 0
+
+
+async def test_a_stale_worker_cannot_overwrite_a_successor_that_already_finished(db_path):
+    """The finalize order cross-review called the most dangerous, and which no
+    test covered. A's lease lapses; B takes over, finishes and releases. When
+    finalize deleted rows, B's completion left no trace, so A saw no other
+    owner and wrote over B's result. B now leaves a tombstone, and A is
+    refused."""
+    await claim_citations(db_path, "rid", ["c1"], "A", 180)
+    await _expire(db_path, "rid", "A")
+    assert await claim_citations(db_path, "rid", ["c1"], "B", 180) == {"c1"}
+
+    await merge_citation_fields(db_path, "rid", {"c1": {"suggestion": "B"}}, owner="B")
+    await merge_citation_fields(db_path, "rid", {"c1": {"suggestion": "A"}}, owner="A")
+
+    stored = json.loads((await get_report(db_path, "rid"))["report_json"])
+    assert stored["citations"][0]["suggestion"] == "B"
+
+
+async def test_winning_means_the_insert_landed(db_path):
+    """The previous winner check filtered on expires_at > now, with now taken
+    at the start of the same transaction — every freshly inserted row passed by
+    construction. Winners are now the rows this call actually inserted."""
+    assert await claim_citations(db_path, "rid", ["c1"], "A", 180) == {"c1"}
+    # Same owner again: nothing new lands, so nothing is won.
+    assert await claim_citations(db_path, "rid", ["c1"], "A", 180) == set()
+
+
+async def test_existing_database_gains_the_tombstone_column(tmp_path):
+    """CREATE TABLE IF NOT EXISTS never adds a column, so a database created
+    before the tombstone existed would otherwise run without it."""
+    import aiosqlite
+    path = str(tmp_path / "old.db")
+    async with aiosqlite.connect(path) as db:
+        await db.execute(
+            "CREATE TABLE citation_claims (report_id TEXT NOT NULL, "
+            "citation_id TEXT NOT NULL, owner TEXT NOT NULL, "
+            "expires_at TIMESTAMP NOT NULL, PRIMARY KEY (report_id, citation_id))")
+        await db.commit()
+    await init_db(path)
+    await init_db(path)   # idempotent
+    assert await claim_citations(path, "r", ["c1"], "o", 60) == {"c1"}

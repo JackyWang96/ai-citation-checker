@@ -89,7 +89,14 @@ async def suggest_fixes(
 
     owns_client = client is None
     if owns_client:
-        client = anthropic.AsyncAnthropic(api_key=cfg.ANTHROPIC_API_KEY)
+        client = anthropic.AsyncAnthropic(
+            api_key=cfg.ANTHROPIC_API_KEY,
+            # Explicit, because analysis_lease_seconds() is derived from
+            # these. The SDK default (600s, 2 retries) has no bound the
+            # lease could be sized against.
+            timeout=cfg.CLAUDE_TIMEOUT_SECONDS,
+            max_retries=cfg.LLM_MAX_RETRIES,
+        )
 
     sem = asyncio.Semaphore(cfg.LLM_CONCURRENCY)
     try:

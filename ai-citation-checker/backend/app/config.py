@@ -26,27 +26,66 @@ LLM_CONCURRENCY = int(os.getenv("LLM_CONCURRENCY", "4"))
 # retry: the first pass fixes most references, and a second failure
 # usually means the rules can't be satisfied from the text available.
 LLM_MAX_FIX_ATTEMPTS = int(os.getenv("LLM_MAX_FIX_ATTEMPTS", "2"))
-# Lease length is sized to the work, not fixed. A fixed 180s was a guess: a
-# large report queues behind LLM_CONCURRENCY, so its last citations can start
-# paying with most of the lease already gone, and once it expires a second tab
-# takes over and pays again. Sized as base + one slot per round of concurrent
-# work. A long lease only delays recovery after a crash, which is cheap; a
-# short one causes double billing, which is not.
-ANALYSIS_LEASE_BASE_SECONDS = int(os.getenv("ANALYSIS_LEASE_BASE_SECONDS", "60"))
-ANALYSIS_LEASE_PER_ROUND_SECONDS = int(
-    os.getenv("ANALYSIS_LEASE_PER_ROUND_SECONDS", "60")
-)
-for _name in ("ANALYSIS_LEASE_BASE_SECONDS", "ANALYSIS_LEASE_PER_ROUND_SECONDS",
-              "LLM_CONCURRENCY"):
+# Explicit per-call limits for the two paid APIs. Left to the SDK defaults —
+# 600s read timeout, two retries — a single Claude call could legitimately run
+# for half an hour, and the analysis lease below had nothing real to be sized
+# against.
+CLAUDE_TIMEOUT_SECONDS = float(os.getenv("CLAUDE_TIMEOUT_SECONDS", "60"))
+EMBEDDING_TIMEOUT_SECONDS = float(os.getenv("EMBEDDING_TIMEOUT_SECONDS", "30"))
+LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "2"))
+
+# The longest each SDK will wait between retries when the server sends a
+# Retry-After header. Both honour it in preference to their own 8s backoff
+# cap, and they differ: anthropic accepts up to 60s, openai up to 120s.
+# tests/test_analysis_claims.py checks these against the installed SDKs, so a
+# release that raises either cap fails the build instead of silently making
+# the lease too short.
+ANTHROPIC_MAX_RETRY_AFTER_SECONDS = 60
+OPENAI_MAX_RETRY_AFTER_SECONDS = 120
+
+ANALYSIS_LEASE_MARGIN_SECONDS = int(os.getenv("ANALYSIS_LEASE_MARGIN_SECONDS", "60"))
+
+for _name in ("CLAUDE_TIMEOUT_SECONDS", "EMBEDDING_TIMEOUT_SECONDS",
+              "ANALYSIS_LEASE_MARGIN_SECONDS", "LLM_CONCURRENCY",
+              "LLM_MAX_FIX_ATTEMPTS"):
     if globals()[_name] <= 0:
         # Zero or negative would hand out leases that are already expired, so
         # workers would start paying with no protection at all.
         raise ValueError(f"{_name} must be positive, got {globals()[_name]}")
+if LLM_MAX_RETRIES < 0:
+    raise ValueError(f"LLM_MAX_RETRIES must be >= 0, got {LLM_MAX_RETRIES}")
+
+
+def _call_upper_bound(timeout: float, retry_after_cap: float) -> float:
+    """Worst case for one SDK call: every attempt times out, and every gap
+    between attempts waits the longest Retry-After the SDK will honour."""
+    return timeout * (LLM_MAX_RETRIES + 1) + retry_after_cap * LLM_MAX_RETRIES
 
 
 def analysis_lease_seconds(citation_count: int) -> int:
+    """How long to lease `citation_count` citations for.
+
+    Derived from the per-call limits rather than guessed. One citation does an
+    embedding and up to LLM_MAX_FIX_ATTEMPTS Claude calls, all inside a single
+    concurrency slot; the slots run in ceil(n / LLM_CONCURRENCY) rounds.
+
+    The result is long — about 16 minutes for one round at the defaults. That
+    is the honest bound, and its only cost is slower recovery after a crash.
+    A shorter lease can expire while a worker is still paying, which lets a
+    second request take over and pay again.
+
+    This bounds the work, not the process: a worker paused by the OS beyond
+    the bound can still outlive its lease. The tombstones in citation_claims
+    stop such a worker overwriting a successor's result; they cannot refund
+    the second payment.
+    """
+    per_citation = (
+        _call_upper_bound(EMBEDDING_TIMEOUT_SECONDS, OPENAI_MAX_RETRY_AFTER_SECONDS)
+        + LLM_MAX_FIX_ATTEMPTS
+        * _call_upper_bound(CLAUDE_TIMEOUT_SECONDS, ANTHROPIC_MAX_RETRY_AFTER_SECONDS)
+    )
     rounds = -(-citation_count // LLM_CONCURRENCY)   # ceil division
-    return ANALYSIS_LEASE_BASE_SECONDS + rounds * ANALYSIS_LEASE_PER_ROUND_SECONDS
+    return int(ANALYSIS_LEASE_MARGIN_SECONDS + rounds * per_citation)
 
 # langchain-core pulls in langsmith, whose tracing client uploads prompts
 # and completions to an external service when enabled. It is off unless

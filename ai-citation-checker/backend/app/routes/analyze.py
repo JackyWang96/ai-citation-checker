@@ -82,8 +82,10 @@ async def analyze_report(report_id: str, response: Response):
 
     if suggestions:
         # Merged under the write lock rather than overwriting the snapshot this
-        # request read, and gated on the lease still being ours, so neither a
-        # concurrent analyse nor a lease takeover can be clobbered.
+        # request read. A citation is skipped if anyone else has a row for it —
+        # in flight or finished — so a takeover's result is never overwritten.
+        # Our own lease need not still be live: work that outlived it with no
+        # successor was still paid for, and dropping it would mean paying again.
         merged = await merge_citation_fields(
             cfg.DB_PATH, report_id, suggestions, owner=owner
         )
