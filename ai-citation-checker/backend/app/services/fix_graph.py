@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any, Optional, TypedDict
+from typing import Any, NamedTuple, Optional, TypedDict
 
 import anthropic
 from langgraph.graph import END, StateGraph
@@ -63,6 +63,8 @@ class FixState(TypedDict, total=False):
     client: Any            # AsyncAnthropic; never serialised (no checkpointer)
     rules: list[Any]       # RuleChunk
     retrieval_ok: bool
+    billed: bool           # sticky: once any Claude call returned, never reset
+    generation_failed: bool
     suggestion: str
     explanation: str
     rule_basis: list[dict]
@@ -134,6 +136,24 @@ async def retrieve_rules(state: FixState) -> FixState:
 
 
 async def generate_fix(state: FixState) -> FixState:
+    """One Claude attempt.
+
+    The call and the parse are separate failure points because they are
+    billed differently. One `except` used to cover both, so a response that
+    was charged for and then failed to parse looked exactly like a request
+    that never reached the API — and both were released for retry, paying
+    again for the parse failure on every click.
+
+    `billed` is only ever set True, never False: LangGraph overwrites keys a
+    node returns, so returning False on a later failed attempt would erase an
+    earlier attempt's charge.
+
+    A failed attempt leaves `suggestion` alone rather than blanking it. When a
+    retry fails, the previous attempt's draft — unverified, but paid for — is
+    still the best answer available. Blanking it threw that draft away and
+    left the citation looking unanalysed, to be paid for again.
+    `generation_failed` carries the "stop retrying" signal instead.
+    """
     attempts = state.get("attempts", 0) + 1
     try:
         resp = await state["client"].messages.create(
@@ -145,11 +165,29 @@ async def generate_fix(state: FixState) -> FixState:
             output_config={"format": {"type": "json_schema",
                                       "schema": _OUTPUT_SCHEMA}},
         )
+    except anthropic.APITimeoutError:
+        # Checked before APIConnectionError, which it subclasses. The client
+        # stopped waiting; the server may well have finished and charged.
+        logger.warning("fix generation timed out; treating as billed", exc_info=True)
+        return {"attempts": attempts, "generation_failed": True, "billed": True}
+    except (anthropic.APIConnectionError, anthropic.APIStatusError):
+        # The API answered with an error, or was never reached. No completion
+        # was produced, so nothing was charged.
+        logger.warning("fix generation failed before a response", exc_info=True)
+        return {"attempts": attempts, "generation_failed": True}
+    except Exception:
+        # Unknown: never refund on a guess.
+        logger.warning("fix generation failed unexpectedly", exc_info=True)
+        return {"attempts": attempts, "generation_failed": True, "billed": True}
+
+    # A response exists from here on, so it was charged whether or not it is
+    # usable. Truncated output (max_tokens) and refusals both land here.
+    try:
         text = next((b.text for b in resp.content if b.type == "text"), "")
         data = json.loads(text)
     except Exception:
-        logger.warning("fix generation failed", exc_info=True)
-        return {"attempts": attempts, "suggestion": ""}
+        logger.warning("fix response could not be parsed (billed)", exc_info=True)
+        return {"attempts": attempts, "generation_failed": True, "billed": True}
 
     # rule_basis comes from the model and may name chunks that were never
     # retrieved. Showing a hallucinated rule as the justification for a fix
@@ -178,6 +216,8 @@ async def generate_fix(state: FixState) -> FixState:
         "suggestion": (data.get("corrected_reference") or "").strip(),
         "explanation": (data.get("explanation") or "").strip(),
         "rule_basis": basis,
+        "billed": True,
+        "generation_failed": False,
     }
 
 
@@ -190,10 +230,15 @@ async def validate_fix(state: FixState) -> FixState:
 
 
 def should_retry(state: FixState) -> str:
+    if state.get("generation_failed"):
+        # Retrying a transport failure spends another call on the same outage.
+        # Checked by flag, not by an empty suggestion: a failed retry now keeps
+        # the previous attempt's draft in place.
+        return "done"
     if not state.get("validation"):
         return "done"
     if not state.get("suggestion"):
-        return "done"          # generation failed; retrying won't help
+        return "done"
     if state.get("attempts", 0) >= cfg.LLM_MAX_FIX_ATTEMPTS:
         return "done"
     return "retry"
@@ -218,26 +263,37 @@ def _build_graph():
 _graph = _build_graph()
 
 
-async def run_fix(
-    citation: dict, client: anthropic.AsyncAnthropic
-) -> Optional[dict]:
-    """Return the outcome for one citation, or None if it should stay retryable.
+class FixOutcome(NamedTuple):
+    """What one citation produced, and whether producing it cost money.
 
-    Three outcomes. A usable rewrite is returned, marked verified or not. A
-    considered decline — the model saw the rules and judged the reference
-    correct — is returned with `suggestion=None` and status "declined", so it
-    is not re-analysed and re-charged. Anything that went wrong (generation
-    failed, or the model declined while retrieval was down) returns None: the
-    citation stays unanalysed and the user can try again."""
+    `payload` None means nothing usable came back and the citation stays
+    retryable. `billed` decides what that retry costs the user's budget: a
+    failure that charged nothing is refunded, one that charged — or might
+    have — counts toward the per-citation cap.
+    """
+    payload: Optional[dict]
+    billed: bool
+
+
+async def run_fix_outcome(
+    citation: dict, client: anthropic.AsyncAnthropic
+) -> FixOutcome:
+    """Run the loop for one citation and settle what it produced.
+
+    Three ways it ends. A usable rewrite, verified or not. A considered
+    decline — the model saw the rules and judged the reference correct —
+    recorded as status "declined" so it is not re-analysed. Or nothing usable,
+    which leaves the citation retryable; `billed` then says whether that try
+    cost money."""
     final = await _graph.ainvoke({"citation": citation, "client": client,
-                                  "attempts": 0})
+                                  "attempts": 0, "billed": False})
+    billed = bool(final.get("billed"))
     suggestion = final.get("suggestion") or ""
     if not suggestion:
-        # Generation failed — a transport error or unparseable response. This
-        # must NOT be recorded as an outcome: the citation stays unanalysed so
-        # the user can retry once the outage passes. Marking it would make a
-        # transient failure permanent.
-        return None
+        # Nothing usable. Retryable either way; `billed` separates a request
+        # that never reached the API from a response that was charged for and
+        # then failed to parse or came back truncated.
+        return FixOutcome(None, billed)
 
     # The model sometimes concludes no change is needed but still echoes the
     # reference back. Rendering that as a suggestion shows the user an "AI fix"
@@ -246,26 +302,31 @@ async def run_fix(
         if not final.get("retrieval_ok", True):
             # Retrieval was down, so the model judged this with no rules in
             # front of it. Recording that as a considered decline would make an
-            # outage permanent — the same leak the failure branch above avoids,
-            # reached through the retrieval path instead of the Claude one.
-            return None
-        # Recorded, unlike the failure above: the model gave a considered
-        # answer, and asking again costs another embedding and Claude call to
-        # get the same one. Without the marker the citation looks unanalysed
-        # and every click repeats that cost.
-        return {
+            # outage permanent. It stays retryable — and the call was charged,
+            # so the retry counts.
+            return FixOutcome(None, billed)
+        # Recorded: the model gave a considered answer, and asking again costs
+        # another embedding and Claude call to get the same one.
+        return FixOutcome({
             "suggestion": None,
             "suggestion_explanation": "",
             "suggestion_verified": False,
             "suggestion_rule_basis": [],
             "suggestion_validation": [],
             "suggestion_status": "declined",
-        }
-    return {
+        }, billed)
+    return FixOutcome({
         "suggestion": suggestion,
         "suggestion_explanation": final.get("explanation", ""),
         "suggestion_verified": bool(final.get("verified")),
         "suggestion_rule_basis": final.get("rule_basis") or [],
         "suggestion_validation": final.get("validation") or [],
         "suggestion_status": None,
-    }
+    }, billed)
+
+
+async def run_fix(
+    citation: dict, client: anthropic.AsyncAnthropic
+) -> Optional[dict]:
+    """The payload only, for callers that do not settle billing."""
+    return (await run_fix_outcome(citation, client)).payload

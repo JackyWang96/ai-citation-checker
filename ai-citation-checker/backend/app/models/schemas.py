@@ -54,10 +54,11 @@ class Citation(BaseModel):
     suggestion_rule_basis: list[RuleBasis] = []
     # Rules the suggestion still violates; only populated when unverified.
     suggestion_validation: list[str] = []
-    # "declined" means the loop ran and produced nothing usable. Without it the
-    # citation looks unanalysed forever, so the button stays lit and every
-    # click pays for the same work again.
-    suggestion_status: Optional[Literal["declined"]] = None
+    # Terminal outcomes. "declined": the model judged the reference already
+    # correct. "failed": ANALYSIS_MAX_BILLED_ATTEMPTS charged attempts produced
+    # nothing usable. Without a recorded status the citation looks unanalysed
+    # forever, so the button stays lit and every click pays again.
+    suggestion_status: Optional[Literal["declined", "failed"]] = None
 
 
 class Report(BaseModel):

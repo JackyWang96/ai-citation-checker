@@ -33,7 +33,7 @@ interface CitationData {
   suggestion_verified?: boolean
   suggestion_validation?: string[]
   suggestion_rule_basis?: (RuleBasis | string)[]
-  suggestion_status?: 'declined' | null
+  suggestion_status?: 'declined' | 'failed' | null
 }
 
 interface Props {
@@ -156,7 +156,7 @@ export default function IssueCard({ cit, isActive, onClick, onHover }: Props) {
           {/* The loop ran and produced nothing usable. Saying so beats showing
               nothing: the user paid for the attempt and would otherwise see no
               response to the button at all. */}
-          {!cit.suggestion && cit.suggestion_status === 'declined' && (
+          {!cit.suggestion && (cit.suggestion_status === 'declined' || cit.suggestion_status === 'failed') && (
             <div style={{ marginTop: 10, padding: '8px 10px', background: 'var(--bg)', border: '1px dashed var(--border)', borderRadius: 6, fontSize: 11.5, color: 'var(--text-3)' }}>
               {t.noFixAvailable}
             </div>

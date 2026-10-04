@@ -8,16 +8,22 @@ configured.
 from __future__ import annotations
 import asyncio
 import logging
-from typing import Optional
+from typing import NamedTuple, Optional
 import anthropic
 import app.config as cfg
-from app.services.fix_graph import run_fix
+from app.services.fix_graph import FixOutcome, run_fix_outcome
 
 logger = logging.getLogger(__name__)
 
 # Issue types that a rewrite can plausibly fix. A "not_found" reference can't
 # be corrected by reformatting, so those are left alone.
 _FIXABLE_ISSUE_TYPES = frozenset({"format_violation", "field_mismatch"})
+
+# Outcomes that end a citation's analysis for the life of the report.
+# "declined": the model judged the reference already correct.
+# "failed": it was charged ANALYSIS_MAX_BILLED_ATTEMPTS times and never
+# produced anything usable — retrying again would only pay again.
+TERMINAL_STATUSES = frozenset({"declined", "failed"})
 
 
 def fixable_citations(citations: list[dict]) -> list[dict]:
@@ -34,12 +40,12 @@ def _fixable(citation: dict) -> bool:
     """A reference citation carrying at least one rewrite-fixable issue."""
     if citation.get("kind") != "reference":
         return False
-    # Already analysed — don't pay twice. The "declined" case covers a loop
-    # that ran and produced nothing usable: without it such a citation looks
-    # untouched and every click repeats the whole cost. Compared explicitly, so
-    # a future status like "failed" cannot silently count as finished — it must
-    # leave the citation retryable, and an open-ended truthy test would not.
-    if citation.get("suggestion") or citation.get("suggestion_status") == "declined":
+    # Already analysed — don't pay twice. A terminal status covers a loop that
+    # ran and will not be retried: without it such a citation looks untouched
+    # and every click repeats the whole cost. Matched against an explicit set,
+    # so a status added later stays retryable until someone decides otherwise;
+    # an open-ended truthy test would silently treat it as finished.
+    if citation.get("suggestion") or citation.get("suggestion_status") in TERMINAL_STATUSES:
         return False
     return any(
         i.get("type") in _FIXABLE_ISSUE_TYPES
@@ -61,8 +67,20 @@ def _build_user_prompt(citation: dict) -> str:
     return "\n".join(lines)
 
 
-async def _suggest_one(client: anthropic.AsyncAnthropic, citation: dict,
-                       sem: asyncio.Semaphore) -> Optional[dict]:
+class Settlement(NamedTuple):
+    """The batch result, split the way the caller has to settle it.
+
+    `results` are written to the report. `unbilled` are citations that
+    produced nothing and cost nothing — their claimed attempt is refunded.
+    Every other claimed citation that is in neither counts as a charged
+    attempt, which is the safe default for anything uncertain.
+    """
+    results: dict[str, dict]
+    unbilled: set[str]
+
+
+async def _settle_one(client: anthropic.AsyncAnthropic, citation: dict,
+                      sem: asyncio.Semaphore) -> FixOutcome:
     """Run one citation through the fix loop.
 
     A single citation's failure must never fail the whole batch — the report
@@ -74,47 +92,60 @@ async def _suggest_one(client: anthropic.AsyncAnthropic, citation: dict,
             # are per phase and cannot be relied on to end a call; this cancels
             # it. A citation that runs out stays unanalysed and retryable.
             return await asyncio.wait_for(
-                run_fix(citation, client),
+                run_fix_outcome(citation, client),
                 timeout=cfg.ANALYSIS_CITATION_DEADLINE_SECONDS,
             )
         except Exception:
+            # Hit the deadline, or failed in a way the loop did not classify.
+            # Either could have happened after a response was charged, so
+            # assume it was: refunding on a guess would let the retry budget
+            # be spent without limit.
             logger.warning("fix loop failed for one citation", exc_info=True)
-            return None
+            return FixOutcome(None, billed=True)
 
 
-async def suggest_fixes(
+async def settle_fixes(
     citations: list[dict],
     client: Optional[anthropic.AsyncAnthropic] = None,
-) -> dict[str, dict]:
-    """Map citation id -> suggestion payload for every fixable citation that
-    produced a usable rewrite. `client` is injectable for tests; in production
-    it defaults to a key-configured AsyncAnthropic."""
+) -> Settlement:
+    """Analyse every fixable citation and report what each one cost.
+    `client` is injectable for tests; in production it defaults to a
+    key-configured AsyncAnthropic."""
     targets = [c for c in citations if _fixable(c)]
     if not targets:
-        return {}
+        return Settlement({}, set())
 
     owns_client = client is None
     if owns_client:
         client = anthropic.AsyncAnthropic(
             api_key=cfg.ANTHROPIC_API_KEY,
-            # Explicit, because analysis_lease_seconds() is derived from
-            # these. The SDK default (600s, 2 retries) has no bound the
-            # lease could be sized against.
+            # Explicit so a call does not burn its concurrency slot for the SDK
+            # default of half an hour before the per-citation deadline cuts it.
+            # These do not bound the lease — the deadline does.
             timeout=cfg.CLAUDE_TIMEOUT_SECONDS,
             max_retries=cfg.LLM_MAX_RETRIES,
         )
 
     sem = asyncio.Semaphore(cfg.LLM_CONCURRENCY)
     try:
-        results = await asyncio.gather(
-            *[_suggest_one(client, c, sem) for c in targets]
+        outcomes = await asyncio.gather(
+            *[_settle_one(client, c, sem) for c in targets]
         )
     finally:
         if owns_client:
             await client.close()
 
-    return {
-        c["id"]: r
-        for c, r in zip(targets, results)
-        if r is not None
-    }
+    return Settlement(
+        results={c["id"]: o.payload for c, o in zip(targets, outcomes)
+                 if o.payload is not None},
+        unbilled={c["id"] for c, o in zip(targets, outcomes)
+                  if o.payload is None and not o.billed},
+    )
+
+
+async def suggest_fixes(
+    citations: list[dict],
+    client: Optional[anthropic.AsyncAnthropic] = None,
+) -> dict[str, dict]:
+    """Map citation id -> payload for every citation that produced one."""
+    return (await settle_fixes(citations, client)).results

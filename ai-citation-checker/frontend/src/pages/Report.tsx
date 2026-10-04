@@ -42,7 +42,7 @@ interface Citation {
   suggestion_verified?: boolean
   suggestion_validation?: string[]
   suggestion_rule_basis?: (RuleBasis | string)[]
-  suggestion_status?: 'declined' | null
+  suggestion_status?: 'declined' | 'failed' | null
 }
 
 interface ReportData {
@@ -159,10 +159,11 @@ export default function Report() {
     (c) =>
       c.kind === 'reference' &&
       !c.suggestion &&
-      // A recorded decline counts as analysed. Without this the button stays
-      // lit and each click pays for the same work again. Compared explicitly
-      // so a future status like 'failed' cannot silently count as finished.
+      // A terminal status counts as analysed. Without this the button stays
+      // lit and each click pays for the same work again. Matched against an
+      // explicit list so a status added later is not silently treated as done.
       c.suggestion_status !== 'declined' &&
+      c.suggestion_status !== 'failed' &&
       c.issues.some((iss) => iss.type === 'format_violation' || iss.type === 'field_mismatch'),
   )
 

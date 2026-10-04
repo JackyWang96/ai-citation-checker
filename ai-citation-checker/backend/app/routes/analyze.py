@@ -10,9 +10,10 @@ import uuid
 import app.config as cfg
 from fastapi import APIRouter, Response
 
-from app.services.fix_suggester import fixable_citations, suggest_fixes
+from app.services.fix_suggester import fixable_citations, settle_fixes
 from app.storage.db import (
     claim_citations,
+    fail_exhausted_citations,
     get_report,
     merge_citation_fields,
     release_claims,
@@ -45,10 +46,20 @@ async def analyze_report(report_id: str, response: Response):
     # happens outside any database transaction, so a crash after paying and
     # before committing still leaves the work to be redone.
     owner = uuid.uuid4().hex
+    target_ids = [c["id"] for c in targets]
     won = await claim_citations(
-        cfg.DB_PATH, report_id, [c["id"] for c in targets], owner,
+        cfg.DB_PATH, report_id, target_ids, owner,
         cfg.analysis_lease_seconds(len(targets)),
     )
+
+    # A citation we wanted but could not win may simply be in someone else's
+    # hands — or its budget may be spent by a worker that died on its last
+    # attempt, so nobody ever marked it failed. Settle those now; otherwise
+    # the page keeps offering a button that can never win a claim.
+    lost = [cid for cid in target_ids if cid not in won]
+    swept = await fail_exhausted_citations(cfg.DB_PATH, report_id, lost)
+    if swept is not None:
+        report = swept
     if not won:
         return report
 
@@ -59,7 +70,9 @@ async def analyze_report(report_id: str, response: Response):
     # place nobody else can start them, so this read is the safe one.
     latest_row = await get_report(cfg.DB_PATH, report_id)
     if latest_row is None:
-        await release_claims(cfg.DB_PATH, report_id, owner)
+        # Nothing has been paid for yet, so every attempt claimed above is
+        # refunded — otherwise a vanished report would eat into the budget.
+        await release_claims(cfg.DB_PATH, report_id, owner, refund=set(won))
         response.status_code = 410
         return {"detail": "Report expired or not found"}
     report = json.loads(latest_row["report_json"])
@@ -68,35 +81,32 @@ async def analyze_report(report_id: str, response: Response):
                if c["id"] in won and c["id"] in still_fixable]
     stale = [cid for cid in won if cid not in still_fixable]
     if stale:
-        await release_claims(cfg.DB_PATH, report_id, owner, stale)
+        # Already finished by someone else; we never paid for these.
+        await release_claims(cfg.DB_PATH, report_id, owner, stale, refund=set(stale))
     if not claimed:
         return report
 
     try:
-        suggestions = await suggest_fixes(claimed)
+        settlement = await settle_fixes(claimed)
     except Exception:
-        # Release rather than wait out the lease: nothing was persisted, so the
-        # user should be able to retry immediately.
+        # Release so the user can retry immediately. No refund: this failed
+        # partway through, and some of it may already have been charged.
         await release_claims(cfg.DB_PATH, report_id, owner)
         raise
 
-    if suggestions:
-        # Merged under the write lock rather than overwriting the snapshot this
-        # request read. A citation is skipped if anyone else has a row for it —
-        # in flight or finished — so a takeover's result is never overwritten.
-        # Our own lease need not still be live: work that outlived it with no
-        # successor was still paid for, and dropping it would mean paying again.
-        merged = await merge_citation_fields(
-            cfg.DB_PATH, report_id, suggestions, owner=owner
-        )
-        if merged is None:
-            # The report was cleaned up while we were analysing. The results
-            # have nowhere to go; answering 200 with the old snapshot would
-            # tell the client the request succeeded and show it nothing.
-            await release_claims(cfg.DB_PATH, report_id, owner)
-            response.status_code = 410
-            return {"detail": "Report expired or not found"}
-        return merged
-
-    await release_claims(cfg.DB_PATH, report_id, owner)
-    return report
+    # Settle every claimed citation in one transaction — written, refunded,
+    # released, or given up as failed once its budget is spent. Merged under
+    # the write lock rather than over the snapshot this request read, and
+    # skipping any citation another worker holds or has finished, so a
+    # takeover's result is never overwritten.
+    merged = await merge_citation_fields(
+        cfg.DB_PATH, report_id, settlement.results, owner=owner,
+        refund=settlement.unbilled,
+    )
+    if merged is None:
+        # The report was cleaned up while we were analysing. The results have
+        # nowhere to go; answering 200 with the old snapshot would tell the
+        # client the request succeeded and show it nothing.
+        response.status_code = 410
+        return {"detail": "Report expired or not found"}
+    return merged

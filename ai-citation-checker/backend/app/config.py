@@ -47,9 +47,18 @@ ANALYSIS_CITATION_DEADLINE_SECONDS = float(
 )
 ANALYSIS_LEASE_MARGIN_SECONDS = int(os.getenv("ANALYSIS_LEASE_MARGIN_SECONDS", "60"))
 
+# How many charged attempts one citation may consume within one report before
+# it is given up as "failed". The invariant this protects is spend, not any
+# particular failure: a truncated response, an unparseable one, a timeout the
+# server may have finished — each is charged, and each would otherwise be
+# retried on every click forever. Attempts that charged nothing (the API
+# returned an error or was unreachable) are refunded and do not count.
+ANALYSIS_MAX_BILLED_ATTEMPTS = int(os.getenv("ANALYSIS_MAX_BILLED_ATTEMPTS", "2"))
+
 for _name in ("CLAUDE_TIMEOUT_SECONDS", "EMBEDDING_TIMEOUT_SECONDS",
               "ANALYSIS_CITATION_DEADLINE_SECONDS", "ANALYSIS_LEASE_MARGIN_SECONDS",
-              "LLM_CONCURRENCY", "LLM_MAX_FIX_ATTEMPTS"):
+              "ANALYSIS_MAX_BILLED_ATTEMPTS", "LLM_CONCURRENCY",
+              "LLM_MAX_FIX_ATTEMPTS"):
     if globals()[_name] <= 0:
         # Zero or negative would hand out leases that are already expired, so
         # workers would start paying with no protection at all.

@@ -1,6 +1,8 @@
 import json
 
 import aiosqlite
+
+import app.config as cfg
 from datetime import datetime, timezone, timedelta
 
 DDL = """
@@ -29,6 +31,12 @@ CREATE TABLE IF NOT EXISTS citation_claims (
     owner       TEXT NOT NULL,
     expires_at  TIMESTAMP NOT NULL,
     done        INTEGER NOT NULL DEFAULT 0,
+    -- Charged attempts this citation has consumed in this report. Taken at
+    -- claim time, before any money is spent, so a worker that dies after
+    -- paying has still used its attempt. Refunded only when an attempt is
+    -- known to have charged nothing. Survives release and lease expiry —
+    -- which is why released rows are expired rather than deleted.
+    attempts    INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (report_id, citation_id)
 );
 CREATE INDEX IF NOT EXISTS idx_claims_expires_at ON citation_claims(expires_at);
@@ -70,6 +78,12 @@ async def init_db(db_path: str) -> None:
                 "ALTER TABLE citation_claims "
                 "ADD COLUMN done INTEGER NOT NULL DEFAULT 0"
             )
+        if "attempts" not in columns:
+            # Existing rows were each claimed once.
+            await db.execute(
+                "ALTER TABLE citation_claims "
+                "ADD COLUMN attempts INTEGER NOT NULL DEFAULT 1"
+            )
         await db.commit()
 
 
@@ -90,39 +104,54 @@ async def claim_citations(
     citation_ids: list[str],
     owner: str,
     ttl_seconds: int,
+    max_attempts: int | None = None,
 ) -> set[str]:
     """Take a lease on each citation, returning only the ones this caller won.
 
-    The caller must analyse nothing it did not win. Leases expire, so a worker
-    that crashes mid-analysis does not strand its citations; finished ones
-    (`done`) never expire and can never be claimed again.
+    The caller must analyse nothing it did not win. A citation is won by
+    inserting the first lease for it, or by taking over one that lapsed —
+    and only while it still has charged attempts left. Winning consumes an
+    attempt up front: the money is about to be spent, and a worker that dies
+    after spending it must not get the attempt back.
 
-    "Won" means this call's INSERT actually landed. An earlier version re-read
-    rows by owner and filtered on `expires_at > now`, but `now` was the
-    transaction's own start time, so every freshly inserted row passed by
-    construction and the filter decided nothing.
+    Finished citations (`done`) are never won again, and neither are ones
+    whose budget is spent.
+
+    "Won" means this call's own INSERT or UPDATE landed. An earlier version
+    re-read rows by owner and filtered on `expires_at > now`, with `now` from
+    the same transaction, so every fresh row passed and the filter decided
+    nothing.
     """
     if ttl_seconds <= 0:
         raise ValueError("ttl_seconds must be positive")
+    if max_attempts is None:
+        max_attempts = cfg.ANALYSIS_MAX_BILLED_ATTEMPTS
     async with aiosqlite.connect(db_path) as db:
         await db.execute("BEGIN IMMEDIATE")
         # Timed after the write lock is held: computing it before would let a
         # long lock wait silently eat into the lease.
         now = datetime.now(timezone.utc)
         expires = (now + timedelta(seconds=ttl_seconds)).isoformat()
-        # Only abandoned in-flight leases are reclaimable. Tombstones stay.
-        await db.execute(
-            "DELETE FROM citation_claims "
-            "WHERE report_id=? AND done=0 AND expires_at<=?",
-            (report_id, now.isoformat()),
-        )
         won: set[str] = set()
         for citation_id in citation_ids:
             cur = await db.execute(
                 "INSERT OR IGNORE INTO citation_claims "
-                "(report_id, citation_id, owner, expires_at) VALUES (?,?,?,?)",
+                "(report_id, citation_id, owner, expires_at, done, attempts) "
+                "VALUES (?,?,?,?,0,1)",
                 (report_id, citation_id, owner, expires),
             )
+            if cur.rowcount != 1:
+                # A row exists. Take it over only if it is an abandoned,
+                # unfinished lease with budget left. Lapsed rows are kept
+                # rather than deleted precisely so this count survives.
+                cur = await db.execute(
+                    "UPDATE citation_claims "
+                    "SET owner=?, expires_at=?, attempts=attempts+1 "
+                    "WHERE report_id=? AND citation_id=? AND done=0 "
+                    "AND expires_at<=? AND attempts<?",
+                    (owner, expires, report_id, citation_id,
+                     now.isoformat(), max_attempts),
+                )
             if cur.rowcount == 1:
                 won.add(citation_id)
         await db.commit()
@@ -134,39 +163,53 @@ async def release_claims(
     report_id: str,
     owner: str,
     citation_ids: list[str] | None = None,
+    refund: set[str] | None = None,
 ) -> None:
-    """Drop this owner's in-flight leases — all of them, or just
-    `citation_ids` — so a failed attempt can be retried at once instead of
-    waiting out the TTL. Tombstones are never released."""
+    """Hand back this owner's in-flight leases — all of them, or just
+    `citation_ids` — so they can be retried at once rather than after the TTL.
+
+    Released leases are expired, not deleted: deleting them would reset the
+    attempt count, and with it the cap on what one citation can be charged.
+    Citations in `refund` charged nothing on this attempt and get it back.
+    Tombstones are never touched.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    scope, args = "", []
+    if citation_ids is not None:
+        if not citation_ids:
+            return
+        scope = f" AND citation_id IN ({','.join('?' * len(citation_ids))})"
+        args = list(citation_ids)
     async with aiosqlite.connect(db_path) as db:
-        if citation_ids is None:
-            await db.execute(
-                "DELETE FROM citation_claims "
-                "WHERE report_id=? AND owner=? AND done=0",
-                (report_id, owner),
-            )
-        else:
-            await db.executemany(
-                "DELETE FROM citation_claims "
-                "WHERE report_id=? AND owner=? AND citation_id=? AND done=0",
-                [(report_id, owner, cid) for cid in citation_ids],
-            )
+        await db.execute("BEGIN IMMEDIATE")
+        if refund:
+            await _refund(db, report_id, owner, refund)
+        await db.execute(
+            "UPDATE citation_claims SET expires_at=? "
+            "WHERE report_id=? AND owner=? AND done=0" + scope,
+            [now, report_id, owner, *args],
+        )
         await db.commit()
 
 
-async def delete_stale_claims(db_path: str) -> None:
-    """Remove abandoned in-flight leases, and every row whose report is gone.
+async def _refund(db, report_id: str, owner: str, citation_ids: set[str]) -> None:
+    """Return one attempt to each citation, never going below zero."""
+    await db.executemany(
+        "UPDATE citation_claims SET attempts=MAX(attempts-1, 0) "
+        "WHERE report_id=? AND owner=? AND citation_id=? AND done=0",
+        [(report_id, owner, cid) for cid in citation_ids],
+    )
 
-    Expired rows were otherwise only cleared when the same report was claimed
-    again, so a worker killed mid-analysis on a report nobody reopened left its
-    rows behind indefinitely. Tombstones are kept for as long as their report
-    exists — they are what stops a stale worker overwriting a finished result.
+
+async def delete_stale_claims(db_path: str) -> None:
+    """Remove every lease row whose report is gone.
+
+    Rows are otherwise kept for the life of their report, lapsed ones
+    included: a lapsed lease still carries the citation's attempt count, and
+    dropping it would hand that citation a fresh budget. A tombstone, likewise,
+    is what stops a stale worker overwriting a finished result.
     """
-    now = datetime.now(timezone.utc).isoformat()
     async with aiosqlite.connect(db_path) as db:
-        await db.execute(
-            "DELETE FROM citation_claims WHERE done=0 AND expires_at<=?", (now,)
-        )
         await db.execute(
             "DELETE FROM citation_claims "
             "WHERE report_id NOT IN (SELECT id FROM reports)"
@@ -174,11 +217,96 @@ async def delete_stale_claims(db_path: str) -> None:
         await db.commit()
 
 
+_FAILED_FIELDS = {
+    "suggestion": None,
+    "suggestion_explanation": "",
+    "suggestion_verified": False,
+    "suggestion_rule_basis": [],
+    "suggestion_validation": [],
+    "suggestion_status": "failed",
+}
+
+
+def _mark_failed(report: dict, citation_ids: set[str]) -> None:
+    """Record spent budgets on the report, so the citation reads as finished
+    there too — otherwise the page keeps offering a button that can no longer
+    win a claim and silently does nothing."""
+    for citation in report.get("citations", []):
+        if citation["id"] not in citation_ids:
+            continue
+        if citation.get("suggestion") or citation.get("suggestion_status"):
+            continue   # already finished some other way; never downgrade it
+        citation.update(_FAILED_FIELDS)
+
+
+async def _settle_exhausted(db, report: dict, report_id: str, rows_sql: str,
+                            args: list) -> None:
+    """Mark lapsed, unfinished leases with no budget left as failed, and
+    tombstone them. `rows_sql` narrows which rows are considered."""
+    cur = await db.execute(
+        "SELECT citation_id FROM citation_claims "
+        "WHERE report_id=? AND done=0 AND attempts>=? AND expires_at<=?"
+        + rows_sql,
+        [report_id, cfg.ANALYSIS_MAX_BILLED_ATTEMPTS,
+         datetime.now(timezone.utc).isoformat(), *args],
+    )
+    exhausted = {r[0] for r in await cur.fetchall()}
+    if not exhausted:
+        return
+    _mark_failed(report, exhausted)
+    await db.executemany(
+        "UPDATE citation_claims SET done=1 WHERE report_id=? AND citation_id=?",
+        [(report_id, cid) for cid in exhausted],
+    )
+
+
+async def fail_exhausted_citations(
+    db_path: str, report_id: str, citation_ids: list[str]
+) -> dict | None:
+    """Settle citations whose budget ran out without anyone settling them.
+
+    The normal path marks a citation failed when its last attempt settles.
+    If the worker making that attempt died instead, nobody did: the lease
+    lapses with the budget spent, no claim can win it again, and the report
+    goes on showing it as analysable. Called for citations a request wanted
+    but did not win. Returns the updated report, or None if unchanged.
+    """
+    if not citation_ids:
+        return None
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        await db.execute("BEGIN IMMEDIATE")
+        cur = await db.execute(
+            "SELECT report_json FROM reports WHERE id=?", (report_id,)
+        )
+        row = await cur.fetchone()
+        if row is None:
+            await db.rollback()
+            return None
+        report = json.loads(row["report_json"])
+        before = json.dumps(report)
+        await _settle_exhausted(
+            db, report, report_id,
+            f" AND citation_id IN ({','.join('?' * len(citation_ids))})",
+            list(citation_ids),
+        )
+        if json.dumps(report) == before:
+            await db.commit()
+            return None
+        await db.execute(
+            "UPDATE reports SET report_json=? WHERE id=?",
+            (json.dumps(report), report_id),
+        )
+        await db.commit()
+        return report
+
+
 async def merge_citation_fields(
     db_path: str,
     report_id: str,
     updates: dict[str, dict],
     owner: str | None = None,
+    refund: set[str] | None = None,
 ) -> dict | None:
     """Apply per-citation fields to a stored report, inside one transaction.
 
@@ -202,8 +330,11 @@ async def merge_citation_fields(
     an analysis that outlived its own lease with nobody taking over has still
     been paid for, and discarding it would only mean paying again.
 
-    Written citations become tombstones; this owner's other in-flight leases
-    (claimed but produced nothing) are released so they stay retryable.
+    With an owner this is the settlement for everything the owner claimed,
+    in one transaction: written citations become tombstones; those in
+    `refund` charged nothing and get their attempt back; the rest are released
+    for retry; and any whose charged attempts are now spent are marked failed
+    on the report, so they stop being offered and stop being paid for.
 
     Returns the merged report, or None if the report is gone.
     """
@@ -241,10 +372,6 @@ async def merge_citation_fields(
             citation.update(fields)
             applied.append(citation["id"])
 
-        await db.execute(
-            "UPDATE reports SET report_json=? WHERE id=?",
-            (json.dumps(report), report_id),
-        )
         if owner is not None:
             await db.executemany(
                 "INSERT INTO citation_claims "
@@ -255,11 +382,22 @@ async def merge_citation_fields(
                 [(report_id, cid, owner, "9999-12-31T00:00:00+00:00")
                  for cid in applied],
             )
+            if refund:
+                await _refund(db, report_id, owner, refund - set(applied))
+            # Released by expiring, not deleting: the row keeps the attempt
+            # count that caps what this citation can still be charged.
             await db.execute(
-                "DELETE FROM citation_claims "
+                "UPDATE citation_claims SET expires_at=? "
                 "WHERE report_id=? AND owner=? AND done=0",
-                (report_id, owner),
+                (datetime.now(timezone.utc).isoformat(), report_id, owner),
             )
+            await _settle_exhausted(db, report, report_id, " AND owner=?", [owner])
+
+        # Written last: settling exhausted citations above edits the report.
+        await db.execute(
+            "UPDATE reports SET report_json=? WHERE id=?",
+            (json.dumps(report), report_id),
+        )
         await db.commit()
         return report
 

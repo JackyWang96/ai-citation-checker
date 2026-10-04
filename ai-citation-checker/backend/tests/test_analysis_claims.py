@@ -41,6 +41,17 @@ def _migrate_in_child(path, barrier, results):
         results.put(repr(exc))
 
 
+def _as_settlement(fake_suggest):
+    """Adapt a fake that returns {id: payload} to settle_fixes, which also
+    reports what was refundable. These tests are about leases, not billing,
+    so nothing is marked unbilled."""
+    from app.services.fix_suggester import Settlement
+
+    async def settle(citations, client=None):
+        return Settlement(await fake_suggest(citations, client), set())
+    return settle
+
+
 async def _expire(db_path: str, report_id: str, owner: str) -> None:
     """Push a lease into the past. claim_citations rejects a non-positive TTL
     (it would hand out a lease that is already dead), so an expired lease has
@@ -152,7 +163,7 @@ async def test_endpoint_charges_once_under_concurrent_requests(db_path, monkeypa
                           "suggestion_rule_basis": [], "suggestion_validation": [],
                           "suggestion_status": None} for c in citations}
 
-    monkeypatch.setattr(analyze, "suggest_fixes", fake_suggest)
+    monkeypatch.setattr(analyze, "settle_fixes", _as_settlement(fake_suggest))
 
     class Resp:
         status_code = 200
@@ -198,7 +209,7 @@ async def test_a_stale_snapshot_cannot_buy_finished_work_again(db_path, monkeypa
 
     stale = await get_report(db_path, "rid")          # A reads first …
 
-    monkeypatch.setattr(analyze, "suggest_fixes", payer("B"))
+    monkeypatch.setattr(analyze, "settle_fixes", _as_settlement(payer("B")))
     await analyze.analyze_report("rid", Resp())       # … B runs to completion
 
     real_get = analyze.get_report
@@ -209,7 +220,7 @@ async def test_a_stale_snapshot_cannot_buy_finished_work_again(db_path, monkeypa
         return stale if reads["n"] == 1 else await real_get(*args, **kwargs)
 
     monkeypatch.setattr(analyze, "get_report", a_reads_stale_first)
-    monkeypatch.setattr(analyze, "suggest_fixes", payer("A"))
+    monkeypatch.setattr(analyze, "settle_fixes", _as_settlement(payer("A")))
     await analyze.analyze_report("rid", Resp())       # A resumes with its snapshot
 
     assert paid.count("A") == 0, f"A paid again: {paid}"
@@ -339,7 +350,7 @@ async def test_report_removed_mid_analysis_answers_410(db_path, monkeypatch):
             await db.commit()
         return {c["id"]: {"suggestion": "PAID"} for c in citations}
 
-    monkeypatch.setattr(analyze, "suggest_fixes", removes_report)
+    monkeypatch.setattr(analyze, "settle_fixes", _as_settlement(removes_report))
 
     class Resp:
         status_code = 200
