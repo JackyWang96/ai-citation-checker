@@ -25,7 +25,13 @@ async def embed_query(
     """Embed one query string. `client` is injectable for tests."""
     owns_client = client is None
     if owns_client:
-        client = openai.AsyncOpenAI(api_key=cfg.OPENAI_API_KEY)
+        client = openai.AsyncOpenAI(
+            api_key=cfg.OPENAI_API_KEY,
+            # Explicit, because analysis_lease_seconds() is derived from
+            # these. The SDK default (600s, 2 retries) has no bound.
+            timeout=cfg.EMBEDDING_TIMEOUT_SECONDS,
+            max_retries=cfg.LLM_MAX_RETRIES,
+        )
     try:
         resp = await client.embeddings.create(model=cfg.EMBEDDING_MODEL, input=[text])
     finally:
