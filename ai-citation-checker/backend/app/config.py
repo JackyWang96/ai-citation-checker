@@ -26,10 +26,27 @@ LLM_CONCURRENCY = int(os.getenv("LLM_CONCURRENCY", "4"))
 # retry: the first pass fixes most references, and a second failure
 # usually means the rules can't be satisfied from the text available.
 LLM_MAX_FIX_ATTEMPTS = int(os.getenv("LLM_MAX_FIX_ATTEMPTS", "2"))
-# How long a citation stays claimed while being analysed. Long enough to cover
-# the slowest realistic run (retrieval + two Claude calls under concurrency
-# limits), short enough that a crashed worker's citations free up soon after.
-ANALYSIS_LEASE_SECONDS = int(os.getenv("ANALYSIS_LEASE_SECONDS", "180"))
+# Lease length is sized to the work, not fixed. A fixed 180s was a guess: a
+# large report queues behind LLM_CONCURRENCY, so its last citations can start
+# paying with most of the lease already gone, and once it expires a second tab
+# takes over and pays again. Sized as base + one slot per round of concurrent
+# work. A long lease only delays recovery after a crash, which is cheap; a
+# short one causes double billing, which is not.
+ANALYSIS_LEASE_BASE_SECONDS = int(os.getenv("ANALYSIS_LEASE_BASE_SECONDS", "60"))
+ANALYSIS_LEASE_PER_ROUND_SECONDS = int(
+    os.getenv("ANALYSIS_LEASE_PER_ROUND_SECONDS", "60")
+)
+for _name in ("ANALYSIS_LEASE_BASE_SECONDS", "ANALYSIS_LEASE_PER_ROUND_SECONDS",
+              "LLM_CONCURRENCY"):
+    if globals()[_name] <= 0:
+        # Zero or negative would hand out leases that are already expired, so
+        # workers would start paying with no protection at all.
+        raise ValueError(f"{_name} must be positive, got {globals()[_name]}")
+
+
+def analysis_lease_seconds(citation_count: int) -> int:
+    rounds = -(-citation_count // LLM_CONCURRENCY)   # ceil division
+    return ANALYSIS_LEASE_BASE_SECONDS + rounds * ANALYSIS_LEASE_PER_ROUND_SECONDS
 
 # langchain-core pulls in langsmith, whose tracing client uploads prompts
 # and completions to an external service when enabled. It is off unless

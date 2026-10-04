@@ -77,10 +77,14 @@ async def claim_citations(
     mid-analysis does not strand its citations: the next request takes them
     over once the TTL passes.
     """
-    now = datetime.now(timezone.utc)
-    expires = (now + timedelta(seconds=ttl_seconds)).isoformat()
+    if ttl_seconds <= 0:
+        raise ValueError("ttl_seconds must be positive")
     async with aiosqlite.connect(db_path) as db:
         await db.execute("BEGIN IMMEDIATE")
+        # Timed after the write lock is held: computing it before would let a
+        # long lock wait silently eat into the lease.
+        now = datetime.now(timezone.utc)
+        expires = (now + timedelta(seconds=ttl_seconds)).isoformat()
         await db.execute(
             "DELETE FROM citation_claims WHERE report_id=? AND expires_at<=?",
             (report_id, now.isoformat()),
@@ -91,22 +95,54 @@ async def claim_citations(
                 "(report_id, citation_id, owner, expires_at) VALUES (?,?,?,?)",
                 (report_id, citation_id, owner, expires),
             )
+        # Only this call's ids, and only live leases. Matching on owner alone
+        # relied on owners never repeating, and counted expired rows as won.
         cur = await db.execute(
-            "SELECT citation_id FROM citation_claims WHERE report_id=? AND owner=?",
-            (report_id, owner),
+            "SELECT citation_id FROM citation_claims "
+            "WHERE report_id=? AND owner=? AND expires_at>?",
+            (report_id, owner, now.isoformat()),
         )
-        won = {row[0] for row in await cur.fetchall()}
+        won = {row[0] for row in await cur.fetchall()} & set(citation_ids)
         await db.commit()
     return won
 
 
-async def release_claims(db_path: str, report_id: str, owner: str) -> None:
-    """Drop this owner's leases so a failed attempt can be retried at once
-    instead of waiting out the TTL."""
+async def release_claims(
+    db_path: str,
+    report_id: str,
+    owner: str,
+    citation_ids: list[str] | None = None,
+) -> None:
+    """Drop this owner's leases — all of them, or just `citation_ids` — so a
+    failed attempt can be retried at once instead of waiting out the TTL."""
     async with aiosqlite.connect(db_path) as db:
+        if citation_ids is None:
+            await db.execute(
+                "DELETE FROM citation_claims WHERE report_id=? AND owner=?",
+                (report_id, owner),
+            )
+        else:
+            await db.executemany(
+                "DELETE FROM citation_claims "
+                "WHERE report_id=? AND owner=? AND citation_id=?",
+                [(report_id, owner, cid) for cid in citation_ids],
+            )
+        await db.commit()
+
+
+async def delete_stale_claims(db_path: str) -> None:
+    """Remove expired leases and leases whose report is gone.
+
+    Expired rows were otherwise only cleared when the same report was claimed
+    again, so a worker killed mid-analysis on a report nobody reopened left its
+    rows behind indefinitely.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("DELETE FROM citation_claims WHERE expires_at<=?", (now,))
         await db.execute(
-            "DELETE FROM citation_claims WHERE report_id=? AND owner=?",
-            (report_id, owner),
+            "DELETE FROM citation_claims "
+            "WHERE report_id NOT IN (SELECT id FROM reports)"
         )
         await db.commit()
 
