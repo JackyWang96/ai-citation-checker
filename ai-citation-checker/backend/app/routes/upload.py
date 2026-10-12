@@ -24,16 +24,21 @@ async def check_essay(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="File too large (max 10MB)")
 
     try:
+        # step 1 parse information
         parsed = parse_docx(data)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    # step 2 extract information
     intext = extract_intext_citations(parsed.body_text)
     ref_entries = parse_reference_entries(
         [p.raw_text for p in parsed.reference_paragraphs]
     )
+
+    # step 3 Verify information
     verify_results = await verify_all(ref_entries, cfg.DB_PATH)
 
+    # step 4 Build report
     report_id = str(uuid.uuid4())
     report = build_report(
         report_id=report_id,
